@@ -90,14 +90,30 @@ jobs:
           wind_dir = wd.get("value") if isinstance(wd, dict) else None
 
           ts = int(time.time() * 1000)
-
+# --- lectura robusta de ratxa de vent (gust) ---
+def read_gust():
+    for p in [
+        ["data","wind","gust"],
+        ["data","wind","wind_gust"],
+        ["data","wind","gust_speed"],
+        ["data","wind","max_gust"],
+        ["data","wind","gust_10m"]
+    ]:
+        obj = get_obj(p)
+        if isinstance(obj, dict) and "value" in obj:
+            try:
+                return round(float(obj["value"]), 2)
+            except:
+                pass
+    return None
+    
           point = {
               "ts": ts,
               "temp_c": read_temp_c(["data","outdoor","temperature"]),
               "hum_pct": read_num(["data","outdoor","humidity"]),
               "dew_c": read_temp_c(["data","outdoor","dew_point"]),
               "wind_kmh": read_num(["data","wind","wind_speed"]),
-              "gust_kmh": read_num(["data","wind","gust"]),
+              ""gust_kmh": read_gust(),
               "wind_dir": wind_dir,
               "rain_day_mm": read_num(["data","rainfall","daily"]),
               "rain_rate_mmh": read_num(["data","rainfall","rate"])
