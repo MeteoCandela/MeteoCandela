@@ -1,8 +1,13 @@
 name: Ecowitt updater
 
 on:
+  # Executa quan fem canvis al repo (això evita dependre del botó "Run workflow")
+  push:
+    branches: [ "main" ]
+  # Executa automàticament cada 5 minuts (només a la branca per defecte)
   schedule:
     - cron: "*/5 * * * *"
+  # Permet execució manual (si GitHub t'ho deixa)
   workflow_dispatch:
 
 permissions:
@@ -21,7 +26,7 @@ jobs:
 
       - run: pip install requests
 
-            - name: Fetch Ecowitt data
+      - name: Fetch Ecowitt data
         env:
           APP_KEY: ${{ secrets.ECOWITT_APPLICATION_KEY }}
           API_KEY: ${{ secrets.ECOWITT_API_KEY }}
@@ -76,10 +81,13 @@ jobs:
               n = to_float(v)
               if n is None:
                   return None
-              # Si Ecowitt diu que és Fahrenheit, convertim a Celsius
               if u and "F" in str(u):
                   return round(f_to_c(n), 2)
               return round(n, 2)
+
+          # wind_direction pot ser objecte: {"value":"267","unit":"º",...}
+          wd = get_obj(["data","wind","wind_direction"])
+          wind_dir = wd.get("value") if isinstance(wd, dict) else None
 
           ts = int(time.time() * 1000)
 
@@ -90,8 +98,7 @@ jobs:
               "dew_c": read_temp_c(["data","outdoor","dew_point"]),
               "wind_kmh": read_num(["data","wind","wind_speed"]),
               "gust_kmh": read_num(["data","wind","gust"]),
-              # wind_direction pot ser objecte; agafem només value
-              "wind_dir": (get_obj(["data","wind","wind_direction"]) or {}).get("value"),
+              "wind_dir": wind_dir,
               "rain_day_mm": read_num(["data","rainfall","daily"]),
               "rain_rate_mmh": read_num(["data","rainfall","rate"])
           }
@@ -114,8 +121,7 @@ jobs:
           print("OK:", point)
           PY
 
-
-      - name: Commit
+      - name: Commit updated history.json
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
