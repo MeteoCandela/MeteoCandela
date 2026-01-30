@@ -58,25 +58,49 @@ jobs:
                 return None
             return cur
 
-          def get_value(path):
-            obj = get_obj(path)
-            if isinstance(obj, dict) and "value" in obj:
-              return obj["value"]
-            return None
+         def get_obj(path):
+  cur = j
+  for k in path:
+    if isinstance(cur, dict) and k in cur:
+      cur = cur[k]
+    else:
+      return None
+  return cur
 
-          def get_num(path):
-            v = get_value(path)
-            if v is None:
-              return None
-            try:
-              return round(float(v), 2)
-            except Exception:
-              return None
+def get_value_unit(path):
+  obj = get_obj(path)
+  if isinstance(obj, dict):
+    return obj.get("value"), obj.get("unit")
+  return None, None
 
-          # Outdoor
-          temp_c = get_num(["data","outdoor","temperature"])
-          hum_pct = get_num(["data","outdoor","humidity"])
-          dew_c  = get_num(["data","outdoor","dew_point"])
+def to_float(x):
+  try:
+    return float(x)
+  except Exception:
+    return None
+
+def f_to_c(f):
+  return (f - 32.0) * 5.0 / 9.0
+
+def read_temp_c(path):
+  v, u = get_value_unit(path)
+  n = to_float(v)
+  if n is None:
+    return None
+  if u and "F" in str(u):
+    return round(f_to_c(n), 2)
+  return round(n, 2)
+
+def read_num(path):
+  v, _u = get_value_unit(path)
+  n = to_float(v)
+  return round(n, 2) if n is not None else None
+
+# Outdoor
+temp_c = read_temp_c(["data","outdoor","temperature"])
+hum_pct = read_num(["data","outdoor","humidity"])
+dew_c  = read_temp_c(["data","outdoor","dew_point"])
+
 
           # Wind
           wind_kmh = get_num(["data","wind","wind_speed"])
