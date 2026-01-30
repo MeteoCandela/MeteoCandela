@@ -1,0 +1,115 @@
+name: Update Ecowitt data
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: pip install requests
+
+      - name: Fetch realtime from Ecowitt and append history
+        env:
+          APP_KEY: ${{ secrets.ECOWITT_APPLICATION_KEY }}
+          API_KEY: ${{ secrets.ECOWITT_API_KEY }}
+          MAC: ${{ secrets.ECOWITT_MAC }}
+        run: |
+          python - << 'PY'
+          import json, time, os
+          import requests
+
+          url = "https://api.ecowitt.net/api/v3/device/real_time"
+          params = {
+            "application_key": os.environ["APP_KEY"],
+            "api_key": os.environ["API_KEY"],
+            "mac": os.environ["MAC"],
+            "call_back": "all"
+          }
+
+          r = requests.get(url, params=params, timeout=25)
+          r.raise_for_status()
+          j = r.json()
+
+          def deep_get(d, path, default=None):
+            cur = d
+            for k in path:
+              if isinstance(cur, dict) and k in cur:
+                cur = cur[k]
+              else:
+                return default
+            return cur
+
+          def to_num(x):
+            try:
+              return round(float(x), 2)
+            except Exception:
+              return None
+
+          base = j.get("data", j)
+          ts = int(time.time() * 1000)
+
+          temp_c = to_num(deep_get(j, ["data","outdoor","temperature"]) or deep_get(base, ["outdoor","temperature"]) or deep_get(base, ["temp"]))
+          hum_pct = to_num(deep_get(j, ["data","outdoor","humidity"]) or deep_get(base, ["outdoor","humidity"]) or deep_get(base, ["humidity"]))
+          dew_c  = to_num(deep_get(j, ["data","outdoor","dew_point"]) or deep_get(base, ["outdoor","dew_point"]) or deep_get(base, ["dew_point"]))
+
+          wind_kmh = to_num(deep_get(j, ["data","wind","wind_speed"]) or deep_get(base, ["wind","wind_speed"]) or deep_get(base, ["wind_speed"]))
+          gust_kmh = to_num(deep_get(j, ["data","wind","gust"]) or deep_get(base, ["wind","gust"]) or deep_get(base, ["gust"]))
+          wind_dir = (deep_get(j, ["data","wind","wind_direction"]) or deep_get(base, ["wind","wind_direction"]) or deep_get(base, ["wind_direction"]))
+
+          rain_day = to_num(deep_get(j, ["data","rainfall","daily"]) or deep_get(base, ["rainfall","daily"]) or deep_get(base, ["rain_day"]))
+          rain_rate = to_num(deep_get(j, ["data","rainfall","rate"]) or deep_get(base, ["rainfall","rate"]) or deep_get(base, ["rain_rate"]))
+
+          point = {
+            "ts": ts,
+            "temp_c": temp_c,
+            "hum_pct": hum_pct,
+            "dew_c": dew_c,
+            "wind_kmh": wind_kmh,
+            "gust_kmh": gust_kmh,
+            "wind_dir": wind_dir,
+            "rain_day_mm": rain_day,
+            "rain_rate_mmh": rain_rate
+          }
+
+          path = "data/history.json"
+          try:
+            with open(path, "r", encoding="utf-8") as f:
+              hist = json.load(f)
+            if not isinstance(hist, list):
+              hist = []
+          except FileNotFoundError:
+            hist = []
+
+          hist.append(point)
+
+          if len(hist) > 900:
+            hist = hist[-900:]
+
+          with open(path, "w", encoding="utf-8") as f:
+            json.dump(hist, f, ensure_ascii=False)
+
+          print("Appended:", point)
+          PY
+
+      - name: Commit updated history.json
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add data/history.json
+          git commit -m "Update weather data" || echo "No changes"
+          git push
