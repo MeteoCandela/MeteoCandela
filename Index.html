@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Estació meteorològica</title>
+  <style>
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+    header { padding: 16px; border-bottom: 1px solid #eee; }
+    h1 { font-size: 18px; margin: 0; }
+    .wrap { padding: 0; }
+    iframe { width: 100%; height: 92vh; border: 0; }
+    .note { color:#666; font-size: 13px; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Estació meteorològica</h1>
+    <div class="note">Dades en temps quasi real (Ecowitt).</div>
+  </header>
+
+  <div class="wrap">
+    <iframe
+      src="https://www.ecowitt.net/home/index?id=304664"
+      loading="lazy"
+      referrerpolicy="no-referrer">
+    </iframe>
+  </div>
+</body>
+</html>
