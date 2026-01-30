@@ -108,3 +108,14 @@ refresh();
 
 // refresc automàtic cada 60 segons
 setInterval(refresh, 60_000);
+
+setInterval(async () => {
+  try {
+    const history = await loadHistory();
+    const last = history[history.length - 1];
+    renderCurrent(last);
+    renderCharts(history);
+  } catch (e) {
+    console.warn("No s'ha pogut actualitzar automàticament");
+  }
+}, 120000); // cada 2 minuts
