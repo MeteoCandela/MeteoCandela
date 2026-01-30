@@ -2,6 +2,13 @@ const HISTORY_URL = "data/history.json";
 
 let chartTemp, chartHum;
 
+function degToCardinal(deg){
+  const d = Number(deg);
+  if (!Number.isFinite(d)) return "—";
+  const dirs = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+  return dirs[Math.round(d/22.5) % 16];
+}
+
 function fmtTime(ts){
   const d = new Date(ts);
   return d.toLocaleString("ca-ES", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" });
@@ -46,12 +53,12 @@ function renderCurrent(last){
   setText("temp", last.temp_c ?? "—");
   setText("hum", last.hum_pct ?? "—");
   setText("wind", last.wind_kmh ?? "—");
-  setText("rainDay", last.rain_day_mm ?? "—");
+  setText("rainDay", last.rain_day_mm ?? "0.0");
 
   setText("tempSub", last.dew_c != null ? `Punt de rosada: ${last.dew_c} °C` : "—");
   setText("dewSub", last.dew_c != null ? `Punt de rosada: ${last.dew_c} °C` : "—");
-  setText("gustSub", `Ratxa: ${last.gust_kmh ?? "—"} km/h · Dir: ${last.wind_dir ?? "—"}`);
-  setText("rainRateSub", `Intensitat: ${last.rain_rate_mmh ?? "—"} mm/h`);
+  setText("gustSub", `Ratxa: ${last.gust_kmh ?? "—"} km/h · Dir: ${degToCardinal(last.wind_dir)} (${last.wind_dir ?? "—"}º)`);
+  setText("rainRateSub", `Intensitat: ${last.rain_rate_mmh ?? "0.0"} mm/h`);
 
   setText("lastUpdated", `Actualitzat: ${fmtTime(last.ts)}`);
 }
