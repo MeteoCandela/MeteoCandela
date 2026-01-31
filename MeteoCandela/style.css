@@ -17,7 +17,7 @@ body{
 .hero{
   position: relative;
   min-height: 220px;
-  background-image: url("assets/valls.jpg");
+  background-image: url("MeteoCandela/assets/valls.jpg");
   background-size: cover;
   background-position: center;
   border-bottom: 1px solid var(--border);
