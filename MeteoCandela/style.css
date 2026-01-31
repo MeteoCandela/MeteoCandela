@@ -14,24 +14,30 @@ body{
   background: radial-gradient(1200px 700px at 20% 10%, #1b2a4a, var(--bg));
 }
 
-.hero{
+.hero {
   position: relative;
-  min-height: 220px;
-  background-image: url("MeteoCandela/assets/valls.jpg");
+  min-height: 45vh;
+  padding: 28px 18px;
+
+  display: flex;
+  align-items: flex-end;
+
+  background-image: url("assets/valls.jpg");
   background-size: cover;
   background-position: center;
-  border-bottom: 1px solid var(--border);
+  background-repeat: no-repeat;
 }
 
-.hero__overlay{
-  position:absolute;
-  inset:0;
-  background: linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.70));
+.hero__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
 }
 
-.hero__content{
-  position:relative;
-  padding: 22px 18px;
+.hero__content {
+  position: relative;
+  z-index: 1;
+  color: #fff;
 }
 
 h1{ margin: 0 0 6px; font-size: 28px; }
