@@ -3,7 +3,6 @@ name: Ecowitt updater
 on:
   workflow_dispatch:
   schedule:
-    # Cada 5 minuts (UTC). Mantén-ne només un per evitar carreres i 'fetch first'.
     - cron: "*/5 * * * *"
 
 concurrency:
@@ -21,7 +20,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # IMPORTANT: necessari per fer pull --rebase sense problemes
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -33,7 +32,7 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Fetch Ecowitt realtime and append history
+      - name: Fetch Ecowitt history (5min) and append
         env:
           ECOWITT_APPLICATION_KEY: ${{ secrets.ECOWITT_APPLICATION_KEY }}
           ECOWITT_API_KEY: ${{ secrets.ECOWITT_API_KEY }}
@@ -45,16 +44,13 @@ jobs:
           from pathlib import Path
           import urllib.request, urllib.parse
 
-          # ===== RUTES (ROOT DEL REPO) =====
           HISTORY_PATH = Path("data") / "history.json"
           HEARTBEAT_DIR = Path("heartbeat")
           HEARTBEAT_PATH = HEARTBEAT_DIR / "heartbeat.json"
-          # =================================
 
           app_key = os.getenv("ECOWITT_APPLICATION_KEY")
           api_key = os.getenv("ECOWITT_API_KEY")
           mac = os.getenv("ECOWITT_MAC")
-
           if not (app_key and api_key and mac):
               raise SystemExit("Falten secrets: ECOWITT_APPLICATION_KEY / ECOWITT_API_KEY / ECOWITT_MAC")
 
@@ -64,122 +60,236 @@ jobs:
               except Exception:
                   return None
 
-          def f_to_c(f):
+          def f_to_c(v):
               try:
-                  return (float(f) - 32.0) * 5.0 / 9.0
+                  return (float(v) - 32.0) * 5.0 / 9.0
               except Exception:
                   return None
 
-          # Endpoint Ecowitt API v3
-          base_url = "https://api.ecowitt.net/api/v3/device/real_time"
+          def mph_to_kmh(v):
+              try:
+                  return float(v) * 1.609344
+              except Exception:
+                  return None
+
+          def ms_to_kmh(v):
+              try:
+                  return float(v) * 3.6
+              except Exception:
+                  return None
+
+          def to_ms_epoch(s):
+              # Accepta segons o ms
+              if s is None:
+                  return None
+              try:
+                  x = float(s)
+                  if x > 1e12:  # ja és ms
+                      return int(x)
+                  if x > 1e9:   # segons unix
+                      return int(x * 1000)
+              except Exception:
+                  pass
+              return None
+
+          def read_hist():
+              if HISTORY_PATH.exists():
+                  try:
+                      h = json.loads(HISTORY_PATH.read_text(encoding="utf-8"))
+                      if isinstance(h, list):
+                          return h
+                  except Exception:
+                      pass
+              return []
+
+          def write_hist(hist):
+              HISTORY_PATH.parent.mkdir(parents=True, exist_ok=True)
+              HISTORY_PATH.write_text(json.dumps(hist, ensure_ascii=False), encoding="utf-8")
+
+          def write_heartbeat(now_ms):
+              HEARTBEAT_DIR.mkdir(parents=True, exist_ok=True)
+              hb = {"run_ts": now_ms, "run_iso_utc": datetime.now(timezone.utc).isoformat()}
+              HEARTBEAT_PATH.write_text(json.dumps(hb, ensure_ascii=False), encoding="utf-8")
+              return hb
+
+          # 1) Carrega històric i calcula finestra a demanar
+          hist = read_hist()
+          hist = [h for h in hist if isinstance(h, dict) and isinstance(h.get("ts"), (int, float))]
+
+          now_ms = int(time.time() * 1000)
+          cutoff_ms = now_ms - 24 * 60 * 60 * 1000
+
+          last_ts_ms = None
+          if hist:
+              last_ts_ms = int(hist[-1]["ts"])
+
+          # Si no hi ha històric, arrenca amb les últimes 24h
+          start_ms = max(last_ts_ms + 1, cutoff_ms) if last_ts_ms else cutoff_ms
+          end_ms = now_ms
+
+          # IMPORTANT: Ecowitt històric sovint va en segons unix
+          start_s = int(start_ms / 1000)
+          end_s = int(end_ms / 1000)
+
+          # 2) Crida API històrica (5 min)
+          # Nota: alguns comptes/firmwares exigeixen aquests noms exactes.
+          base_url = "https://api.ecowitt.net/api/v3/device/history"
           params = {
               "application_key": app_key,
               "api_key": api_key,
               "mac": mac,
-              "call_back": "all"
+              "cycle_type": "5min",
+              "call_back": "all",
+              "start_time": start_s,
+              "end_time": end_s,
           }
           url = base_url + "?" + urllib.parse.urlencode(params)
 
-          with urllib.request.urlopen(url, timeout=20) as r:
+          with urllib.request.urlopen(url, timeout=30) as r:
               payload = json.loads(r.read().decode("utf-8"))
 
-          data = payload.get("data", {}) if isinstance(payload, dict) else {}
+          if not isinstance(payload, dict):
+              raise SystemExit(f"Resposta inesperada: {type(payload)}")
 
-          def pick(*keys):
-              cur = data
+          # 3) Extreu mostres
+          data = payload.get("data")
+          if data is None:
+              # Algunes respostes venen encapsulades
+              data = payload.get("datas") or payload.get("result") or payload.get("records")
+
+          if data is None:
+              # Ajuda a depurar si Ecowitt retorna un error
+              raise SystemExit("No he trobat 'data' a la resposta. Payload keys: " + ", ".join(payload.keys()))
+
+          # data pot ser: llista de registres, o dict amb 'list'
+          if isinstance(data, dict):
+              data_list = data.get("list") or data.get("data") or data.get("records")
+          else:
+              data_list = data
+
+          if not isinstance(data_list, list):
+              raise SystemExit(f"Format històric inesperat: {type(data_list)}")
+
+          # Helpers per llegir valors (Ecowitt sovint fa {value, unit})
+          def val_unit(x):
+              if isinstance(x, dict):
+                  return fnum(x.get("value")), (x.get("unit") or x.get("units"))
+              return fnum(x), None
+
+          def pick(d, *keys):
+              cur = d
               for k in keys:
                   if not isinstance(cur, dict) or k not in cur:
                       return None
                   cur = cur[k]
               return cur
 
-          # --- TEMPERATURA/HUMITAT/ROSADA ---
-          # Ecowitt sovint envia aquests valors en Fahrenheit a l'API.
-          temp_raw = (
-              fnum(pick("outdoor", "temperature", "value")) or
-              fnum(pick("temp", "value")) or
-              fnum(pick("temperature", "value"))
-          )
-          hum_pct = (
-              fnum(pick("outdoor", "humidity", "value")) or
-              fnum(pick("humidity", "value"))
-          )
+          def parse_row(r):
+              # timestamp: prova camps típics
+              ts_ms = (
+                  to_ms_epoch(r.get("ts")) or
+                  to_ms_epoch(r.get("time")) or
+                  to_ms_epoch(r.get("timestamp")) or
+                  to_ms_epoch(r.get("dateutc")) or
+                  None
+              )
 
-          dew_raw = (
-              fnum(pick("outdoor", "dew_point", "value")) or
-              fnum(pick("dew_point", "value"))
-          )
+              # si no ve timestamp, intenta camp "time" com string "YYYY-MM-DD HH:MM"
+              if ts_ms is None and isinstance(r.get("time"), str):
+                  try:
+                      # assumeix UTC si no hi ha TZ (és el més estable per runner)
+                      dt = datetime.strptime(r["time"], "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
+                      ts_ms = int(dt.timestamp() * 1000)
+                  except Exception:
+                      ts_ms = None
 
-          temp_c = f_to_c(temp_raw) if temp_raw is not None else None
-          dew_c  = f_to_c(dew_raw) if dew_raw is not None else None
+              if ts_ms is None:
+                  return None
 
-          # --- VENT (normalment ja ve en km/h, però ho deixem tolerant) ---
-          wind_kmh = (
-              fnum(pick("wind_speed", "value")) or
-              fnum(pick("wind", "wind_speed", "value"))
-          )
-          gust_kmh = (
-              fnum(pick("wind_gust", "value")) or
-              fnum(pick("wind", "wind_gust", "value"))
-          )
-          wind_dir = (
-              pick("wind_direction", "value") or
-              pick("wind", "wind_direction", "value")
-          )
+              # TEMPERATURA / HUMITAT / ROSADA
+              t_raw, t_unit = val_unit(pick(r, "outdoor", "temperature") or r.get("temperature") or r.get("temp"))
+              h_raw, h_unit = val_unit(pick(r, "outdoor", "humidity") or r.get("humidity"))
+              d_raw, d_unit = val_unit(pick(r, "outdoor", "dew_point") or r.get("dew_point"))
 
-          # --- PLUJA (mm) ---
-          rain_day_mm = (
-              fnum(pick("rainfall_daily", "value")) or
-              fnum(pick("rainfall", "daily", "value"))
-          )
-          rain_rate_mmh = (
-              fnum(pick("rain_rate", "value")) or
-              fnum(pick("rainfall", "rate", "value"))
-          )
+              # Converteix a C si cal
+              temp_c = t_raw
+              if t_raw is not None:
+                  if (t_unit and str(t_unit).lower().startswith("f")) or (t_raw >= 80):
+                      temp_c = f_to_c(t_raw)
 
-          now_ms = int(time.time() * 1000)
+              dew_c = d_raw
+              if d_raw is not None:
+                  if (d_unit and str(d_unit).lower().startswith("f")) or (d_raw >= 80):
+                      dew_c = f_to_c(d_raw)
 
-          row = {
-              "ts": now_ms,
-              "temp_c": temp_c,
-              "hum_pct": hum_pct,
-              "dew_c": dew_c,
-              "wind_kmh": wind_kmh,
-              "gust_kmh": gust_kmh,
-              "wind_dir": str(wind_dir) if wind_dir is not None else None,
-              "rain_day_mm": rain_day_mm,
-              "rain_rate_mmh": rain_rate_mmh,
-          }
+              hum_pct = h_raw  # normalment ja %
 
-          # --- HISTÒRIC 24h ---
-          HISTORY_PATH.parent.mkdir(parents=True, exist_ok=True)
+              # VENT / RATXA
+              w_raw, w_unit = val_unit(r.get("wind_speed") or pick(r, "wind", "wind_speed"))
+              g_raw, g_unit = val_unit(r.get("wind_gust") or pick(r, "wind", "wind_gust"))
+              wind_dir = (r.get("wind_direction") or pick(r, "wind", "wind_direction"))
 
-          if HISTORY_PATH.exists():
-              try:
-                  hist = json.loads(HISTORY_PATH.read_text(encoding="utf-8"))
-                  if not isinstance(hist, list):
-                      hist = []
-              except Exception:
-                  hist = []
-          else:
-              hist = []
+              def norm_w(v, unit):
+                  if v is None:
+                      return None
+                  u = (str(unit).lower() if unit else "")
+                  if "mph" in u:
+                      return mph_to_kmh(v)
+                  if u in ("m/s", "ms", "mps"):
+                      return ms_to_kmh(v)
+                  # Si no hi ha unit, assumim que ja és km/h (com tens ara)
+                  return float(v)
 
-          hist.append(row)
+              wind_kmh = norm_w(w_raw, w_unit)
+              gust_kmh = norm_w(g_raw, g_unit)
 
-          cutoff = now_ms - 24 * 60 * 60 * 1000
-          hist = [h for h in hist if isinstance(h, dict) and h.get("ts", 0) >= cutoff]
+              # PLUJA
+              rd_raw, rd_unit = val_unit(r.get("rainfall_daily") or pick(r, "rainfall", "daily") or r.get("rain_day"))
+              rr_raw, rr_unit = val_unit(r.get("rain_rate") or pick(r, "rainfall", "rate") or r.get("rain_rate"))
 
-          HISTORY_PATH.write_text(json.dumps(hist, ensure_ascii=False), encoding="utf-8")
+              # normalment ja mm i mm/h; si vingués inch ho veuries al unit i es podria afegir conversió
+              rain_day_mm = rd_raw
+              rain_rate_mmh = rr_raw
 
-          # --- HEARTBEAT ---
-          HEARTBEAT_DIR.mkdir(parents=True, exist_ok=True)
-          hb = {
-              "run_ts": now_ms,
-              "run_iso_utc": datetime.now(timezone.utc).isoformat()
-          }
-          HEARTBEAT_PATH.write_text(json.dumps(hb, ensure_ascii=False), encoding="utf-8")
+              return {
+                  "ts": int(ts_ms),
+                  "temp_c": None if temp_c is None else float(temp_c),
+                  "hum_pct": None if hum_pct is None else float(hum_pct),
+                  "dew_c": None if dew_c is None else float(dew_c),
+                  "wind_kmh": None if wind_kmh is None else float(wind_kmh),
+                  "gust_kmh": None if gust_kmh is None else float(gust_kmh),
+                  "wind_dir": (str(wind_dir) if wind_dir is not None else None),
+                  "rain_day_mm": rain_day_mm,
+                  "rain_rate_mmh": rain_rate_mmh,
+              }
 
-          print("OK appended:", row)
+          new_rows = []
+          for r in data_list:
+              if not isinstance(r, dict):
+                  continue
+              row = parse_row(r)
+              if row is None:
+                  continue
+              # només punts nous (evita duplicats)
+              if row["ts"] >= start_ms:
+                  new_rows.append(row)
+
+          # 4) Fusiona + dedupe per ts + retalla 24h
+          merged = hist + new_rows
+          by_ts = {}
+          for r in merged:
+              ts = r.get("ts")
+              if not isinstance(ts, (int, float)):
+                  continue
+              by_ts[int(ts)] = r  # si hi ha duplicat, el més nou guanya
+
+          merged = [by_ts[k] for k in sorted(by_ts.keys())]
+          merged = [r for r in merged if r["ts"] >= cutoff_ms]
+
+          write_hist(merged)
+          hb = write_heartbeat(now_ms)
+
+          print(f"Fetched {len(new_rows)} rows (window {start_s}->{end_s}s). Total kept: {len(merged)}")
           print("Heartbeat:", hb)
           PY
 
@@ -198,14 +308,11 @@ jobs:
           git add data/history.json heartbeat/heartbeat.json
           git commit -m "Update meteo data" || true
 
-          # Evita 'fetch first' si el remot ha canviat entre checkout i push
           git pull --rebase origin main
 
-          # Re-assegura que els fitxers que ens importen queden staged i commitejats
           git add data/history.json heartbeat/heartbeat.json
           git commit -m "Update meteo data" || true
 
-          # Push amb reintents (per carreres puntuals)
           for i in 1 2 3; do
             if git push origin HEAD:main; then
               echo "Push OK"
