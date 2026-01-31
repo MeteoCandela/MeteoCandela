@@ -31,6 +31,28 @@
     }).format(d);
   }
 
+  // ====== NOU: utilitats per mín/màx del dia ======
+  function startOfLocalDay(tsMs) {
+    const d = new Date(tsMs);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  }
+
+  function isSameLocalDay(tsMs, dayStartMs) {
+    const d = new Date(tsMs);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime() === dayStartMs;
+  }
+
+  function minMax(values) {
+    const v = values
+      .filter(x => x != null && Number.isFinite(Number(x)))
+      .map(Number);
+    if (!v.length) return { min: null, max: null };
+    return { min: Math.min(...v), max: Math.max(...v) };
+  }
+  // ==============================================
+
   // Converteix graus a nom de vent en català (8 sectors) amb Garbí
   function degToWindCatalan(deg) {
     if (deg == null || Number.isNaN(Number(deg))) return "—";
@@ -232,7 +254,8 @@
     }
   }
 
-  function renderCurrent(last) {
+  // ====== MODIFICAT: ara rep també rows per calcular mín/màx d’avui ======
+  function renderCurrent(last, rows) {
     $("temp").textContent = last.temp_c == null ? "—" : fmt1(last.temp_c);
     $("hum").textContent = last.hum_pct == null ? "—" : String(Math.round(last.hum_pct));
     $("wind").textContent = last.wind_kmh == null ? "—" : fmt1(last.wind_kmh);
@@ -242,6 +265,20 @@
       $("tempSub").textContent =
         last.dew_c == null ? "Punt de rosada: —" : `Punt de rosada: ${fmt1(last.dew_c)} °C`;
     }
+
+    // ====== NOU: Mín/Màx temperatura del dia (avui) ======
+    const elMinMax = $("tempMinMax");
+    if (elMinMax && Array.isArray(rows) && rows.length) {
+      const todayStart = startOfLocalDay(last.ts);
+      const todayRows = rows.filter(r => isSameLocalDay(r.ts, todayStart));
+      const { min, max } = minMax(todayRows.map(r => r.temp_c));
+
+      elMinMax.textContent =
+        (min == null || max == null)
+          ? "Temperatura avui: mín — · màx —"
+          : `Temperatura avui: mín ${fmt1(min)} °C · màx ${fmt1(max)} °C`;
+    }
+    // ================================================
 
     // Direcció: graus + símbol + nom de vent català
     let dirTxt = "—";
@@ -302,7 +339,8 @@
       .filter(r => Number.isFinite(r.ts))
       .sort((a, b) => a.ts - b.ts);
 
-    if (rows.length) renderCurrent(rows[rows.length - 1]);
+    // ====== MODIFICAT: passem rows a renderCurrent ======
+    if (rows.length) renderCurrent(rows[rows.length - 1], rows);
 
     let hb = null;
     try { hb = await fetchJson(`${HEARTBEAT_URL}?t=${Date.now()}`); } catch (_) {}
