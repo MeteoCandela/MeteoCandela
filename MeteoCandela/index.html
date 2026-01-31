@@ -1,114 +1,52 @@
 <!doctype html>
 <html lang="ca">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Meteo Valls</title>
-
-  <link rel="stylesheet" href="./style.css" />
-
-  <!-- Chart.js (sense dependències extra) -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- cache-buster del JS per evitar versions enganxades -->
+  <script defer src="app.js?v=2026-01-31-1"></script>
 </head>
-
 <body>
-  <div class="bg" aria-hidden="true"></div>
-  <div class="overlay" aria-hidden="true"></div>
-
-  <header class="header">
-    <div class="brand">
-      <div class="icon">☁️</div>
-      <div>
-        <h1>Meteo Valls</h1>
-        <p>Dades i històric · Ecowitt</p>
-      </div>
-    </div>
-
-    <div class="headerRight">
-      <div class="pill" id="lastUpdated">Actualitzat: —</div>
-      <a class="btn" href="https://www.ecowitt.net/" target="_blank" rel="noreferrer">Veure a Ecowitt ↗</a>
+  <header class="hero">
+    <div class="hero__overlay"></div>
+    <div class="hero__content">
+      <h1>Meteo Valls</h1>
+      <p id="lastUpdated">Carregant…</p>
     </div>
   </header>
 
-  <main class="container">
-    <section class="cards">
-      <article class="card">
-        <div class="cardTop">
-          <span class="label">Temperatura</span>
-          <span class="unit">°C</span>
-        </div>
-        <div class="valueRow">
-          <div class="value" id="temp">—</div>
-          <div class="unitBig">°C</div>
-        </div>
-        <div class="sub" id="tempSub">—</div>
-      </article>
-
-      <article class="card">
-        <div class="cardTop">
-          <span class="label">Humitat</span>
-          <span class="unit">%</span>
-        </div>
-        <div class="valueRow">
-          <div class="value" id="hum">—</div>
-          <div class="unitBig">%</div>
-        </div>
-        <div class="sub" id="dewSub">—</div>
-      </article>
-
-      <article class="card">
-        <div class="cardTop">
-          <span class="label">Vent</span>
-          <span class="unit">km/h</span>
-        </div>
-        <div class="valueRow">
-          <div class="value" id="wind">—</div>
-          <div class="unitBig">km/h</div>
-        </div>
-        <div class="sub" id="gustSub">—</div>
-      </article>
-
-      <article class="card">
-        <div class="cardTop">
-          <span class="label">Pluja (avui)</span>
-          <span class="unit">mm</span>
-        </div>
-        <div class="valueRow">
-          <div class="value" id="rainDay">—</div>
-          <div class="unitBig">mm</div>
-        </div>
-        <div class="sub" id="rainRateSub">—</div>
-      </article>
-    </section>
-
-    <section class="charts">
-      <div class="chartsHeader">
-        <h2>Últimes 24 hores</h2>
-        <div class="muted" id="autoStatus">Actualització automàtica</div>
+  <main class="grid">
+    <section class="card">
+      <h2>Actual</h2>
+      <div class="kpis">
+        <div class="kpi"><div class="kpi__v" id="temp">—</div><div class="kpi__l">Temperatura (°C)</div></div>
+        <div class="kpi"><div class="kpi__v" id="hum">—</div><div class="kpi__l">Humitat (%)</div></div>
+        <div class="kpi"><div class="kpi__v" id="wind">—</div><div class="kpi__l">Vent (km/h)</div></div>
+        <div class="kpi"><div class="kpi__v" id="rainDay">—</div><div class="kpi__l">Pluja dia (mm)</div></div>
       </div>
-
-      <div class="chartGrid">
-        <div class="panel">
-          <div class="panelTitle">Temperatura</div>
-          <canvas id="chartTemp"></canvas>
-          <div class="panelFoot" id="tempFoot">—</div>
-        </div>
-
-        <div class="panel">
-          <div class="panelTitle">Humitat</div>
-          <canvas id="chartHum"></canvas>
-          <div class="panelFoot" id="humFoot">—</div>
-        </div>
+      <div class="subs">
+        <div id="tempSub">—</div>
+        <div id="gustSub">—</div>
+        <div id="rainRateSub">—</div>
       </div>
     </section>
 
-    <footer class="footer">
-      <span>© <span id="year"></span> Meteo Valls</span>
-      <span class="dot">·</span>
-      <span class="muted">GitHub Pages</span>
-    </footer>
+    <section class="card chart-box">
+      <h2>Temperatura (24h)</h2>
+      <canvas id="chartTemp"></canvas>
+    </section>
+
+    <section class="card chart-box">
+      <h2>Humitat (24h)</h2>
+      <canvas id="chartHum"></canvas>
+    </section>
   </main>
 
-  <script src="./app.js"></script>
+  <footer class="footer">
+    <span>© <span id="year"></span> Meteo Valls</span>
+  </footer>
 </body>
 </html>
