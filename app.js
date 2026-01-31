@@ -4,6 +4,7 @@
   const BASE = (location.pathname.includes("/MeteoCandela/")) ? "/MeteoCandela" : "";
 
   const HISTORY_URL = `${BASE}/data/history.json`;
+  const CURRENT_URL = `${BASE}/data/current.json`;            // <-- NOU
   const HEARTBEAT_URL = `${BASE}/heartbeat/heartbeat.json`;
 
   const $ = (id) => document.getElementById(id);
@@ -31,7 +32,7 @@
     }).format(d);
   }
 
-  // ====== NOU: utilitats per mín/màx del dia ======
+  // ====== utilitats per mín/màx del dia ======
   function startOfLocalDay(tsMs) {
     const d = new Date(tsMs);
     d.setHours(0, 0, 0, 0);
@@ -254,7 +255,7 @@
     }
   }
 
-  // ====== MODIFICAT: ara rep també rows per calcular mín/màx d’avui ======
+  // ====== ara rep també rows per calcular mín/màx d’avui ======
   function renderCurrent(last, rows) {
     $("temp").textContent = last.temp_c == null ? "—" : fmt1(last.temp_c);
     $("hum").textContent = last.hum_pct == null ? "—" : String(Math.round(last.hum_pct));
@@ -266,19 +267,21 @@
         last.dew_c == null ? "Punt de rosada: —" : `Punt de rosada: ${fmt1(last.dew_c)} °C`;
     }
 
-    // ====== NOU: Mín/Màx temperatura del dia (avui) ======
+    // ====== Mín/Màx temperatura del dia (avui) a partir de HISTORY ======
     const elMinMax = $("tempMinMax");
     if (elMinMax && Array.isArray(rows) && rows.length) {
       const todayStart = startOfLocalDay(last.ts);
       const todayRows = rows.filter(r => isSameLocalDay(r.ts, todayStart));
-      const { min, max } = minMax(todayRows.map(r => r.temp_c));
+      // Filtre anti-outlier (evita pics absurds a les gràfiques / minmax)
+      const temps = todayRows.map(r => r.temp_c).filter(t => t != null && t > -30 && t < 45);
+      const { min, max } = minMax(temps);
 
       elMinMax.textContent =
         (min == null || max == null)
           ? "Temperatura avui: mín — · màx —"
           : `Temperatura avui: mín ${fmt1(min)} °C · màx ${fmt1(max)} °C`;
     }
-    // ================================================
+    // ================================================================
 
     // Direcció: graus + símbol + nom de vent català
     let dirTxt = "—";
@@ -304,48 +307,95 @@
     $("lastUpdated").textContent = `Actualitzat: ${fmtDate(last.ts)}`;
   }
 
-  function renderStatus(rows, hb) {
+  // ====== MODIFICAT: distingeix "temps real" vs "històric" ======
+  function renderStatus(rows, hb, currentRow) {
     const el = $("statusLine");
     if (!el) return;
 
     const now = Date.now();
-    const lastDataTs = rows.length ? rows[rows.length - 1].ts : null;
+
+    const lastHistTs = rows.length ? rows[rows.length - 1].ts : null;
     const hbTs = hb?.run_ts ? Number(hb.run_ts) : null;
 
-    if (!lastDataTs) {
-      el.textContent = "Sense dades (history.json buit o no carregat).";
+    const curTs = currentRow?.ts ? Number(currentRow.ts) : null;
+
+    // Si no hi ha current ni history
+    if (!curTs && !lastHistTs) {
+      el.textContent = "Sense dades (current.json i history.json buits o no carregats).";
       return;
     }
 
-    const dataAgeMin = (now - lastDataTs) / 60000;
-    const hbAgeMin = hbTs ? (now - hbTs) / 60000 : null;
+    const parts = [];
 
-    let msg = `Dada: fa ${Math.round(dataAgeMin)} min`;
-    if (hbAgeMin != null) msg += ` · Workflow: fa ${Math.round(hbAgeMin)} min`;
+    if (curTs) {
+      const curAgeMin = (now - curTs) / 60000;
+      parts.push(`Dada (temps real): fa ${Math.round(curAgeMin)} min`);
+    }
 
-    if (dataAgeMin > 20) msg += " · ⚠️ Dades antigues (possible aturada o límit).";
+    if (lastHistTs) {
+      const histAgeMin = (now - lastHistTs) / 60000;
+      parts.push(`Històric: fa ${Math.round(histAgeMin)} min`);
+    }
 
-    el.textContent = msg;
+    if (hbTs) {
+      const hbAgeMin = (now - hbTs) / 60000;
+      parts.push(`Workflow: fa ${Math.round(hbAgeMin)} min`);
+    }
+
+    // Warning només si el "temps real" està antic (això és el que t’importa)
+    if (curTs) {
+      const curAgeMin = (now - curTs) / 60000;
+      if (curAgeMin > 20) parts.push("⚠️ Dades antigues (possible aturada o límit).");
+    } else if (lastHistTs) {
+      // fallback: si no tenim current, fem servir històric
+      const histAgeMin = (now - lastHistTs) / 60000;
+      if (histAgeMin > 20) parts.push("⚠️ Dades antigues (possible aturada o límit).");
+    }
+
+    el.textContent = parts.join(" · ");
   }
 
   async function main() {
     if ($("year")) $("year").textContent = String(new Date().getFullYear());
 
-    let raw = await fetchJson(`${HISTORY_URL}?t=${Date.now()}`);
-    if (!Array.isArray(raw)) raw = [];
+    // 1) HISTORY (per gràfiques + mín/màx)
+    let rawHist = [];
+    try {
+      rawHist = await fetchJson(`${HISTORY_URL}?t=${Date.now()}`);
+      if (!Array.isArray(rawHist)) rawHist = [];
+    } catch (e) {
+      console.warn("No puc carregar history.json", e);
+      rawHist = [];
+    }
 
-    const rows = raw
+    const rows = rawHist
       .map(normalizeRow)
       .filter(r => Number.isFinite(r.ts))
       .sort((a, b) => a.ts - b.ts);
 
-    // ====== MODIFICAT: passem rows a renderCurrent ======
-    if (rows.length) renderCurrent(rows[rows.length - 1], rows);
+    // 2) CURRENT (temps real per la targeta)
+    let currentRow = null;
+    try {
+      const rawCur = await fetchJson(`${CURRENT_URL}?t=${Date.now()}`);
+      if (rawCur && typeof rawCur === "object" && rawCur.ts != null) {
+        currentRow = normalizeRow(rawCur);
+      }
+    } catch (e) {
+      console.warn("No puc carregar current.json", e);
+      currentRow = null;
+    }
+
+    // 3) Render: prioritat a current; fallback a l’últim de history
+    if (currentRow) {
+      renderCurrent(currentRow, rows);
+    } else if (rows.length) {
+      renderCurrent(rows[rows.length - 1], rows);
+    }
 
     let hb = null;
     try { hb = await fetchJson(`${HEARTBEAT_URL}?t=${Date.now()}`); } catch (_) {}
 
-    renderStatus(rows, hb);
+    renderStatus(rows, hb, currentRow);
 
     try { buildCharts(rows); } catch (e) { console.warn(e); }
   }
