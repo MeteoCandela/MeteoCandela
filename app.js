@@ -93,9 +93,12 @@
 
     const labels = r24.map(r => fmtTime(r.ts));
     const temp = r24.map(r => r.temp_c);
-    const hum = r24.map(r => r.hum_pct);
+    const hum  = r24.map(r => r.hum_pct);
+    const wind = r24.map(r => r.wind_kmh);
+    const gust = r24.map(r => r.gust_kmh);
 
     // Opcions comunes + TOOLTIP només valor i unitat
+    // (unitat definida per dataset via __unit)
     const commonOpts = {
       responsive: true,
       maintainAspectRatio: false,
@@ -117,8 +120,9 @@
             label: (ctx) => {
               const v = ctx.parsed?.y;
               if (v == null) return "—";
-              const unit = (ctx.chart.canvas.id === "chartHum") ? " %" : " °C";
-              return Number(v).toFixed(1) + unit;
+              const unit = ctx.dataset?.__unit || "";
+              // Espai davant la unitat només si n'hi ha
+              return Number(v).toFixed(1) + (unit ? ` ${unit}` : "");
             }
           }
         }
@@ -132,34 +136,41 @@
     // Destrueix gràfics anteriors si recarregues (evita duplicats)
     if (window.__chartTemp) window.__chartTemp.destroy();
     if (window.__chartHum) window.__chartHum.destroy();
+    if (window.__chartWind) window.__chartWind.destroy();
 
+    // Temperatura
     window.__chartTemp = new Chart($("chartTemp"), {
       type: "line",
       data: {
         labels,
         datasets: [{
           data: temp,
+          __unit: "°C",
           tension: 0.25,
           pointRadius: 2,
           pointHoverRadius: 7,
           pointHitRadius: 12,
-          borderWidth: 2
+          borderWidth: 2,
+          fill: false
         }]
       },
       options: commonOpts
     });
 
+    // Humitat
     window.__chartHum = new Chart($("chartHum"), {
       type: "line",
       data: {
         labels,
         datasets: [{
           data: hum,
+          __unit: "%",
           tension: 0.25,
           pointRadius: 2,
           pointHoverRadius: 7,
           pointHitRadius: 12,
-          borderWidth: 2
+          borderWidth: 2,
+          fill: false
         }]
       },
       options: {
@@ -167,6 +178,42 @@
         scales: { ...commonOpts.scales, y: { min: 0, max: 100 } }
       }
     });
+
+    // Vent + Ratxa (mateix estil, coherent)
+    const windCanvas = $("chartWind");
+    if (windCanvas) {
+      window.__chartWind = new Chart(windCanvas, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            // Vent sostingut (àrea)
+            {
+              data: wind,
+              __unit: "km/h",
+              tension: 0.25,
+              pointRadius: 2,
+              pointHoverRadius: 7,
+              pointHitRadius: 12,
+              borderWidth: 2,
+              fill: true
+            },
+            // Ratxa (línia)
+            {
+              data: gust,
+              __unit: "km/h",
+              tension: 0.25,
+              pointRadius: 2,
+              pointHoverRadius: 7,
+              pointHitRadius: 12,
+              borderWidth: 2,
+              fill: false
+            }
+          ]
+        },
+        options: commonOpts
+      });
+    }
   }
 
   function renderCurrent(last) {
@@ -196,7 +243,7 @@
 
   function renderStatus(rows, hb) {
     const el = $("statusLine");
-    if (!el) return; // si no existeix, no trenquem la càrrega
+    if (!el) return;
 
     const now = Date.now();
     const lastDataTs = rows.length ? rows[rows.length - 1].ts : null;
