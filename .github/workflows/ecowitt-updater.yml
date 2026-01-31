@@ -8,6 +8,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: ecowitt-updater
+  cancel-in-progress: true
+
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -15,8 +19,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          persist-credentials: true
           fetch-depth: 0
+          persist-credentials: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -26,44 +30,75 @@ jobs:
       - name: Install deps
         run: pip install requests
 
-      - name: Fetch Ecowitt and append history
+      - name: Fetch Ecowitt realtime and append history
         env:
           APP_KEY: ${{ secrets.ECOWITT_APPLICATION_KEY }}
           API_KEY: ${{ secrets.ECOWITT_API_KEY }}
           MAC: ${{ secrets.ECOWITT_MAC }}
         run: |
           python - << 'PY'
-          import json, time, os
+          import json, os, time
           import requests
 
-          # --- Config ---
           OUT_PATH = "MeteoCandela/data/history.json"
           URL = "https://api.ecowitt.net/api/v3/device/real_time"
 
-          # --- Helpers ---
-          def deep_get(d, path, default=None):
+          def deep_get(d, path):
             cur = d
             for k in path:
               if isinstance(cur, dict) and k in cur:
                 cur = cur[k]
               else:
-                return default
+                return None
             return cur
 
-          def unwrap(v):
-            # Ecowitt sovint retorna dicts tipus {"value":"302","unit":"º","time":"..."}
-            if isinstance(v, dict):
-              return v.get("value")
-            return v
+          def unwrap(obj):
+            # Ecowitt: sovint {"value":"12.3","unit":"C","time":"..."}
+            if isinstance(obj, dict):
+              return obj.get("value"), obj.get("unit")
+            return obj, None
 
-          def to_num(x):
-            x = unwrap(x)
+          def to_float(x):
             try:
-              return round(float(x), 2)
+              return float(x)
             except Exception:
               return None
 
-          # --- Call API ---
+          def c_from(value, unit):
+            n = to_float(value)
+            if n is None:
+              return None
+            u = (unit or "").upper()
+            # Ecowitt acostuma a portar "°F", "F", "°C", "C"
+            if "F" in u:
+              return round((n - 32.0) * 5.0 / 9.0, 2)
+            return round(n, 2)
+
+          def kmh_from(value, unit):
+            n = to_float(value)
+            if n is None:
+              return None
+            u = (unit or "").lower()
+            # Si ja és km/h o "km/h"
+            if "km" in u:
+              return round(n, 2)
+            # mph -> km/h
+            if "mph" in u:
+              return round(n * 1.609344, 2)
+            # m/s -> km/h
+            if "m/s" in u or "ms" == u:
+              return round(n * 3.6, 2)
+            # si no sabem unitat, assumim que ja és km/h (millor que inventar)
+            return round(n, 2)
+
+          def mm_from(value, unit):
+            n = to_float(value)
+            if n is None:
+              return None
+            # Ecowitt pluja normalment mm
+            return round(n, 2)
+
+          # Call API
           params = {
             "application_key": os.environ["APP_KEY"],
             "api_key": os.environ["API_KEY"],
@@ -74,37 +109,38 @@ jobs:
           r = requests.get(URL, params=params, timeout=30)
           r.raise_for_status()
           j = r.json()
-
-          # Ecowitt pot retornar {code,msg,data:{...}}
           data = j.get("data", j)
 
           ts = int(time.time() * 1000)
 
-          # Camps típics (segons el que has vist als teus JSON)
-          temp_c = to_num(deep_get(data, ["outdoor", "temperature"]))
-          hum_pct = to_num(deep_get(data, ["outdoor", "humidity"]))
-          dew_c  = to_num(deep_get(data, ["outdoor", "dew_point"]))
+          # Outdoor
+          temp_v, temp_u = unwrap(deep_get(data, ["outdoor","temperature"]))
+          hum_v, hum_u   = unwrap(deep_get(data, ["outdoor","humidity"]))
+          dew_v, dew_u   = unwrap(deep_get(data, ["outdoor","dew_point"]))
 
-          wind_kmh = to_num(deep_get(data, ["wind", "wind_speed"]))
-          gust_kmh = to_num(deep_get(data, ["wind", "gust"]))
-          wind_dir = unwrap(deep_get(data, ["wind", "wind_direction"]))
+          # Wind
+          ws_v, ws_u     = unwrap(deep_get(data, ["wind","wind_speed"]))
+          gust_v, gust_u = unwrap(deep_get(data, ["wind","gust"]))
+          wd_obj         = deep_get(data, ["wind","wind_direction"])
+          wd_v, wd_u     = unwrap(wd_obj)
 
-          rain_day = to_num(deep_get(data, ["rainfall", "daily"]))
-          rain_rate = to_num(deep_get(data, ["rainfall", "rate"]))
+          # Rain (pot ser null si el sensor no en té)
+          rd_v, rd_u     = unwrap(deep_get(data, ["rainfall","daily"]))
+          rr_v, rr_u     = unwrap(deep_get(data, ["rainfall","rate"]))
 
           point = {
             "ts": ts,
-            "temp_c": temp_c,
-            "hum_pct": hum_pct,
-            "dew_c": dew_c,
-            "wind_kmh": wind_kmh,
-            "gust_kmh": gust_kmh,
-            "wind_dir": str(wind_dir) if wind_dir is not None else None,
-            "rain_day_mm": rain_day,
-            "rain_rate_mmh": rain_rate
+            "temp_c": c_from(temp_v, temp_u),
+            "hum_pct": round(to_float(hum_v), 2) if to_float(hum_v) is not None else None,
+            "dew_c": c_from(dew_v, dew_u),
+            "wind_kmh": kmh_from(ws_v, ws_u),
+            "gust_kmh": kmh_from(gust_v, gust_u),
+            "wind_dir": str(wd_v) if wd_v is not None else None,   # graus com string
+            "rain_day_mm": mm_from(rd_v, rd_u),
+            "rain_rate_mmh": mm_from(rr_v, rr_u)
           }
 
-          # --- Load existing ---
+          # Load history
           try:
             with open(OUT_PATH, "r", encoding="utf-8") as f:
               hist = json.load(f)
@@ -115,11 +151,9 @@ jobs:
 
           hist.append(point)
 
-          # limita mida
-          if len(hist) > 2000:
-            hist = hist[-2000:]
+          # Mantén ~3 dies a 5 min (3*24*12=864). Guardem 1200 per marge.
+          hist = hist[-1200:]
 
-          # --- Save ---
           os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
           with open(OUT_PATH, "w", encoding="utf-8") as f:
             json.dump(hist, f, ensure_ascii=False)
@@ -127,10 +161,11 @@ jobs:
           print("OK appended:", point)
           PY
 
-      - name: Commit updated history.json
+      - name: Commit & push
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
           git add MeteoCandela/data/history.json
           git commit -m "Update meteo data" || echo "No changes"
+          git pull --rebase || true
           git push
