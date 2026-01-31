@@ -16,12 +16,10 @@ body{
 
 .hero {
   position: relative;
-  min-height: 46vh;
-  padding: 56px 20px 28px;
-
+  min-height: 45vh;
+  padding: 28px 18px;
   display: flex;
   align-items: flex-end;
-  justify-content: flex-start;
 
   background-image: url("/MeteoCandela/assets/valls.jpg");
   background-size: cover;
@@ -32,41 +30,23 @@ body{
 .hero__overlay {
   position: absolute;
   inset: 0;
-
-  /* Overlay PRO (gradient) */
-  background: linear-gradient(
-    to bottom,
-    rgba(0,0,0,0.10) 0%,
-    rgba(0,0,0,0.35) 45%,
-    rgba(0,0,0,0.72) 100%
-  );
+  background: rgba(0,0,0,0.45);
 }
 
 .hero__content {
   position: relative;
   z-index: 1;
   color: #fff;
-  max-width: 980px;
-  padding-left: 6px;
 }
 
-/* Tipografia PRO al hero */
-.hero h1{
-  margin: 0 0 6px;
-  font-size: 32px;
-  line-height: 1.05;
-  letter-spacing: -0.5px;
-  text-shadow: 0 8px 24px rgba(0,0,0,0.45);
-}
-
-.hero #lastUpdated{
-  margin: 0;
-  color: rgba(255,255,255,0.85);
-  text-shadow: 0 6px 18px rgba(0,0,0,0.35);
-}
-
-h1{ margin: 0; }
+h1{ margin: 0 0 6px; font-size: 28px; }
 p{ margin: 0; color: var(--muted); }
+
+.status{
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(255,255,255,.75);
+}
 
 .grid{
   display: grid;
@@ -119,13 +99,11 @@ h2{ margin: 0 0 12px; font-size: 16px; color: var(--text); }
   gap: 6px;
 }
 
-/* IMPORTANTÍSSIM: alçada fixa del contenidor per evitar “infinits” a mòbil */
-.chart-box{
-  height: 260px;
-}
+/* IMPORTANT: alçada fixa a mòbil */
+.chart-box{ height: 260px; }
 .chart-box canvas{
   width: 100% !important;
-  height: calc(100% - 26px) !important; /* deixa espai pel títol */
+  height: calc(100% - 26px) !important;
 }
 
 .footer{
