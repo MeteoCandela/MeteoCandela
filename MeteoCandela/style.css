@@ -47,6 +47,7 @@ body{
   z-index: 1;
   color: #fff;
   max-width: 980px;
+  padding-left: 6px;
 }
 
 /* Tipografia PRO al hero */
