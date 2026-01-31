@@ -37,9 +37,7 @@
     if (tempC === null || tempC === undefined) {
       if (r.temp_f != null) tempC = fToC(Number(r.temp_f));
       else if (r.temperature != null) {
-        // Si arriba "temperature" (unitat desconeguda), preferim heurística prudent:
         const t = Number(r.temperature);
-        // si és clarament Fahrenheit (ex: > 45 a l'hivern pot ser C també), però normalment F > 80.
         tempC = (t >= 80) ? fToC(t) : t;
       }
     }
@@ -64,7 +62,7 @@
       else if (r.wind_gust != null) gustKmh = Number(r.wind_gust);
     }
 
-    // PLUJA (a la teva history actual ve com null, però ho deixem robust)
+    // PLUJA
     const rainDay = (r.rain_day_mm ?? r.rain_day ?? null);
     const rainRate = (r.rain_rate_mmh ?? r.rain_rate ?? null);
 
@@ -87,8 +85,7 @@
     return await res.json();
   }
 
-  // IMPORTANT: aquí NO fem servir l'eix "time" (necessita adapter).
-  // Fem labels string i x="category", que funciona sempre.
+  // IMPORTANT: x="category" (sense adapter de temps)
   function buildCharts(rows) {
     const now = Date.now();
     const last24hMs = 24 * 60 * 60 * 1000;
@@ -98,10 +95,35 @@
     const temp = r24.map(r => r.temp_c);
     const hum = r24.map(r => r.hum_pct);
 
+    // Opcions comunes + TOOLTIP només valor i unitat
     const commonOpts = {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+
+      // Millor experiència mòbil: no cal tocar el punt exacte
+      interaction: {
+        mode: "nearest",
+        intersect: false,
+        axis: "x"
+      },
+
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          enabled: true,
+          displayColors: false,   // treu el quadradet de color
+          callbacks: {
+            title: () => "",      // NO hora/data
+            label: (ctx) => {
+              const v = ctx.parsed?.y;
+              if (v == null) return "—";
+              const unit = (ctx.chart.canvas.id === "chartHum") ? " %" : " °C";
+              return Number(v).toFixed(1) + unit;
+            }
+          }
+        }
+      },
+
       scales: {
         x: { type: "category", ticks: { maxTicksLimit: 8 } }
       }
@@ -113,13 +135,33 @@
 
     window.__chartTemp = new Chart($("chartTemp"), {
       type: "line",
-      data: { labels, datasets: [{ data: temp }] },
+      data: {
+        labels,
+        datasets: [{
+          data: temp,
+          tension: 0.25,
+          pointRadius: 2,
+          pointHoverRadius: 7,
+          pointHitRadius: 12,
+          borderWidth: 2
+        }]
+      },
       options: commonOpts
     });
 
     window.__chartHum = new Chart($("chartHum"), {
       type: "line",
-      data: { labels, datasets: [{ data: hum }] },
+      data: {
+        labels,
+        datasets: [{
+          data: hum,
+          tension: 0.25,
+          pointRadius: 2,
+          pointHoverRadius: 7,
+          pointHitRadius: 12,
+          borderWidth: 2
+        }]
+      },
       options: {
         ...commonOpts,
         scales: { ...commonOpts.scales, y: { min: 0, max: 100 } }
@@ -171,7 +213,6 @@
     let msg = `Dada: fa ${Math.round(dataAgeMin)} min`;
     if (hbAgeMin != null) msg += ` · Workflow: fa ${Math.round(hbAgeMin)} min`;
 
-    // alerta si s'ha quedat clavat
     if (dataAgeMin > 20) msg += " · ⚠️ Dades antigues (possible aturada o límit).";
 
     el.textContent = msg;
