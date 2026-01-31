@@ -5,81 +5,132 @@ on:
     - cron: "*/5 * * * *"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   update:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - run: pip install requests
+      - name: Install deps
+        run: pip install requests
 
-      - name: Fetch Ecowitt
+      - name: Fetch Ecowitt and append history
         env:
-          APP_KEY: ${{ secrets.ECOWITT_APP_KEY }}
+          APP_KEY: ${{ secrets.ECOWITT_APPLICATION_KEY }}
           API_KEY: ${{ secrets.ECOWITT_API_KEY }}
           MAC: ${{ secrets.ECOWITT_MAC }}
         run: |
-          python << 'PY'
-          import json, os, time, requests
+          python - << 'PY'
+          import json, time, os
+          import requests
 
-          url = "https://api.ecowitt.net/api/v3/device/real_time"
+          # --- Config ---
+          OUT_PATH = "MeteoCandela/data/history.json"
+          URL = "https://api.ecowitt.net/api/v3/device/real_time"
+
+          # --- Helpers ---
+          def deep_get(d, path, default=None):
+            cur = d
+            for k in path:
+              if isinstance(cur, dict) and k in cur:
+                cur = cur[k]
+              else:
+                return default
+            return cur
+
+          def unwrap(v):
+            # Ecowitt sovint retorna dicts tipus {"value":"302","unit":"º","time":"..."}
+            if isinstance(v, dict):
+              return v.get("value")
+            return v
+
+          def to_num(x):
+            x = unwrap(x)
+            try:
+              return round(float(x), 2)
+            except Exception:
+              return None
+
+          # --- Call API ---
           params = {
-              "application_key": os.environ["APP_KEY"],
-              "api_key": os.environ["API_KEY"],
-              "mac": os.environ["MAC"],
-              "call_back": "all"
+            "application_key": os.environ["APP_KEY"],
+            "api_key": os.environ["API_KEY"],
+            "mac": os.environ["MAC"],
+            "call_back": "all"
           }
 
-          r = requests.get(url, params=params, timeout=30)
+          r = requests.get(URL, params=params, timeout=30)
           r.raise_for_status()
           j = r.json()
 
-          def g(path):
-              cur = j
-              for p in path:
-                  if isinstance(cur, dict) and p in cur:
-                      cur = cur[p]
-                  else:
-                      return None
-              return cur
+          # Ecowitt pot retornar {code,msg,data:{...}}
+          data = j.get("data", j)
 
-          def v(path):
-              o = g(path)
-              return float(o["value"]) if isinstance(o, dict) and "value" in o else None
+          ts = int(time.time() * 1000)
+
+          # Camps típics (segons el que has vist als teus JSON)
+          temp_c = to_num(deep_get(data, ["outdoor", "temperature"]))
+          hum_pct = to_num(deep_get(data, ["outdoor", "humidity"]))
+          dew_c  = to_num(deep_get(data, ["outdoor", "dew_point"]))
+
+          wind_kmh = to_num(deep_get(data, ["wind", "wind_speed"]))
+          gust_kmh = to_num(deep_get(data, ["wind", "gust"]))
+          wind_dir = unwrap(deep_get(data, ["wind", "wind_direction"]))
+
+          rain_day = to_num(deep_get(data, ["rainfall", "daily"]))
+          rain_rate = to_num(deep_get(data, ["rainfall", "rate"]))
 
           point = {
-              "ts": int(time.time()*1000),
-              "temp_c": v(["data","outdoor","temperature"]),
-              "hum_pct": v(["data","outdoor","humidity"]),
-              "dew_c": v(["data","outdoor","dew_point"]),
-              "wind_kmh": v(["data","wind","wind_speed"]),
-              "gust_kmh": v(["data","wind","wind_gust"]),
-              "wind_dir": v(["data","wind","wind_direction"]),
-              "rain_day_mm": v(["data","rainfall","daily"]),
-              "rain_rate_mmh": v(["data","rainfall","rain_rate"])
+            "ts": ts,
+            "temp_c": temp_c,
+            "hum_pct": hum_pct,
+            "dew_c": dew_c,
+            "wind_kmh": wind_kmh,
+            "gust_kmh": gust_kmh,
+            "wind_dir": str(wind_dir) if wind_dir is not None else None,
+            "rain_day_mm": rain_day,
+            "rain_rate_mmh": rain_rate
           }
 
-          path = "data/history.json"
+          # --- Load existing ---
           try:
-              hist = json.load(open(path))
-          except:
+            with open(OUT_PATH, "r", encoding="utf-8") as f:
+              hist = json.load(f)
+            if not isinstance(hist, list):
               hist = []
+          except FileNotFoundError:
+            hist = []
 
           hist.append(point)
-          hist = hist[-500:]
 
-          json.dump(hist, open(path,"w"), indent=2)
+          # limita mida
+          if len(hist) > 2000:
+            hist = hist[-2000:]
+
+          # --- Save ---
+          os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
+          with open(OUT_PATH, "w", encoding="utf-8") as f:
+            json.dump(hist, f, ensure_ascii=False)
+
+          print("OK appended:", point)
           PY
 
-      - name: Commit
+      - name: Commit updated history.json
         run: |
           git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          git add data/history.json
-          git commit -m "Update weather data" || echo "No changes"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add MeteoCandela/data/history.json
+          git commit -m "Update meteo data" || echo "No changes"
           git push
