@@ -2,10 +2,113 @@
 <html lang="ca">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta http-equiv="refresh" content="0; url=/MeteoCandela/" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Meteo Valls</title>
-  <script>location.replace("/MeteoCandela/");</script>
+
+  <link rel="stylesheet" href="./style.css" />
+
+  <!-- Chart.js (sense dependències extra) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
-<body>Redirigint…</body>
+
+<body>
+  <div class="bg" aria-hidden="true"></div>
+  <div class="overlay" aria-hidden="true"></div>
+
+  <header class="header">
+    <div class="brand">
+      <div class="icon">☁️</div>
+      <div>
+        <h1>Meteo Valls</h1>
+        <p>Dades i històric · Ecowitt</p>
+      </div>
+    </div>
+
+    <div class="headerRight">
+      <div class="pill" id="lastUpdated">Actualitzat: —</div>
+      <a class="btn" href="https://www.ecowitt.net/" target="_blank" rel="noreferrer">Veure a Ecowitt ↗</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="cards">
+      <article class="card">
+        <div class="cardTop">
+          <span class="label">Temperatura</span>
+          <span class="unit">°C</span>
+        </div>
+        <div class="valueRow">
+          <div class="value" id="temp">—</div>
+          <div class="unitBig">°C</div>
+        </div>
+        <div class="sub" id="tempSub">—</div>
+      </article>
+
+      <article class="card">
+        <div class="cardTop">
+          <span class="label">Humitat</span>
+          <span class="unit">%</span>
+        </div>
+        <div class="valueRow">
+          <div class="value" id="hum">—</div>
+          <div class="unitBig">%</div>
+        </div>
+        <div class="sub" id="dewSub">—</div>
+      </article>
+
+      <article class="card">
+        <div class="cardTop">
+          <span class="label">Vent</span>
+          <span class="unit">km/h</span>
+        </div>
+        <div class="valueRow">
+          <div class="value" id="wind">—</div>
+          <div class="unitBig">km/h</div>
+        </div>
+        <div class="sub" id="gustSub">—</div>
+      </article>
+
+      <article class="card">
+        <div class="cardTop">
+          <span class="label">Pluja (avui)</span>
+          <span class="unit">mm</span>
+        </div>
+        <div class="valueRow">
+          <div class="value" id="rainDay">—</div>
+          <div class="unitBig">mm</div>
+        </div>
+        <div class="sub" id="rainRateSub">—</div>
+      </article>
+    </section>
+
+    <section class="charts">
+      <div class="chartsHeader">
+        <h2>Últimes 24 hores</h2>
+        <div class="muted" id="autoStatus">Actualització automàtica</div>
+      </div>
+
+      <div class="chartGrid">
+        <div class="panel">
+          <div class="panelTitle">Temperatura</div>
+          <canvas id="chartTemp"></canvas>
+          <div class="panelFoot" id="tempFoot">—</div>
+        </div>
+
+        <div class="panel">
+          <div class="panelTitle">Humitat</div>
+          <canvas id="chartHum"></canvas>
+          <div class="panelFoot" id="humFoot">—</div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>© <span id="year"></span> Meteo Valls</span>
+      <span class="dot">·</span>
+      <span class="muted">GitHub Pages</span>
+    </footer>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
 </html>
