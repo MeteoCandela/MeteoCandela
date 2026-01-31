@@ -79,14 +79,13 @@ jobs:
                   return None
 
           def to_ms_epoch(s):
-              # Accepta segons o ms
               if s is None:
                   return None
               try:
                   x = float(s)
-                  if x > 1e12:  # ja és ms
+                  if x > 1e12:  # ms
                       return int(x)
-                  if x > 1e9:   # segons unix
+                  if x > 1e9:   # s
                       return int(x * 1000)
               except Exception:
                   pass
@@ -115,7 +114,7 @@ jobs:
           # 1) Carrega històric i calcula finestra
           hist = read_hist()
           hist = [h for h in hist if isinstance(h, dict) and isinstance(h.get("ts"), (int, float))]
-          hist.sort(key=lambda x: int(x["ts"]))  # IMPORTANT: assegura ordre
+          hist.sort(key=lambda x: int(x["ts"]))
 
           now_ms = int(time.time() * 1000)
           cutoff_ms = now_ms - 24 * 60 * 60 * 1000
@@ -154,17 +153,37 @@ jobs:
           if not isinstance(payload, dict):
               raise SystemExit(f"Resposta inesperada: {type(payload)}")
 
-          data = payload.get("data") or payload.get("datas") or payload.get("result") or payload.get("records")
+          # 3) Agafa la secció data SENSE fer "or" (per no confondre [] amb None)
+          data = payload.get("data")
           if data is None:
-    print("Ecowitt: cap dada nova encara (data=null).")
-    write_heartbeat(now_ms)
-    print("Heartbeat escrit. Sortida neta.")
-    exit(0)
+              data = payload.get("datas")
+          if data is None:
+              data = payload.get("result")
+          if data is None:
+              data = payload.get("records")
 
+          # Si Ecowitt respon data=null -> NO és error, és "encara no hi ha punt nou"
+          if data is None:
+              print("Ecowitt: cap dada nova encara (data=null).")
+              hb = write_heartbeat(now_ms)
+              print("Heartbeat:", hb)
+              exit(0)
+
+          # data pot ser: llista, o dict amb list/data/records
           if isinstance(data, dict):
-              data_list = data.get("list") or data.get("data") or data.get("records")
+              data_list = data.get("list")
+              if data_list is None:
+                  data_list = data.get("data")
+              if data_list is None:
+                  data_list = data.get("records")
           else:
               data_list = data
+
+          if data_list is None:
+              print("Ecowitt: data present però sense llista (cap punt nou).")
+              hb = write_heartbeat(now_ms)
+              print("Heartbeat:", hb)
+              exit(0)
 
           if not isinstance(data_list, list):
               raise SystemExit(f"Format històric inesperat: {type(data_list)}")
@@ -202,7 +221,7 @@ jobs:
                   return None
 
               t_raw, t_unit = val_unit(pick(r, "outdoor", "temperature") or r.get("temperature") or r.get("temp"))
-              h_raw, h_unit = val_unit(pick(r, "outdoor", "humidity") or r.get("humidity"))
+              h_raw, _h_unit = val_unit(pick(r, "outdoor", "humidity") or r.get("humidity"))
               d_raw, d_unit = val_unit(pick(r, "outdoor", "dew_point") or r.get("dew_point"))
 
               temp_c = t_raw
@@ -234,8 +253,8 @@ jobs:
               wind_kmh = norm_w(w_raw, w_unit)
               gust_kmh = norm_w(g_raw, g_unit)
 
-              rd_raw, rd_unit = val_unit(r.get("rainfall_daily") or pick(r, "rainfall", "daily") or r.get("rain_day"))
-              rr_raw, rr_unit = val_unit(r.get("rain_rate") or pick(r, "rainfall", "rate") or r.get("rain_rate"))
+              rd_raw, _rd_unit = val_unit(r.get("rainfall_daily") or pick(r, "rainfall", "daily") or r.get("rain_day"))
+              rr_raw, _rr_unit = val_unit(r.get("rain_rate") or pick(r, "rainfall", "rate") or r.get("rain_rate"))
 
               return {
                   "ts": int(ts_ms),
@@ -256,7 +275,7 @@ jobs:
               row = parse_row(r)
               if row is None:
                   continue
-              # IMPORTANT: com que fem overlap, només considerem "nou" el que supera l'últim ts guardat
+              # Com que fem overlap, només compta com "nou" el que supera l'últim ts guardat
               if last_ts_ms is None or row["ts"] > last_ts_ms:
                   new_rows.append(row)
 
