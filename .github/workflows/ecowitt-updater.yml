@@ -3,14 +3,10 @@ name: Ecowitt updater
 on:
   workflow_dispatch:
   schedule:
-    # Intent 1: cada 5 minuts (UTC)
     - cron: "*/5 * * * *"
-    # Intent 2: desfasat +1 minut
     - cron: "1-59/5 * * * *"
-    # Intent 3: desfasat +2 minuts
     - cron: "2-59/5 * * * *"
 
-# Evita cues i “embussos”: si entra un nou trigger, cancel·la el run anterior si encara està corrent
 concurrency:
   group: ecowitt-updater
   cancel-in-progress: true
@@ -34,12 +30,10 @@ jobs:
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
-          # Si no tens requirements.txt, això no fallarà; simplement no instal·larà res extra
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Fetch Ecowitt realtime and append history
         env:
-          # Si ja ho tens definit com a Secrets al repo, mantén aquests noms
           ECOWITT_APPLICATION_KEY: ${{ secrets.ECOWITT_APPLICATION_KEY }}
           ECOWITT_API_KEY: ${{ secrets.ECOWITT_API_KEY }}
           ECOWITT_MAC: ${{ secrets.ECOWITT_MAC }}
@@ -51,12 +45,12 @@ jobs:
           import urllib.request
           import urllib.parse
 
-          # ====== AJUSTA AQUESTES RUTES SI LES TENS DIFERENTS ======
-          BASE = Path("MeteoCandela")
+          # ====== RUTES AL ROOT (important) ======
+          BASE = Path(".")
           HISTORY_PATH = BASE / "data" / "history.json"
           HEARTBEAT_DIR = BASE / "heartbeat"
           HEARTBEAT_PATH = HEARTBEAT_DIR / "heartbeat.json"
-          # =========================================================
+          # ======================================
 
           app_key = os.getenv("ECOWITT_APPLICATION_KEY")
           api_key = os.getenv("ECOWITT_API_KEY")
@@ -65,8 +59,6 @@ jobs:
           if not (app_key and api_key and mac):
             raise SystemExit("Falten secrets: ECOWITT_APPLICATION_KEY / ECOWITT_API_KEY / ECOWITT_MAC")
 
-          # Endpoint habitual d'Ecowitt (si al teu codi ja funciona, mantenim això)
-          # Si tu uses un altre endpoint internament, digues-m'ho i l'ajusto.
           base_url = "https://api.ecowitt.net/api/v3/device/real_time"
           params = {
             "application_key": app_key,
@@ -79,10 +71,8 @@ jobs:
           with urllib.request.urlopen(url, timeout=20) as r:
             payload = json.loads(r.read().decode("utf-8"))
 
-          # ---------- Normalització mínima de camps ----------
-          # IMPORTANT: això és tolerant; si algun camp no hi és, queda a null.
           data = payload.get("data", {}) if isinstance(payload, dict) else {}
-          # Alguns dispositius posen "outdoor" o "temp" dins de subclaus; ho fem robust.
+
           def pick(*keys):
             cur = data
             for k in keys:
@@ -90,26 +80,20 @@ jobs:
               cur = cur[k]
             return cur
 
-          # Temperatura/humitat (molts retorns venen com strings)
           def fnum(x):
             try:
               return float(x)
             except Exception:
               return None
 
-          # Prova camins típics
           temp_c = fnum(pick("outdoor", "temperature", "value")) or fnum(pick("temp", "value")) or fnum(pick("temperature", "value"))
           hum_pct = fnum(pick("outdoor", "humidity", "value")) or fnum(pick("humidity", "value"))
-
-          # Punt de rosada
           dew_c = fnum(pick("outdoor", "dew_point", "value")) or fnum(pick("dew_point", "value"))
 
-          # Vent (km/h)
           wind_kmh = fnum(pick("wind_speed", "value")) or fnum(pick("wind", "wind_speed", "value"))
           gust_kmh = fnum(pick("wind_gust", "value")) or fnum(pick("wind", "wind_gust", "value"))
           wind_dir = pick("wind_direction", "value") or pick("wind", "wind_direction", "value")
 
-          # Pluja (mm)
           rain_day_mm = fnum(pick("rainfall_daily", "value")) or fnum(pick("rainfall", "daily", "value"))
           rain_rate_mmh = fnum(pick("rain_rate", "value")) or fnum(pick("rainfall", "rate", "value"))
 
@@ -126,8 +110,8 @@ jobs:
             "rain_rate_mmh": rain_rate_mmh,
           }
 
-          # ---------- Carrega històric, afegeix i retalla a 24h ----------
           HISTORY_PATH.parent.mkdir(parents=True, exist_ok=True)
+
           if HISTORY_PATH.exists():
             try:
               hist = json.loads(HISTORY_PATH.read_text(encoding="utf-8"))
@@ -139,18 +123,13 @@ jobs:
 
           hist.append(row)
 
-          # Retalla a les últimes 24h (24*60*60*1000)
           cutoff = now_ms - 24*60*60*1000
           hist = [h for h in hist if isinstance(h, dict) and h.get("ts", 0) >= cutoff]
 
           HISTORY_PATH.write_text(json.dumps(hist, ensure_ascii=False), encoding="utf-8")
 
-          # ---------- Heartbeat (per saber quan ha corregut el workflow) ----------
           HEARTBEAT_DIR.mkdir(parents=True, exist_ok=True)
-          hb = {
-            "run_ts": now_ms,
-            "run_iso_utc": datetime.now(timezone.utc).isoformat()
-          }
+          hb = {"run_ts": now_ms, "run_iso_utc": datetime.now(timezone.utc).isoformat()}
           HEARTBEAT_PATH.write_text(json.dumps(hb, ensure_ascii=False), encoding="utf-8")
 
           print("OK appended:", row)
@@ -165,6 +144,6 @@ jobs:
           fi
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git add MeteoCandela/data/history.json MeteoCandela/heartbeat/heartbeat.json
+          git add data/history.json heartbeat/heartbeat.json
           git commit -m "Update meteo data"
           git push
