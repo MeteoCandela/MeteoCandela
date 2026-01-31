@@ -112,27 +112,30 @@ jobs:
               HEARTBEAT_PATH.write_text(json.dumps(hb, ensure_ascii=False), encoding="utf-8")
               return hb
 
-          # 1) Carrega històric i calcula finestra a demanar
+          # 1) Carrega històric i calcula finestra
           hist = read_hist()
           hist = [h for h in hist if isinstance(h, dict) and isinstance(h.get("ts"), (int, float))]
+          hist.sort(key=lambda x: int(x["ts"]))  # IMPORTANT: assegura ordre
 
           now_ms = int(time.time() * 1000)
           cutoff_ms = now_ms - 24 * 60 * 60 * 1000
 
-          last_ts_ms = None
-          if hist:
-              last_ts_ms = int(hist[-1]["ts"])
+          last_ts_ms = int(hist[-1]["ts"]) if hist else None
 
-          # Si no hi ha històric, arrenca amb les últimes 24h
-          start_ms = max(last_ts_ms + 1, cutoff_ms) if last_ts_ms else cutoff_ms
+          # SOLAPAMENT per evitar perdre punts per retard (15 min)
+          OVERLAP_MS = 15 * 60 * 1000
+
+          if last_ts_ms is None:
+              start_ms = cutoff_ms
+          else:
+              start_ms = max(last_ts_ms - OVERLAP_MS, cutoff_ms)
+
           end_ms = now_ms
 
-          # IMPORTANT: Ecowitt històric sovint va en segons unix
           start_s = int(start_ms / 1000)
           end_s = int(end_ms / 1000)
 
           # 2) Crida API històrica (5 min)
-          # Nota: alguns comptes/firmwares exigeixen aquests noms exactes.
           base_url = "https://api.ecowitt.net/api/v3/device/history"
           params = {
               "application_key": app_key,
@@ -151,17 +154,10 @@ jobs:
           if not isinstance(payload, dict):
               raise SystemExit(f"Resposta inesperada: {type(payload)}")
 
-          # 3) Extreu mostres
-          data = payload.get("data")
+          data = payload.get("data") or payload.get("datas") or payload.get("result") or payload.get("records")
           if data is None:
-              # Algunes respostes venen encapsulades
-              data = payload.get("datas") or payload.get("result") or payload.get("records")
-
-          if data is None:
-              # Ajuda a depurar si Ecowitt retorna un error
               raise SystemExit("No he trobat 'data' a la resposta. Payload keys: " + ", ".join(payload.keys()))
 
-          # data pot ser: llista de registres, o dict amb 'list'
           if isinstance(data, dict):
               data_list = data.get("list") or data.get("data") or data.get("records")
           else:
@@ -170,7 +166,6 @@ jobs:
           if not isinstance(data_list, list):
               raise SystemExit(f"Format històric inesperat: {type(data_list)}")
 
-          # Helpers per llegir valors (Ecowitt sovint fa {value, unit})
           def val_unit(x):
               if isinstance(x, dict):
                   return fnum(x.get("value")), (x.get("unit") or x.get("units"))
@@ -185,7 +180,6 @@ jobs:
               return cur
 
           def parse_row(r):
-              # timestamp: prova camps típics
               ts_ms = (
                   to_ms_epoch(r.get("ts")) or
                   to_ms_epoch(r.get("time")) or
@@ -194,10 +188,8 @@ jobs:
                   None
               )
 
-              # si no ve timestamp, intenta camp "time" com string "YYYY-MM-DD HH:MM"
               if ts_ms is None and isinstance(r.get("time"), str):
                   try:
-                      # assumeix UTC si no hi ha TZ (és el més estable per runner)
                       dt = datetime.strptime(r["time"], "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
                       ts_ms = int(dt.timestamp() * 1000)
                   except Exception:
@@ -206,12 +198,10 @@ jobs:
               if ts_ms is None:
                   return None
 
-              # TEMPERATURA / HUMITAT / ROSADA
               t_raw, t_unit = val_unit(pick(r, "outdoor", "temperature") or r.get("temperature") or r.get("temp"))
               h_raw, h_unit = val_unit(pick(r, "outdoor", "humidity") or r.get("humidity"))
               d_raw, d_unit = val_unit(pick(r, "outdoor", "dew_point") or r.get("dew_point"))
 
-              # Converteix a C si cal
               temp_c = t_raw
               if t_raw is not None:
                   if (t_unit and str(t_unit).lower().startswith("f")) or (t_raw >= 80):
@@ -222,9 +212,8 @@ jobs:
                   if (d_unit and str(d_unit).lower().startswith("f")) or (d_raw >= 80):
                       dew_c = f_to_c(d_raw)
 
-              hum_pct = h_raw  # normalment ja %
+              hum_pct = h_raw
 
-              # VENT / RATXA
               w_raw, w_unit = val_unit(r.get("wind_speed") or pick(r, "wind", "wind_speed"))
               g_raw, g_unit = val_unit(r.get("wind_gust") or pick(r, "wind", "wind_gust"))
               wind_dir = (r.get("wind_direction") or pick(r, "wind", "wind_direction"))
@@ -237,19 +226,13 @@ jobs:
                       return mph_to_kmh(v)
                   if u in ("m/s", "ms", "mps"):
                       return ms_to_kmh(v)
-                  # Si no hi ha unit, assumim que ja és km/h (com tens ara)
                   return float(v)
 
               wind_kmh = norm_w(w_raw, w_unit)
               gust_kmh = norm_w(g_raw, g_unit)
 
-              # PLUJA
               rd_raw, rd_unit = val_unit(r.get("rainfall_daily") or pick(r, "rainfall", "daily") or r.get("rain_day"))
               rr_raw, rr_unit = val_unit(r.get("rain_rate") or pick(r, "rainfall", "rate") or r.get("rain_rate"))
-
-              # normalment ja mm i mm/h; si vingués inch ho veuries al unit i es podria afegir conversió
-              rain_day_mm = rd_raw
-              rain_rate_mmh = rr_raw
 
               return {
                   "ts": int(ts_ms),
@@ -259,8 +242,8 @@ jobs:
                   "wind_kmh": None if wind_kmh is None else float(wind_kmh),
                   "gust_kmh": None if gust_kmh is None else float(gust_kmh),
                   "wind_dir": (str(wind_dir) if wind_dir is not None else None),
-                  "rain_day_mm": rain_day_mm,
-                  "rain_rate_mmh": rain_rate_mmh,
+                  "rain_day_mm": rd_raw,
+                  "rain_rate_mmh": rr_raw,
               }
 
           new_rows = []
@@ -270,18 +253,19 @@ jobs:
               row = parse_row(r)
               if row is None:
                   continue
-              # només punts nous (evita duplicats)
-              if row["ts"] >= start_ms:
+              # IMPORTANT: com que fem overlap, només considerem "nou" el que supera l'últim ts guardat
+              if last_ts_ms is None or row["ts"] > last_ts_ms:
                   new_rows.append(row)
 
-          # 4) Fusiona + dedupe per ts + retalla 24h
           merged = hist + new_rows
+
+          # Dedupe per ts (si arriba el mateix ts amb valors més complets, el nou guanya)
           by_ts = {}
           for r in merged:
               ts = r.get("ts")
               if not isinstance(ts, (int, float)):
                   continue
-              by_ts[int(ts)] = r  # si hi ha duplicat, el més nou guanya
+              by_ts[int(ts)] = r
 
           merged = [by_ts[k] for k in sorted(by_ts.keys())]
           merged = [r for r in merged if r["ts"] >= cutoff_ms]
@@ -289,7 +273,8 @@ jobs:
           write_hist(merged)
           hb = write_heartbeat(now_ms)
 
-          print(f"Fetched {len(new_rows)} rows (window {start_s}->{end_s}s). Total kept: {len(merged)}")
+          print(f"Window request (s): {start_s}->{end_s} | overlap={OVERLAP_MS//60000}min | last_ts={last_ts_ms}")
+          print(f"Fetched {len(new_rows)} NEW rows. Total kept: {len(merged)}")
           print("Heartbeat:", hb)
           PY
 
