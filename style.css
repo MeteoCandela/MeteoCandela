@@ -7,6 +7,7 @@
 }
 
 *{ box-sizing: border-box; }
+
 body{
   margin:0;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
@@ -14,26 +15,28 @@ body{
   background: radial-gradient(1200px 700px at 20% 10%, #1b2a4a, var(--bg));
 }
 
-.hero {
+/* HERO */
+.hero{
   position: relative;
   min-height: 45vh;
   padding: 28px 18px;
   display: flex;
   align-items: flex-end;
 
-  background-image: url("/MeteoCandela/assets/valls.jpg");
+  /* IMPORTANT: ruta relativa perquè funcioni tant a / com a /MeteoCandela/ */
+  background-image: url("assets/valls.jpg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
 }
 
-.hero__overlay {
+.hero__overlay{
   position: absolute;
   inset: 0;
   background: rgba(0,0,0,0.45);
 }
 
-.hero__content {
+.hero__content{
   position: relative;
   z-index: 1;
   color: #fff;
@@ -48,6 +51,7 @@ p{ margin: 0; color: var(--muted); }
   color: rgba(255,255,255,.75);
 }
 
+/* LAYOUT */
 .grid{
   display: grid;
   grid-template-columns: 1fr;
@@ -57,10 +61,9 @@ p{ margin: 0; color: var(--muted); }
   margin: 0 auto;
 }
 
+/* A escriptori: columna esquerra ampla (Actual) i columna dreta estreta (gràfiques en pila) */
 @media (min-width: 900px){
   .grid{ grid-template-columns: 1.2fr .8fr; }
-  .grid > .chart-box:nth-of-type(2){ grid-column: 2; }
-  .grid > .chart-box:nth-of-type(3){ grid-column: 2; }
 }
 
 .card{
@@ -71,8 +74,13 @@ p{ margin: 0; color: var(--muted); }
   backdrop-filter: blur(10px);
 }
 
-h2{ margin: 0 0 12px; font-size: 16px; color: var(--text); }
+h2{
+  margin: 0 0 12px;
+  font-size: 16px;
+  color: var(--text);
+}
 
+/* KPIs */
 .kpis{
   display:grid;
   grid-template-columns: repeat(2, 1fr);
@@ -88,6 +96,7 @@ h2{ margin: 0 0 12px; font-size: 16px; color: var(--text); }
   border-radius: 14px;
   padding: 10px;
 }
+
 .kpi__v{ font-size: 22px; font-weight: 700; }
 .kpi__l{ font-size: 12px; color: var(--muted); margin-top: 4px; }
 
@@ -99,13 +108,16 @@ h2{ margin: 0 0 12px; font-size: 16px; color: var(--text); }
   gap: 6px;
 }
 
-/* IMPORTANT: alçada fixa a mòbil */
+/* CHARTS */
+/* IMPORTANT: alçada fixa a mòbil perquè Chart.js no “s’estiri infinit” */
 .chart-box{ height: 260px; }
+
 .chart-box canvas{
   width: 100% !important;
-  height: calc(100% - 26px) !important;
+  height: calc(100% - 26px) !important; /* deixa espai pel títol */
 }
 
+/* Footer */
 .footer{
   padding: 18px;
   text-align: center;
