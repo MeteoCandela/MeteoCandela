@@ -306,7 +306,6 @@
     const wind = rDay.map(r => r.wind_kmh);
     const gust = rDay.map(r => r.gust_kmh);
 
-    // Mín/Màx reals del dia
     const { min: vMin, max: vMax } = minMax(temp);
 
     const dayTxt = fmtDayLong(dayKey);
@@ -324,9 +323,12 @@
 
     if (typeof window.Chart === "undefined") return;
 
-    function commonTooltip(unit) {
+    // Tooltip: hora + valor (NET). Sense quadret de color.
+    function tooltipMainTempOnly(unit) {
       return {
         displayColors: false,
+        // ✅ clau: només sèrie principal (dataset 0)
+        filter: (item) => item.datasetIndex === 0,
         callbacks: {
           title: (items) => {
             const idx = items?.[0]?.dataIndex;
@@ -343,6 +345,29 @@
       };
     }
 
+    function commonTooltip(unit, nameFormatter) {
+      return {
+        displayColors: false,
+        callbacks: {
+          title: (items) => {
+            const idx = items?.[0]?.dataIndex;
+            if (idx == null) return "";
+            const ts = rDay[idx]?.ts;
+            return ts ? fmtTimeWithH(ts) : "";
+          },
+          label: (ctx) => {
+            const v = ctx.parsed?.y;
+            if (v == null) return "—";
+            const label = (typeof nameFormatter === "function")
+              ? nameFormatter(ctx)
+              : (ctx.dataset?.label || "");
+            const prefix = label ? `${label}: ` : "";
+            return `${prefix}${Number(v).toFixed(1)} ${unit}`;
+          }
+        }
+      };
+    }
+
     const commonBase = {
       responsive: true,
       maintainAspectRatio: false,
@@ -350,7 +375,7 @@
       scales: { x: { type: "category", ticks: { maxTicksLimit: 10 } } }
     };
 
-    // ===== TEMP (net): tooltip només de la sèrie principal =====
+    // ===== TEMP amb línies MIN/MAX i etiqueta a la dreta (ALT CONTRAST) =====
     window.__chartTemp = new Chart($("chartTemp"), {
       type: "line",
       data: {
@@ -358,7 +383,7 @@
         datasets: [
           // Sèrie principal
           {
-            label: "Temperatura",
+            label: "",
             data: temp,
             tension: 0.25,
             pointRadius: 2,
@@ -368,27 +393,23 @@
             fill: false
           },
 
-          // Línia MÍN
+          // Línia MIN
           ...(vMin == null ? [] : [{
             label: "Mín",
             data: labels.map(() => vMin),
             tension: 0,
             pointRadius: 0,
-            pointHoverRadius: 0,
-            pointHitRadius: 0,
             borderWidth: 1.5,
             borderDash: [4, 4],
             fill: false
           }]),
 
-          // Línia MÀX
+          // Línia MAX
           ...(vMax == null ? [] : [{
             label: "Màx",
             data: labels.map(() => vMax),
             tension: 0,
             pointRadius: 0,
-            pointHoverRadius: 0,
-            pointHitRadius: 0,
             borderWidth: 1.5,
             borderDash: [4, 4],
             fill: false
@@ -399,63 +420,47 @@
         ...commonBase,
         plugins: {
           legend: { display: false },
-          tooltip: commonTooltip("°C")
+          tooltip: tooltipMainTempOnly("°C") // ✅ Opció A
         }
       },
-      plugins: [
-        // Filtra tooltip perquè només agafi el dataset 0 (Temperatura)
-        {
-          id: "tempTooltipOnlyMain",
-          beforeInit(chart) {
-            const tt = chart.options?.plugins?.tooltip;
-            if (!tt) return;
-            const prevFilter = tt.filter;
-            tt.filter = (item) => {
-              const ok = (item.datasetIndex === 0);
-              return prevFilter ? (ok && prevFilter(item)) : ok;
-            };
+      plugins: [{
+        id: "minMaxLabels",
+        afterDatasetsDraw(chart) {
+          if (vMin == null && vMax == null) return;
+
+          const { ctx, chartArea } = chart;
+          const yScale = chart.scales?.y;
+          if (!yScale) return;
+
+          ctx.save();
+          ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+          ctx.textAlign = "right";
+          ctx.textBaseline = "middle";
+
+          // ✅ contrast (blanc + contorn fosc)
+          ctx.fillStyle = "rgba(255,255,255,0.88)";
+          ctx.strokeStyle = "rgba(0,0,0,0.55)";
+          ctx.lineWidth = 3;
+
+          const xRight = chartArea.right - 6;
+
+          if (vMax != null) {
+            const yMax = yScale.getPixelForValue(vMax);
+            const tMax = `Màx ${Number(vMax).toFixed(1)} °C`;
+            ctx.strokeText(tMax, xRight, yMax);
+            ctx.fillText(tMax, xRight, yMax);
           }
-        },
-        // Etiquetes Mín/Màx a la dreta
-        {
-          id: "minMaxLabels",
-          afterDatasetsDraw(chart) {
-            if (vMin == null && vMax == null) return;
 
-            const { ctx, chartArea } = chart;
-            const yScale = chart.scales?.y;
-            if (!yScale) return;
-
-            ctx.save();
-ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
-ctx.textAlign = "right";
-ctx.textBaseline = "middle";
-
-// ✅ millor contrast en fons fosc
-ctx.fillStyle = "rgba(255,255,255,0.85)";
-ctx.strokeStyle = "rgba(0,0,0,0.55)";
-ctx.lineWidth = 3;
-
-            const xRight = chartArea.right - 6;
-
-            if (vMax != null) {
-              const yMax = yScale.getPixelForValue(vMax);
-              const tMax = `Màx ${Number(vMax).toFixed(1)} °C`;
-ctx.strokeText(tMax, xRight, yMax);
-ctx.fillText(tMax, xRight, yMax);
-            }
-
-            if (vMin != null) {
-              const yMin = yScale.getPixelForValue(vMin);
-              const tMin = `Mín ${Number(vMin).toFixed(1)} °C`;
-ctx.strokeText(tMin, xRight, yMin);
-ctx.fillText(tMin, xRight, yMin);
-            }
-
-            ctx.restore();
+          if (vMin != null) {
+            const yMin = yScale.getPixelForValue(vMin);
+            const tMin = `Mín ${Number(vMin).toFixed(1)} °C`;
+            ctx.strokeText(tMin, xRight, yMin);
+            ctx.fillText(tMin, xRight, yMin);
           }
+
+          ctx.restore();
         }
-      ]
+      }]
     });
 
     // HUM
@@ -513,24 +518,7 @@ ctx.fillText(tMin, xRight, yMin);
         ...commonBase,
         plugins: {
           legend: { display: true },
-          tooltip: {
-            displayColors: false,
-            callbacks: {
-              title: (items) => {
-                const idx = items?.[0]?.dataIndex;
-                if (idx == null) return "";
-                const ts = rDay[idx]?.ts;
-                return ts ? fmtTimeWithH(ts) : "";
-              },
-              label: (ctx) => {
-                const v = ctx.parsed?.y;
-                if (v == null) return "—";
-                const name = (ctx.dataset?.label || "").trim();
-                const prefix = name ? `${name}: ` : "";
-                return `${prefix}${Number(v).toFixed(1)} km/h`;
-              }
-            }
-          }
+          tooltip: commonTooltip("km/h", (ctx) => ctx.dataset?.label || "")
         }
       }
     });
