@@ -167,6 +167,23 @@ h2{
   gap: 8px;
 }
 
+/* ✅ RETOC: a mòbil, que no s’aixafi (bar a 2 línies) */
+@media (max-width: 520px){
+  .daybar{
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .daybar__right{
+    width: 100%;
+    justify-content: space-between;
+  }
+  .select{
+    flex: 1;
+    min-width: 0;
+  }
+}
+
 .btn{
   appearance:none;
   border: 1px solid var(--border);
@@ -197,15 +214,60 @@ h2{
 /* CHARTS */
 .chart-box{ height: 260px; }
 
+/* ✅ RETOC: títol consistent i canvas que omple la resta */
+.card.chart-box h2{
+  margin-bottom: 10px; /* una mica més d’aire */
+  line-height: 1.2;
+}
+
+/* Canvas ocupa la resta (el 42px és marge+títol aprox, estable visualment) */
 .chart-box canvas{
   width: 100% !important;
-  height: calc(100% - 26px) !important;
+  height: calc(100% - 42px) !important;
 }
 
 @media (min-width: 900px){
   /* el vent a tota amplada ja és span2, li donem una mica més d’alçada */
-  #chartWind{ }
   .card.chart-box.span2{ height: 300px; }
+}
+
+/* ✅ NOU: FAQ bonica (details/summary) */
+#faq details{
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,.04);
+}
+
+#faq details + details{
+  margin-top: 8px;
+}
+
+#faq summary{
+  cursor: pointer;
+  font-weight: 650;
+  list-style: none;
+}
+
+#faq summary::-webkit-details-marker{
+  display: none;
+}
+
+#faq summary::after{
+  content: "▾";
+  float: right;
+  opacity: .8;
+  transform: translateY(1px);
+}
+
+#faq details[open] summary::after{
+  content: "▴";
+}
+
+#faq details p{
+  margin-top: 8px;
+  color: var(--muted);
+  line-height: 1.45;
 }
 
 /* Footer */
