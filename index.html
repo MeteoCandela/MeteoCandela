@@ -13,22 +13,27 @@
 
   <!-- Open Graph (WhatsApp / Facebook / Instagram) -->
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="MeteoCandela"><!-- RETOC #1 -->
-  <meta property="og:locale" content="ca_ES"><!-- RETOC #1 -->
+  <meta property="og:site_name" content="MeteoCandela">
+  <meta property="og:locale" content="ca_ES">
   <meta property="og:title" content="MeteoCandela · Meteo Valls (Alt Camp) en temps real">
   <meta property="og:description" content="Dades en temps real de temperatura, humitat, vent, ratxes i pluja. Gràfiques diàries cada 5 minuts.">
   <meta property="og:url" content="https://meteocandela.cat/">
+
   <meta property="og:image" content="https://meteocandela.cat/og-image.png">
   <meta property="og:image:secure_url" content="https://meteocandela.cat/og-image.png">
-  <meta property="og:image:width" content="1200"><!-- RETOC #3 -->
-  <meta property="og:image:height" content="630"><!-- RETOC #3 -->
-  <meta property="og:image:alt" content="MeteoCandela · Meteo Valls en temps real: temperatura, vent, ratxes i pluja"><!-- RETOC #3 -->
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="MeteoCandela · Meteo Valls en temps real: temperatura, vent, ratxes i pluja">
 
   <!-- Twitter / X -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="MeteoCandela · Meteo Valls (Alt Camp) en temps real"><!-- RETOC #2 -->
-  <meta name="twitter:description" content="Dades en temps real de temperatura, humitat, vent, ratxes i pluja. Gràfiques diàries cada 5 minuts."><!-- RETOC #2 -->
+  <!-- Opcional: posa el teu @ si en tens; si no, pots esborrar aquesta línia -->
+  <!-- <meta name="twitter:site" content="@meteocandela"> -->
+  <meta name="twitter:title" content="MeteoCandela · Meteo Valls (Alt Camp) en temps real">
+  <meta name="twitter:description" content="Dades en temps real de temperatura, humitat, vent, ratxes i pluja. Gràfiques diàries cada 5 minuts.">
   <meta name="twitter:image" content="https://meteocandela.cat/og-image.png">
+  <meta name="twitter:image:alt" content="MeteoCandela · Meteo Valls en temps real: temperatura, vent, ratxes i pluja">
 
   <!-- Schema.org -->
   <script type="application/ld+json">
@@ -51,10 +56,23 @@
   }
   </script>
 
-  <!-- Icons (mòbil / compartir / PWA) -->
+  <!-- Icons (favicon / mòbil / PWA) -->
+  <!-- Si tens favicon.ico, deixa aquesta línia. Si no el tens, no passa res: les PNG de sota ho cobreixen. -->
   <link rel="icon" href="/favicon.ico">
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png"><!-- RETOC #4 -->
-  <link rel="manifest" href="/site.webmanifest"><!-- RETOC #4 -->
+  <link rel="shortcut icon" href="/favicon.ico">
+
+  <!-- IMPORTANT: aquestes 2 són les que realment fan que navegadors moderns trobin el favicon -->
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.png">
+
+  <!-- Apple iOS -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-title" content="MeteoCandela">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- PWA -->
+  <link rel="manifest" href="/site.webmanifest">
 
   <!-- cache-buster CSS -->
   <link rel="stylesheet" href="style.css?v=2026-02-01-1">
