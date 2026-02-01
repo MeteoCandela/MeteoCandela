@@ -1,54 +1,124 @@
-<header class="hero hero--small">
-  <div class="hero__overlay"></div>
-  <div class="hero__content">
-    <h1>Sobre l’estació MeteoCandela</h1>
-    <p>Barri de la Candela · Valls (Alt Camp)</p>
-  </div>
-</header>
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
 
-<main class="grid">
+  <title>Sobre l’estació · MeteoCandela (Barri de la Candela, Valls)</title>
+  <meta name="description" content="Informació sobre l’estació meteorològica MeteoCandela, situada al Barri de la Candela de Valls (Alt Camp): ubicació, criteris de mesura i limitacions.">
+  <link rel="canonical" href="https://meteocandela.cat/sobre.html">
 
-  <section class="card span2">
-    <h2>Context local</h2>
-    <p>
-      MeteoCandela és una estació meteorològica automàtica situada
-      al Barri de la Candela, a Valls (Alt Camp).
-      Les dades reflecteixen les condicions meteorològiques
-      d’un entorn urbà representatiu de la zona.
-    </p>
-  </section>
+  <meta name="robots" content="index,follow">
+  <meta name="theme-color" content="#0b1220">
 
-  <section class="card span2">
-    <h2>Variables mesurades</h2>
-    <ul class="list">
-      <li>Temperatura de l’aire</li>
-      <li>Humitat relativa</li>
-      <li>Vent mitjà i direcció</li>
-      <li>Ratxa màxima de vent</li>
-      <li>Pluja acumulada diària</li>
-      <li>Intensitat de precipitació</li>
-    </ul>
-  </section>
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="MeteoCandela">
+  <meta property="og:locale" content="ca_ES">
+  <meta property="og:title" content="Sobre l’estació · MeteoCandela (Barri de la Candela)">
+  <meta property="og:description" content="Context local i informació de l’estació meteorològica MeteoCandela al Barri de la Candela de Valls.">
+  <meta property="og:url" content="https://meteocandela.cat/sobre.html">
+  <meta property="og:image" content="https://meteocandela.cat/og-image.png">
 
-  <section class="card span2">
-    <h2>Actualització de dades</h2>
-    <p>
-      Les dades s’actualitzen aproximadament cada <strong>5 minuts</strong>,
-      en funció de la comunicació amb els sensors i la disponibilitat de connexió.
-    </p>
-  </section>
+  <link rel="stylesheet" href="style.css?v=2026-02-02-01">
+</head>
 
-  <section class="card span2">
-    <h2>Limitacions i consideracions</h2>
-    <p>
-      Les dades de MeteoCandela <strong>no tenen caràcter oficial</strong>.
-      Provenen d’una estació meteorològica privada i poden diferir
-      de xarxes professionals o oficials.
-    </p>
-  </section>
+<body>
 
-  <section class="card span2">
-    <a href="/" class="back-link">← Tornar a MeteoCandela</a>
-  </section>
+  <!-- HERO -->
+  <header class="hero hero--small">
+    <div class="hero__overlay"></div>
+    <div class="hero__content">
+      <h1>Sobre l’estació</h1>
+      <p>MeteoCandela · Barri de la Candela (Valls)</p>
+    </div>
+  </header>
 
-</main>
+  <main class="grid">
+
+    <!-- CONTEXT LOCAL -->
+    <section class="card span2">
+      <h2>Context i ubicació</h2>
+      <p>
+        <strong>MeteoCandela</strong> és una estació meteorològica automàtica situada al
+        <strong>Barri de la Candela</strong>, dins del nucli urbà de
+        <strong>Valls (Alt Camp, Tarragona)</strong>.
+      </p>
+      <p>
+        La ubicació reflecteix un entorn urbà residencial típic de la ciutat, amb influència
+        de l’orografia propera i de la circulació atmosfèrica pròpia del Camp de Tarragona.
+      </p>
+    </section>
+
+    <!-- OBJECTIU -->
+    <section class="card">
+      <h2>Objectiu del projecte</h2>
+      <p>
+        L’objectiu de MeteoCandela és oferir dades meteorològiques
+        <strong>clares, accessibles i en temps gairebé real</strong>
+        per a ús informatiu, divulgatiu i de seguiment local.
+      </p>
+      <p>
+        El projecte neix amb vocació personal i comunitària, sense finalitat comercial.
+      </p>
+    </section>
+
+    <!-- QUÈ MESURA -->
+    <section class="card">
+      <h2>Variables mesurades</h2>
+      <ul class="list">
+        <li>Temperatura de l’aire</li>
+        <li>Humitat relativa</li>
+        <li>Vent mitjà i direcció</li>
+        <li>Ratxa màxima de vent</li>
+        <li>Pluja acumulada diària</li>
+        <li>Intensitat de precipitació</li>
+      </ul>
+    </section>
+
+    <!-- ACTUALITZACIÓ -->
+    <section class="card span2">
+      <h2>Actualització de dades</h2>
+      <p>
+        Les dades s’actualitzen aproximadament cada <strong>5 minuts</strong>,
+        en funció de la comunicació amb els sensors i la disponibilitat de connexió.
+      </p>
+      <p>
+        Les gràfiques diàries permeten consultar l’evolució de cada variable al llarg del dia,
+        així com dies anteriors disponibles a l’històric.
+      </p>
+    </section>
+
+    <!-- LIMITACIONS -->
+    <section class="card span2">
+      <h2>Limitacions i consideracions</h2>
+      <p>
+        Les dades de MeteoCandela <strong>no tenen caràcter oficial</strong>.
+        Provenen d’una estació meteorològica privada i poden diferir
+        de les estacions professionals o de xarxes oficials.
+      </p>
+      <p>
+        Factors com l’entorn urbà, edificacions properes o episodis de manteniment
+        poden influir puntualment en les mesures.
+      </p>
+    </section>
+
+    <!-- ENLLAÇ DE TORNADA -->
+    <section class="card span2" style="text-align:center">
+      <p>
+        <a href="/" aria-label="Tornar a la pàgina principal">← Tornar a MeteoCandela</a>
+      </p>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <span>© <span id="year"></span> MeteoCandela</span>
+  </footer>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+
+</body>
+</html>
