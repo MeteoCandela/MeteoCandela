@@ -11,13 +11,26 @@
   <meta name="robots" content="index,follow">
   <meta name="theme-color" content="#0b1220">
 
+  <!-- Open Graph (WhatsApp / Facebook / Instagram) -->
   <meta property="og:type" content="website">
+  <meta property="og:site_name" content="MeteoCandela"><!-- RETOC #1 -->
+  <meta property="og:locale" content="ca_ES"><!-- RETOC #1 -->
   <meta property="og:title" content="MeteoCandela · Meteo Valls (Alt Camp) en temps real">
   <meta property="og:description" content="Dades en temps real de temperatura, humitat, vent, ratxes i pluja. Gràfiques diàries cada 5 minuts.">
   <meta property="og:url" content="https://meteocandela.cat/">
   <meta property="og:image" content="https://meteocandela.cat/og-image.png">
-  <meta name="twitter:card" content="summary_large_image">
+  <meta property="og:image:secure_url" content="https://meteocandela.cat/og-image.png">
+  <meta property="og:image:width" content="1200"><!-- RETOC #3 -->
+  <meta property="og:image:height" content="630"><!-- RETOC #3 -->
+  <meta property="og:image:alt" content="MeteoCandela · Meteo Valls en temps real: temperatura, vent, ratxes i pluja"><!-- RETOC #3 -->
 
+  <!-- Twitter / X -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MeteoCandela · Meteo Valls (Alt Camp) en temps real"><!-- RETOC #2 -->
+  <meta name="twitter:description" content="Dades en temps real de temperatura, humitat, vent, ratxes i pluja. Gràfiques diàries cada 5 minuts."><!-- RETOC #2 -->
+  <meta name="twitter:image" content="https://meteocandela.cat/og-image.png">
+
+  <!-- Schema.org -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -38,10 +51,15 @@
   }
   </script>
 
+  <!-- Icons (mòbil / compartir / PWA) -->
   <link rel="icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png"><!-- RETOC #4 -->
+  <link rel="manifest" href="/site.webmanifest"><!-- RETOC #4 -->
 
+  <!-- cache-buster CSS -->
   <link rel="stylesheet" href="style.css?v=2026-02-01-1">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- cache-buster JS -->
   <script defer src="app.js?v=2026-02-01-1"></script>
 </head>
 
