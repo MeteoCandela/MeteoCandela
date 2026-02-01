@@ -1,4 +1,8 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://meteocandela.cat/sitemap.xml
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Facebot
+Allow: /
