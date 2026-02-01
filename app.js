@@ -324,7 +324,7 @@
 
     if (typeof window.Chart === "undefined") return;
 
-    function commonTooltip(unit, nameFormatter) {
+    function commonTooltip(unit) {
       return {
         displayColors: false,
         callbacks: {
@@ -337,11 +337,7 @@
           label: (ctx) => {
             const v = ctx.parsed?.y;
             if (v == null) return "—";
-            const label = (typeof nameFormatter === "function")
-              ? nameFormatter(ctx)
-              : (ctx.dataset?.label || "");
-            const prefix = label ? `${label}: ` : "";
-            return `${prefix}${Number(v).toFixed(1)} ${unit}`;
+            return `${Number(v).toFixed(1)} ${unit}`;
           }
         }
       };
@@ -354,14 +350,15 @@
       scales: { x: { type: "category", ticks: { maxTicksLimit: 10 } } }
     };
 
-    // ===== TEMP amb línies MIN/MAX i etiqueta a la dreta =====
+    // ===== TEMP (net): tooltip només de la sèrie principal =====
     window.__chartTemp = new Chart($("chartTemp"), {
       type: "line",
       data: {
         labels,
         datasets: [
+          // Sèrie principal
           {
-            label: "",
+            label: "Temperatura",
             data: temp,
             tension: 0.25,
             pointRadius: 2,
@@ -371,21 +368,27 @@
             fill: false
           },
 
+          // Línia MÍN
           ...(vMin == null ? [] : [{
             label: "Mín",
             data: labels.map(() => vMin),
             tension: 0,
             pointRadius: 0,
+            pointHoverRadius: 0,
+            pointHitRadius: 0,
             borderWidth: 1.5,
             borderDash: [4, 4],
             fill: false
           }]),
 
+          // Línia MÀX
           ...(vMax == null ? [] : [{
             label: "Màx",
             data: labels.map(() => vMax),
             tension: 0,
             pointRadius: 0,
+            pointHoverRadius: 0,
+            pointHitRadius: 0,
             borderWidth: 1.5,
             borderDash: [4, 4],
             fill: false
@@ -396,42 +399,54 @@
         ...commonBase,
         plugins: {
           legend: { display: false },
-          tooltip: commonTooltip("°C", (ctx) => {
-            const l = (ctx.dataset?.label || "").trim();
-            if (l === "Mín" || l === "Màx") return l;
-            return "";
-          })
+          tooltip: commonTooltip("°C")
         }
       },
-      plugins: [{
-        id: "minMaxLabels",
-        afterDatasetsDraw(chart) {
-          if (vMin == null && vMax == null) return;
-
-          const { ctx, chartArea } = chart;
-          const yScale = chart.scales?.y;
-          if (!yScale) return;
-
-          ctx.save();
-          ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
-          ctx.textAlign = "right";
-          ctx.textBaseline = "middle";
-
-          const xRight = chartArea.right - 6;
-
-          if (vMax != null) {
-            const yMax = yScale.getPixelForValue(vMax);
-            ctx.fillText(`Màx ${Number(vMax).toFixed(1)} °C`, xRight, yMax);
+      plugins: [
+        // Filtra tooltip perquè només agafi el dataset 0 (Temperatura)
+        {
+          id: "tempTooltipOnlyMain",
+          beforeInit(chart) {
+            const tt = chart.options?.plugins?.tooltip;
+            if (!tt) return;
+            const prevFilter = tt.filter;
+            tt.filter = (item) => {
+              const ok = (item.datasetIndex === 0);
+              return prevFilter ? (ok && prevFilter(item)) : ok;
+            };
           }
+        },
+        // Etiquetes Mín/Màx a la dreta
+        {
+          id: "minMaxLabels",
+          afterDatasetsDraw(chart) {
+            if (vMin == null && vMax == null) return;
 
-          if (vMin != null) {
-            const yMin = yScale.getPixelForValue(vMin);
-            ctx.fillText(`Mín ${Number(vMin).toFixed(1)} °C`, xRight, yMin);
+            const { ctx, chartArea } = chart;
+            const yScale = chart.scales?.y;
+            if (!yScale) return;
+
+            ctx.save();
+            ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+            ctx.textAlign = "right";
+            ctx.textBaseline = "middle";
+
+            const xRight = chartArea.right - 6;
+
+            if (vMax != null) {
+              const yMax = yScale.getPixelForValue(vMax);
+              ctx.fillText(`Màx ${Number(vMax).toFixed(1)} °C`, xRight, yMax);
+            }
+
+            if (vMin != null) {
+              const yMin = yScale.getPixelForValue(vMin);
+              ctx.fillText(`Mín ${Number(vMin).toFixed(1)} °C`, xRight, yMin);
+            }
+
+            ctx.restore();
           }
-
-          ctx.restore();
         }
-      }]
+      ]
     });
 
     // HUM
@@ -489,7 +504,24 @@
         ...commonBase,
         plugins: {
           legend: { display: true },
-          tooltip: commonTooltip("km/h", (ctx) => ctx.dataset?.label || "")
+          tooltip: {
+            displayColors: false,
+            callbacks: {
+              title: (items) => {
+                const idx = items?.[0]?.dataIndex;
+                if (idx == null) return "";
+                const ts = rDay[idx]?.ts;
+                return ts ? fmtTimeWithH(ts) : "";
+              },
+              label: (ctx) => {
+                const v = ctx.parsed?.y;
+                if (v == null) return "—";
+                const name = (ctx.dataset?.label || "").trim();
+                const prefix = name ? `${name}: ` : "";
+                return `${prefix}${Number(v).toFixed(1)} km/h`;
+              }
+            }
+          }
         }
       }
     });
