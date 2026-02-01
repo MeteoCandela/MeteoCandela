@@ -3,7 +3,7 @@
   const BASE = (location.pathname.includes("/MeteoCandela/")) ? "/MeteoCandela" : "";
 
   const HISTORY_URL   = `${BASE}/data/history.json`;
-  const CURRENT_URL   = `${BASE}/data/current.json`;          // <-- NOU (temps real)
+  const CURRENT_URL   = `${BASE}/data/current.json`;          // temps real
   const HEARTBEAT_URL = `${BASE}/heartbeat/heartbeat.json`;
 
   const $ = (id) => document.getElementById(id);
@@ -115,7 +115,7 @@
       wind_dir: (r.wind_dir ?? r.wind_direction ?? null),
       rain_day_mm: rainDay != null ? Number(rainDay) : 0,
       rain_rate_mmh: rainRate != null ? Number(rainRate) : 0,
-      source: r.source ?? null, // opcional (si el python ho posa)
+      source: r.source ?? null,
     };
   }
 
@@ -127,7 +127,9 @@
 
   // IMPORTANT: x="category" (sense adapter de temps)
   function buildCharts(rows) {
-    const now = Date.now();
+    // ✅ millor: usar el ts més recent disponible (evita gràfiques “d’ahir” si history va lent)
+    const now = rows.length ? rows[rows.length - 1].ts : Date.now();
+
     const last24hMs = 24 * 60 * 60 * 1000;
     const r24 = rows.filter(r => r.ts >= (now - last24hMs));
 
@@ -189,33 +191,37 @@
     if (windCanvas) {
       window.__chartWind = new Chart(windCanvas, {
         type: "line",
-        data: { labels, datasets: [
-          {
-            label: "vent",
-            data: wind,
-            __unit: "km/h",
-            __prefix: "Vent: ",
-            tension: 0.25,
-            pointRadius: 2,
-            pointHoverRadius: 6,
-            pointHitRadius: 12,
-            borderWidth: 2.5,
-            fill: true
-          },
-          {
-            label: "ratxa",
-            data: gust,
-            __unit: "km/h",
-            __prefix: "Ratxa: ",
-            tension: 0.25,
-            pointRadius: 2,
-            pointHoverRadius: 6,
-            pointHitRadius: 12,
-            borderWidth: 2,
-            borderDash: [6, 4],
-            fill: false
-          }
-        ]},
+        data: {
+          labels,
+          datasets: [
+            // ✅ ordre invertit perquè al tooltip surti primer Ratxa i després Vent
+            {
+              label: "ratxa",
+              data: gust,
+              __unit: "km/h",
+              __prefix: "Ratxa: ",
+              tension: 0.25,
+              pointRadius: 2,
+              pointHoverRadius: 6,
+              pointHitRadius: 12,
+              borderWidth: 2,
+              borderDash: [6, 4],
+              fill: false
+            },
+            {
+              label: "vent",
+              data: wind,
+              __unit: "km/h",
+              __prefix: "Vent: ",
+              tension: 0.25,
+              pointRadius: 2,
+              pointHoverRadius: 6,
+              pointHitRadius: 12,
+              borderWidth: 2.5,
+              fill: true
+            }
+          ]
+        },
         options: commonOpts
       });
     }
@@ -348,15 +354,28 @@
       renderCurrent(current, rows, sourceTag);
       renderStatus(current.ts, hb);
     } else {
-      // ni current ni history
       if ($("lastUpdated")) $("lastUpdated").textContent = "Sense dades.";
       setSourceLine("Origen: —");
       renderStatus(null, hb);
     }
 
-    // 5) Gràfics
-    if (rows.length) {
-      try { buildCharts(rows); } catch (e) { console.warn(e); }
+    // 5) Gràfics (✅ history + current si cal)
+    const rowsForCharts = rows.slice();
+
+    if (current && Number.isFinite(current.ts)) {
+      const lastHistTs = rowsForCharts.length ? rowsForCharts[rowsForCharts.length - 1].ts : null;
+      if (!lastHistTs || current.ts > lastHistTs) {
+        rowsForCharts.push(current);
+      }
+    }
+
+    // Dedupe per ts i ordena
+    const byTs = new Map();
+    for (const r of rowsForCharts) byTs.set(r.ts, r);
+    const mergedCharts = Array.from(byTs.values()).sort((a, b) => a.ts - b.ts);
+
+    if (mergedCharts.length) {
+      try { buildCharts(mergedCharts); } catch (e) { console.warn(e); }
     }
   }
 
@@ -367,3 +386,4 @@
     setSourceLine("Origen: error");
   });
 })();
+```0
