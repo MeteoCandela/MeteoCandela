@@ -1,22 +1,41 @@
 (() => {
-  // Detecta automàticament si estàs servint sota /MeteoCandela/
   const BASE = (location.pathname.includes("/MeteoCandela/")) ? "/MeteoCandela" : "";
-
   const HISTORY_URL   = `${BASE}/data/history.json`;
-  const CURRENT_URL   = `${BASE}/data/current.json`;          // temps real
+  const CURRENT_URL   = `${BASE}/data/current.json`;
   const HEARTBEAT_URL = `${BASE}/heartbeat/heartbeat.json`;
 
   const $ = (id) => document.getElementById(id);
 
-  // ====== CREA el selector de dia si falta al HTML ======
+  // ===== Debug banner (visible sempre fins que ho arreglem) =====
+  function ensureDebugBanner() {
+    let el = $("debugBanner");
+    if (el) return el;
+
+    el = document.createElement("div");
+    el.id = "debugBanner";
+    el.style.cssText = `
+      position: sticky; top: 0; z-index: 9999;
+      padding: 8px 10px; font: 12px/1.35 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background: rgba(0,0,0,.75); color: #fff; border-bottom: 1px solid rgba(255,255,255,.15);
+      white-space: pre-wrap;
+    `;
+    document.body.prepend(el);
+    return el;
+  }
+
+  function dbg(msg) {
+    const el = ensureDebugBanner();
+    el.textContent = msg;
+  }
+  // ============================================================
+
+  // ====== Crea selector de dia si falta ======
   function ensureDayUI() {
-    // Si ja hi és, no fem res
-    if ($("daySelect") && $("dayPrev") && $("dayNext") && $("dayLabel")) return;
+    if ($("daySelect") && $("dayPrev") && $("dayNext") && $("dayLabel")) return true;
 
     const grid = document.querySelector("main.grid");
-    if (!grid) return;
+    if (!grid) return false;
 
-    // Intentem inserir-lo després de la primera card (Actual)
     const firstCard = grid.querySelector(".card");
 
     const section = document.createElement("section");
@@ -27,27 +46,23 @@
           <div class="daybar__title">Gràfiques del dia</div>
           <div id="dayLabel" class="daybar__subtitle">—</div>
         </div>
-
         <div class="daybar__right">
           <button id="dayPrev" class="btn" type="button" aria-label="Dia anterior">◀</button>
-
           <label class="sr-only" for="daySelect">Selecciona dia</label>
           <select id="daySelect" class="select" aria-label="Selecciona dia">
             <option>Carregant…</option>
           </select>
-
           <button id="dayNext" class="btn" type="button" aria-label="Dia següent">▶</button>
         </div>
       </div>
     `;
 
-    if (firstCard && firstCard.nextSibling) {
-      grid.insertBefore(section, firstCard.nextSibling);
-    } else {
-      grid.insertBefore(section, grid.firstChild);
-    }
+    if (firstCard && firstCard.nextSibling) grid.insertBefore(section, firstCard.nextSibling);
+    else grid.prepend(section);
+
+    return true;
   }
-  // ======================================================
+  // ==========================================
 
   function fToC(f) { return (f - 32) * 5 / 9; }
   function mphToKmh(mph) { return mph * 1.609344; }
@@ -67,9 +82,7 @@
 
   function fmtTime(tsMs) {
     const d = new Date(tsMs);
-    return new Intl.DateTimeFormat("ca-ES", {
-      hour: "2-digit", minute: "2-digit"
-    }).format(d);
+    return new Intl.DateTimeFormat("ca-ES", { hour: "2-digit", minute: "2-digit" }).format(d);
   }
 
   function fmtDayLong(dayKey) {
@@ -96,9 +109,7 @@
   }
 
   function minMax(values) {
-    const v = values
-      .filter(x => x != null && Number.isFinite(Number(x)))
-      .map(Number);
+    const v = values.filter(x => x != null && Number.isFinite(Number(x))).map(Number);
     if (!v.length) return { min: null, max: null };
     return { min: Math.min(...v), max: Math.max(...v) };
   }
@@ -106,7 +117,6 @@
   function degToWindCatalan(deg) {
     if (deg == null || Number.isNaN(Number(deg))) return "—";
     const d = ((Number(deg) % 360) + 360) % 360;
-
     if (d >= 337.5 || d < 22.5)   return "N – Tramuntana";
     if (d >= 22.5  && d < 67.5)   return "NE – Gregal";
     if (d >= 67.5  && d < 112.5)  return "E – Llevant";
@@ -115,7 +125,6 @@
     if (d >= 202.5 && d < 247.5)  return "SW – Garbí";
     if (d >= 247.5 && d < 292.5)  return "W – Ponent";
     if (d >= 292.5 && d < 337.5)  return "NW – Mestral";
-
     return "—";
   }
 
@@ -168,96 +177,6 @@
     return await res.json();
   }
 
-  // ===== FIX Chart.js mòbil =====
-  function fixChartsMobile() {
-    const doFix = () => {
-      const charts = [window.__chartTemp, window.__chartHum, window.__chartWind].filter(Boolean);
-      for (const c of charts) {
-        try { c.resize(); c.update(); } catch {}
-      }
-    };
-    requestAnimationFrame(() => {
-      doFix();
-      setTimeout(doFix, 200);
-    });
-  }
-
-  function buildChartsForDay(allRows, dayKey) {
-    const { start, end } = startEndMsFromDayKey(dayKey);
-    const rDay = allRows.filter(r => r.ts >= start && r.ts <= end);
-
-    const labels = rDay.map(r => fmtTime(r.ts));
-    const temp = rDay.map(r => r.temp_c);
-    const hum  = rDay.map(r => r.hum_pct);
-    const wind = rDay.map(r => r.wind_kmh);
-    const gust = rDay.map(r => r.gust_kmh);
-
-    const dayTxt = fmtDayLong(dayKey);
-    if ($("chartTempTitle")) $("chartTempTitle").textContent = `Temperatura · ${dayTxt}`;
-    if ($("chartHumTitle"))  $("chartHumTitle").textContent  = `Humitat · ${dayTxt}`;
-    if ($("chartWindTitle")) $("chartWindTitle").textContent = `Vent i ratxa · ${dayTxt}`;
-
-    const commonOpts = {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: "nearest", intersect: false, axis: "x" },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          enabled: true,
-          displayColors: false,
-          callbacks: {
-            title: () => "",
-            label: (ctx) => {
-              const v = ctx.parsed?.y;
-              if (v == null) return "—";
-              const unit = ctx.dataset?.__unit || "";
-              const prefix = ctx.dataset?.__prefix || "";
-              return `${prefix}${Number(v).toFixed(1)}${unit ? ` ${unit}` : ""}`;
-            }
-          }
-        }
-      },
-      scales: { x: { type: "category", ticks: { maxTicksLimit: 10 } } }
-    };
-
-    if (window.__chartTemp) window.__chartTemp.destroy();
-    if (window.__chartHum) window.__chartHum.destroy();
-    if (window.__chartWind) window.__chartWind.destroy();
-
-    window.__chartTemp = new Chart($("chartTemp"), {
-      type: "line",
-      data: { labels, datasets: [{ data: temp, __unit: "°C", tension: 0.25, pointRadius: 2, pointHoverRadius: 7, pointHitRadius: 12, borderWidth: 2, fill: false }] },
-      options: commonOpts
-    });
-
-    window.__chartHum = new Chart($("chartHum"), {
-      type: "line",
-      data: { labels, datasets: [{ data: hum, __unit: "%", tension: 0.25, pointRadius: 2, pointHoverRadius: 7, pointHitRadius: 12, borderWidth: 2, fill: false }] },
-      options: { ...commonOpts, scales: { ...commonOpts.scales, y: { min: 0, max: 100 } } }
-    });
-
-    const windCanvas = $("chartWind");
-    if (windCanvas) {
-      window.__chartWind = new Chart(windCanvas, {
-        type: "line",
-        data: {
-          labels,
-          datasets: [
-            { label: "ratxa", data: gust, __unit: "km/h", __prefix: "Ratxa: ", tension: 0.25, pointRadius: 2, pointHoverRadius: 6, pointHitRadius: 12, borderWidth: 2, borderDash: [6, 4], fill: false },
-            { label: "vent",  data: wind, __unit: "km/h", __prefix: "Vent: ",  tension: 0.25, pointRadius: 2, pointHoverRadius: 6, pointHitRadius: 12, borderWidth: 2.5, fill: true }
-          ]
-        },
-        options: commonOpts
-      });
-    }
-
-    const dayLabel = $("dayLabel");
-    if (dayLabel) dayLabel.textContent = rDay.length ? `${dayTxt} · ${rDay.length} punts` : `${dayTxt} · sense dades`;
-
-    fixChartsMobile();
-  }
-
   function setSourceLine(txt) {
     const el = $("sourceLine");
     if (el) el.textContent = txt;
@@ -269,23 +188,23 @@
     $("wind").textContent = current.wind_kmh == null ? "—" : fmt1(current.wind_kmh);
     $("rainDay").textContent = current.rain_day_mm == null ? "—" : fmt1(current.rain_day_mm);
 
-    if ($("tempSub")) $("tempSub").textContent = current.dew_c == null ? "Punt de rosada: —" : `Punt de rosada: ${fmt1(current.dew_c)} °C`;
+    if ($("tempSub")) $("tempSub").textContent =
+      current.dew_c == null ? "Punt de rosada: —" : `Punt de rosada: ${fmt1(current.dew_c)} °C`;
 
     const elMinMax = $("tempMinMax");
     if (elMinMax && Array.isArray(historyRows) && historyRows.length) {
       const todayKey = dayKeyFromTs(Date.now());
       const { start, end } = startEndMsFromDayKey(todayKey);
       const todayRows = historyRows.filter(r => r.ts >= start && r.ts <= end).slice();
-
       if (current && Number.isFinite(current.ts) && current.ts >= start && current.ts <= end) {
         const lastHistTs = todayRows.length ? todayRows[todayRows.length - 1].ts : null;
         if (!lastHistTs || current.ts > lastHistTs) todayRows.push(current);
       }
-
       const { min, max } = minMax(todayRows.map(r => r.temp_c));
-      elMinMax.textContent = (min == null || max == null)
-        ? "Temperatura avui: mín — · màx —"
-        : `Temperatura avui: mín ${fmt1(min)} °C · màx ${fmt1(max)} °C`;
+      elMinMax.textContent =
+        (min == null || max == null)
+          ? "Temperatura avui: mín — · màx —"
+          : `Temperatura avui: mín ${fmt1(min)} °C · màx ${fmt1(max)} °C`;
     }
 
     let dirTxt = "—";
@@ -294,8 +213,11 @@
       if (!Number.isNaN(deg)) dirTxt = `${deg.toFixed(0)}° (${degToWindCatalan(deg)})`;
     }
 
-    if ($("gustSub")) $("gustSub").textContent = current.gust_kmh == null ? `Ratxa: — · Dir: ${dirTxt}` : `Ratxa: ${fmt1(current.gust_kmh)} km/h · Dir: ${dirTxt}`;
-    if ($("rainRateSub")) $("rainRateSub").textContent = current.rain_rate_mmh == null ? "Intensitat de pluja: —" : `Intensitat de pluja: ${fmt1(current.rain_rate_mmh)} mm/h`;
+    if ($("gustSub")) $("gustSub").textContent =
+      current.gust_kmh == null ? `Ratxa: — · Dir: ${dirTxt}` : `Ratxa: ${fmt1(current.gust_kmh)} km/h · Dir: ${dirTxt}`;
+
+    if ($("rainRateSub")) $("rainRateSub").textContent =
+      current.rain_rate_mmh == null ? "Intensitat de pluja: —" : `Intensitat de pluja: ${fmt1(current.rain_rate_mmh)} mm/h`;
 
     $("lastUpdated").textContent = `Actualitzat: ${fmtDate(current.ts)}`;
   }
@@ -354,7 +276,7 @@
     const sel = $("daySelect");
     const prev = $("dayPrev");
     const next = $("dayNext");
-    if (!sel) return;
+    if (!sel) return null;
 
     sel.innerHTML = "";
     for (const k of dayKeys) {
@@ -368,7 +290,6 @@
     sel.value = dayKeys[idx0] || dayKeys[dayKeys.length - 1];
 
     function currentIndex() { return dayKeys.indexOf(sel.value); }
-
     function updateButtons() {
       const i = currentIndex();
       if (prev) prev.disabled = (i <= 0);
@@ -379,7 +300,6 @@
       updateButtons();
       setUrlDayParam(sel.value);
       onChange(sel.value);
-      fixChartsMobile();
     });
 
     if (prev) prev.addEventListener("click", () => {
@@ -396,14 +316,94 @@
     return sel.value;
   }
 
+  // ===== Charts =====
+  function buildChartsForDay(allRows, dayKey) {
+    const canvasT = $("chartTemp");
+    const canvasH = $("chartHum");
+    const canvasW = $("chartWind");
+
+    const { start, end } = startEndMsFromDayKey(dayKey);
+    const rDay = allRows.filter(r => r.ts >= start && r.ts <= end);
+
+    // Debug útil
+    dbg(
+      `debug: Chart=${typeof window.Chart}\n` +
+      `UI daySelect=${!!$("daySelect")} dayPrev=${!!$("dayPrev")} dayNext=${!!$("dayNext")}\n` +
+      `canvas: T=${!!canvasT} H=${!!canvasH} W=${!!canvasW}\n` +
+      `day=${dayKey} punts=${rDay.length}`
+    );
+
+    const labels = rDay.map(r => fmtTime(r.ts));
+    const temp = rDay.map(r => r.temp_c);
+    const hum  = rDay.map(r => r.hum_pct);
+    const wind = rDay.map(r => r.wind_kmh);
+    const gust = rDay.map(r => r.gust_kmh);
+
+    const dayTxt = fmtDayLong(dayKey);
+    if ($("chartTempTitle")) $("chartTempTitle").textContent = `Temperatura · ${dayTxt}`;
+    if ($("chartHumTitle"))  $("chartHumTitle").textContent  = `Humitat · ${dayTxt}`;
+    if ($("chartWindTitle")) $("chartWindTitle").textContent = `Vent i ratxa · ${dayTxt}`;
+
+    const dayLabel = $("dayLabel");
+    if (dayLabel) dayLabel.textContent = rDay.length ? `${dayTxt} · ${rDay.length} punts` : `${dayTxt} · sense dades`;
+
+    if (window.__chartTemp) window.__chartTemp.destroy();
+    if (window.__chartHum) window.__chartHum.destroy();
+    if (window.__chartWind) window.__chartWind.destroy();
+
+    if (typeof window.Chart === "undefined") return; // no hi ha Chart.js
+
+    const commonOpts = {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: "nearest", intersect: false, axis: "x" },
+      plugins: { legend: { display: false } },
+      scales: { x: { type: "category", ticks: { maxTicksLimit: 10 } } }
+    };
+
+    if (canvasT) {
+      window.__chartTemp = new Chart(canvasT, {
+        type: "line",
+        data: { labels, datasets: [{ data: temp, tension: 0.25, pointRadius: 2, borderWidth: 2, fill: false }] },
+        options: commonOpts
+      });
+    }
+
+    if (canvasH) {
+      window.__chartHum = new Chart(canvasH, {
+        type: "line",
+        data: { labels, datasets: [{ data: hum, tension: 0.25, pointRadius: 2, borderWidth: 2, fill: false }] },
+        options: { ...commonOpts, scales: { ...commonOpts.scales, y: { min: 0, max: 100 } } }
+      });
+    }
+
+    if (canvasW) {
+      window.__chartWind = new Chart(canvasW, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            { data: gust, tension: 0.25, pointRadius: 2, borderWidth: 2, borderDash: [6,4], fill: false },
+            { data: wind, tension: 0.25, pointRadius: 2, borderWidth: 2.5, fill: true }
+          ]
+        },
+        options: commonOpts
+      });
+    }
+  }
+
+  // ===== Main =====
   async function main() {
     if ($("year")) $("year").textContent = String(new Date().getFullYear());
 
-    // ✅ IMPORTANT: assegura UI abans d'intentar configurar-la
-    ensureDayUI();
+    const uiOk = ensureDayUI();
 
-    window.addEventListener("orientationchange", () => fixChartsMobile());
-    window.addEventListener("pageshow", () => fixChartsMobile());
+    // Debug inicial
+    dbg(
+      `debug: Chart=${typeof window.Chart}\n` +
+      `UI created=${uiOk} main.grid=${!!document.querySelector("main.grid")}\n` +
+      `path=${location.pathname}`
+    );
 
     // 1) HISTORY
     let rawHist = [];
@@ -431,10 +431,9 @@
     let hb = null;
     try { hb = await fetchJson(`${HEARTBEAT_URL}?t=${Date.now()}`); } catch {}
 
-    // 4) “Actual”
+    // 4) Actual
     let actualRow = null;
     let sourceTag = "històric";
-
     if (current) { actualRow = current; sourceTag = "dades en temps real"; }
     else if (historyRows.length) { actualRow = historyRows[historyRows.length - 1]; sourceTag = "últim registre disponible"; }
 
@@ -448,7 +447,7 @@
       renderStatus(null, hb);
     }
 
-    // 5) Rows per gràfiques
+    // 5) Merge per charts
     const rowsForCharts = historyRows.slice();
     if (current && Number.isFinite(current.ts)) {
       const lastHistTs = rowsForCharts.length ? rowsForCharts[rowsForCharts.length - 1].ts : null;
@@ -459,7 +458,7 @@
     for (const r of rowsForCharts) byTs.set(r.ts, r);
     const mergedCharts = Array.from(byTs.values()).sort((a, b) => a.ts - b.ts);
 
-    // 6) Selector de dies
+    // 6) Selector dies
     const dayKeys = buildDayListFromRows(mergedCharts, current);
     const todayKey = dayKeyFromTs(Date.now());
     const initial = getUrlDayParam() || todayKey;
@@ -468,14 +467,12 @@
       buildChartsForDay(mergedCharts, dayKey);
     });
 
-    if (selected) {
-      buildChartsForDay(mergedCharts, selected);
-      fixChartsMobile();
-    }
+    if (selected) buildChartsForDay(mergedCharts, selected);
   }
 
   main().catch(err => {
     console.error(err);
+    dbg(`ERROR:\n${String(err)}`);
     if ($("lastUpdated")) $("lastUpdated").textContent = "Error carregant dades.";
     if ($("statusLine")) $("statusLine").textContent = String(err);
     setSourceLine("Origen: error");
