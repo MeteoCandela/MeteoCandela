@@ -107,14 +107,15 @@
   </script>
 
   <!-- Icons -->
-  <link rel="icon" type="image/png" href="/favicon.png">
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest">
 
-  <!-- CSS / JS -->
-  <link rel="stylesheet" href="style.css?v=2026-02-01-1">
+  <!-- CSS / JS (PUJA el número quan facis canvis!) -->
+  <link rel="stylesheet" href="style.css?v=2026-02-01-99">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script defer src="app.js?v=2026-02-01-1"></script>
+  <script defer src="app.js?v=2026-02-01-99"></script>
 </head>
 
 <body>
@@ -132,13 +133,14 @@
     <div class="hero__overlay"></div>
     <div class="hero__content">
       <h1>MeteoCandela · Valls</h1>
-      <p id="lastUpdated">Carregant…</p>
-      <p id="statusLine" class="status">—</p>
+      <p id="lastUpdated" aria-live="polite">Carregant…</p>
+      <p id="statusLine" class="status" aria-live="polite">—</p>
     </div>
   </header>
 
   <main class="grid">
 
+    <!-- ACTUAL -->
     <section class="card">
       <h2>Actual</h2>
       <div id="sourceLine" class="source">—</div>
@@ -158,18 +160,40 @@
       </div>
     </section>
 
-    <section class="card span2 chart-box">
-      <h2>Temperatura</h2>
+    <!-- SELECTOR DE DIA (NECESSARI pel JS) -->
+    <section class="card span2">
+      <div class="daybar">
+        <div class="daybar__left">
+          <div class="daybar__title">Gràfiques del dia</div>
+          <div id="dayLabel" class="daybar__subtitle">—</div>
+        </div>
+
+        <div class="daybar__right">
+          <button id="dayPrev" class="btn" type="button" aria-label="Dia anterior">◀</button>
+
+          <label class="sr-only" for="daySelect">Selecciona dia</label>
+          <select id="daySelect" class="select" aria-label="Selecciona dia">
+            <option>Carregant…</option>
+          </select>
+
+          <button id="dayNext" class="btn" type="button" aria-label="Dia següent">▶</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- GRÀFIQUES -->
+    <section class="card chart-box">
+      <h2 id="chartTempTitle">Temperatura</h2>
       <canvas id="chartTemp"></canvas>
     </section>
 
     <section class="card chart-box">
-      <h2>Humitat</h2>
+      <h2 id="chartHumTitle">Humitat</h2>
       <canvas id="chartHum"></canvas>
     </section>
 
     <section class="card chart-box span2">
-      <h2>Vent i ratxa</h2>
+      <h2 id="chartWindTitle">Vent i ratxa</h2>
       <canvas id="chartWind"></canvas>
     </section>
 
