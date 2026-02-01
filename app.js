@@ -63,6 +63,27 @@
     return { min: Math.min(...v), max: Math.max(...v) };
   }
 
+  // ✅ NOU: índex de mínim/màxim i arrays “només un punt”
+  function minMaxIndex(arr) {
+    let idxMin = -1, idxMax = -1;
+    let vMin = null, vMax = null;
+
+    for (let i = 0; i < arr.length; i++) {
+      const v = arr[i];
+      if (v == null || !Number.isFinite(Number(v))) continue;
+      const n = Number(v);
+
+      if (vMin == null || n < vMin) { vMin = n; idxMin = i; }
+      if (vMax == null || n > vMax) { vMax = n; idxMax = i; }
+    }
+    return { idxMin, idxMax, vMin, vMax };
+  }
+
+  function onlyPoint(arr, idx) {
+    if (idx < 0) return arr.map(() => null);
+    return arr.map((v, i) => (i === idx ? v : null));
+  }
+
   function degToWindCatalan(deg) {
     if (deg == null || Number.isNaN(Number(deg))) return "—";
     const d = ((Number(deg) % 360) + 360) % 360;
@@ -302,10 +323,16 @@
 
     const labels = rDay.map(r => fmtTime(r.ts));
 
-    const temp = rDay.map(r => r.temp_c);
+    const tempRaw = rDay.map(r => r.temp_c);
     const hum  = rDay.map(r => r.hum_pct);
     const wind = rDay.map(r => r.wind_kmh);
     const gust = rDay.map(r => r.gust_kmh);
+
+    // ✅ temperatura en format numèric/null
+    const temp = tempRaw.map(v => (Number.isFinite(Number(v)) ? Number(v) : null));
+    const { idxMin, idxMax } = minMaxIndex(temp);
+    const tempMinOnly = onlyPoint(temp, idxMin);
+    const tempMaxOnly = onlyPoint(temp, idxMax);
 
     const dayTxt = fmtDayLong(dayKey);
 
@@ -314,11 +341,12 @@
     if ($("chartHumTitle"))  $("chartHumTitle").textContent  = `Humitat (%) · ${dayTxt}`;
     if ($("chartWindTitle")) $("chartWindTitle").textContent = `Vent i ratxa (km/h) · ${dayTxt}`;
 
-    dayLabel.textContent =
-  rDay.length
-    ? dayTxt
-    : `${dayTxt} · sense dades`;
-    
+    // ✅ BUGFIX: dayLabel no estava declarat
+    const dayLabel = $("dayLabel");
+    if (dayLabel) {
+      dayLabel.textContent = rDay.length ? dayTxt : `${dayTxt} · sense dades`;
+    }
+
     if (window.__chartTemp) window.__chartTemp.destroy();
     if (window.__chartHum) window.__chartHum.destroy();
     if (window.__chartWind) window.__chartWind.destroy();
@@ -356,24 +384,59 @@
       scales: { x: { type: "category", ticks: { maxTicksLimit: 10 } } }
     };
 
-    // TEMP
+    // ✅ TEMP amb punts MÍN i MÀX (només aquí fem el canvi)
     window.__chartTemp = new Chart($("chartTemp"), {
       type: "line",
       data: {
         labels,
-        datasets: [{
-          data: temp,
-          tension: 0.25,
-          pointRadius: 2,
-          pointHoverRadius: 7,
-          pointHitRadius: 12,
-          borderWidth: 2,
-          fill: false
-        }]
+        datasets: [
+          // Sèrie principal
+          {
+            label: "", // buit perquè el tooltip no mostri prefix per la línia normal
+            data: temp,
+            tension: 0.25,
+            pointRadius: 2,
+            pointHoverRadius: 7,
+            pointHitRadius: 12,
+            borderWidth: 2,
+            fill: false
+          },
+
+          // Punt MÍN
+          {
+            label: "Mín",
+            data: tempMinOnly,
+            showLine: false,
+            pointRadius: 6,
+            pointHoverRadius: 8,
+            pointHitRadius: 14,
+            borderWidth: 0,
+            pointStyle: "triangle"
+          },
+
+          // Punt MÀX
+          {
+            label: "Màx",
+            data: tempMaxOnly,
+            showLine: false,
+            pointRadius: 6,
+            pointHoverRadius: 8,
+            pointHitRadius: 14,
+            borderWidth: 0,
+            pointStyle: "rectRot"
+          }
+        ]
       },
       options: {
         ...commonBase,
-        plugins: { legend: { display: false }, tooltip: commonTooltip("°C") }
+        plugins: {
+          legend: { display: false },
+          tooltip: commonTooltip("°C", (ctx) => {
+            // si és el punt especial, posa “Mín” o “Màx”; si no, res.
+            const l = (ctx.dataset?.label || "").trim();
+            return (l === "Mín" || l === "Màx") ? l : "";
+          })
+        }
       }
     });
 
