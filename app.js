@@ -274,9 +274,9 @@
     $("lastUpdated").textContent = `Actualitzat: ${fmtDate(last.ts)}`;
 
     // Línia “font”
-    if (sourceTag === "realtime") setSourceLine("Origen: temps real (current.json)");
-    else if (sourceTag === "fallback") setSourceLine("Origen: fallback (últim punt d’històric)");
-    else setSourceLine("Origen: històric (sense current.json)");
+    if (sourceTag === "realtime") setSourceLine("Origen: dades en temps real");
+    else if (sourceTag === "fallback") setSourceLine("Origen: últim registre disponible");
+    else setSourceLine("Origen: històric");
   }
 
   function renderStatus(lastTsMs, hb) {
