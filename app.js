@@ -136,6 +136,29 @@
     return await res.json();
   }
 
+  // ===== FIX Chart.js en mòbil (evita canvas blanc) =====
+  function fixChartsMobile() {
+    // Alguns navegadors (Android) creen charts quan el contenidor encara no té layout final.
+    // Fem resize/update després d’un parell de ticks del render.
+    const doFix = () => {
+      const charts = [window.__chartTemp, window.__chartHum, window.__chartWind].filter(Boolean);
+      for (const c of charts) {
+        try {
+          c.resize();
+          c.update();
+        } catch {}
+      }
+    };
+
+    // 1) després del proper frame
+    requestAnimationFrame(() => {
+      doFix();
+      // 2) i també amb una mica de retard (clau a Android)
+      setTimeout(doFix, 200);
+    });
+  }
+  // ===========================================
+
   // ===== Charts =====
   function buildChartsForDay(allRows, dayKey) {
     const { start, end } = startEndMsFromDayKey(dayKey);
@@ -257,6 +280,9 @@
         dayLabel.textContent = `${dayTxt} · sense dades`;
       }
     }
+
+    // ✅ FIX: força resize/update després de crear (evita canvas blanc a mòbil)
+    fixChartsMobile();
   }
 
   function setSourceLine(txt) {
@@ -444,6 +470,10 @@
   async function main() {
     if ($("year")) $("year").textContent = String(new Date().getFullYear());
 
+    // Re-fix en casos típics de mòbil (back/forward cache, gir de pantalla)
+    window.addEventListener("orientationchange", () => fixChartsMobile());
+    window.addEventListener("pageshow", () => fixChartsMobile());
+
     // 1) HISTORY
     let rawHist = [];
     try {
@@ -515,10 +545,15 @@
 
     const selected = setupDaySelector(dayKeys, initial, (dayKey) => {
       buildChartsForDay(mergedCharts, dayKey);
+      // ✅ extra: torna a forçar el fix al canvi de dia (mòbil)
+      fixChartsMobile();
     });
 
     // primera render
-    if (selected) buildChartsForDay(mergedCharts, selected);
+    if (selected) {
+      buildChartsForDay(mergedCharts, selected);
+      fixChartsMobile();
+    }
   }
 
   main().catch(err => {
