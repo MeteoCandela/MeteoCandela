@@ -314,9 +314,11 @@
     if ($("chartHumTitle"))  $("chartHumTitle").textContent  = `Humitat (%) · ${dayTxt}`;
     if ($("chartWindTitle")) $("chartWindTitle").textContent = `Vent i ratxa (km/h) · ${dayTxt}`;
 
-    const dayLabel = $("dayLabel");
-    if (dayLabel) dayLabel.textContent = rDay.length ? `${dayTxt} · ${rDay.length} punts` : `${dayTxt} · sense dades`;
-
+    dayLabel.textContent =
+  rDay.length
+    ? dayTxt
+    : `${dayTxt} · sense dades`;
+    
     if (window.__chartTemp) window.__chartTemp.destroy();
     if (window.__chartHum) window.__chartHum.destroy();
     if (window.__chartWind) window.__chartWind.destroy();
