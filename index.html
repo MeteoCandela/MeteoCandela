@@ -8,6 +8,7 @@
   <!-- cache-buster CSS -->
   <link rel="stylesheet" href="style.css?v=2026-01-31-3">
 
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <!-- cache-buster JS -->
@@ -15,6 +16,8 @@
 </head>
 
 <body>
+
+  <!-- ================= HEADER ================= -->
   <header class="hero">
     <div class="hero__overlay"></div>
 
@@ -23,16 +26,18 @@
 
       <p id="lastUpdated" aria-live="polite">Carregant…</p>
       <p id="statusLine" class="status" aria-live="polite">—</p>
+
+      <!-- ✅ ORIGEN DE LES DADES -->
+      <p id="sourceLine" class="source" aria-live="polite">—</p>
     </div>
   </header>
 
+  <!-- ================= CONTINGUT ================= -->
   <main class="grid">
-    <!-- ACTUAL -->
+
+    <!-- ===== ACTUAL ===== -->
     <section class="card">
       <h2>Actual</h2>
-
-      <!-- NOU: línia d'origen/font (history / realtime / fallback) -->
-      <div id="sourceLine" class="source">—</div>
 
       <div class="kpis">
         <div class="kpi">
@@ -64,27 +69,30 @@
       </div>
     </section>
 
-    <!-- TEMPERATURA 24H -->
+    <!-- ===== TEMPERATURA ===== -->
     <section class="card chart-box">
-      <h2>Temperatura (24h)</h2>
+      <h2>Temperatura (24 h)</h2>
       <canvas id="chartTemp"></canvas>
     </section>
 
-    <!-- HUMITAT 24H -->
+    <!-- ===== HUMITAT ===== -->
     <section class="card chart-box">
-      <h2>Humitat (24h)</h2>
+      <h2>Humitat (24 h)</h2>
       <canvas id="chartHum"></canvas>
     </section>
 
-    <!-- VENT + RATXA 24H -->
+    <!-- ===== VENT ===== -->
     <section class="card chart-box">
-      <h2>Vent i ratxa (24h)</h2>
+      <h2>Vent i ratxa (24 h)</h2>
       <canvas id="chartWind"></canvas>
     </section>
+
   </main>
 
+  <!-- ================= FOOTER ================= -->
   <footer class="footer">
     <span>© <span id="year"></span> Meteo Valls - Candela</span>
   </footer>
+
 </body>
 </html>
