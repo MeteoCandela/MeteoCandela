@@ -384,61 +384,94 @@
       scales: { x: { type: "category", ticks: { maxTicksLimit: 10 } } }
     };
 
-    // ✅ TEMP amb punts MÍN i MÀX (només aquí fem el canvi)
-    window.__chartTemp = new Chart($("chartTemp"), {
-      type: "line",
-      data: {
-        labels,
-        datasets: [
-          // Sèrie principal
-          {
-            label: "", // buit perquè el tooltip no mostri prefix per la línia normal
-            data: temp,
-            tension: 0.25,
-            pointRadius: 2,
-            pointHoverRadius: 7,
-            pointHitRadius: 12,
-            borderWidth: 2,
-            fill: false
-          },
+// ✅ TEMP amb línies MIN/MAX + etiqueta (Opció 1 clara)
+const { vMin, vMax } = minMax(temp);
 
-          // Punt MÍN
-          {
-            label: "Mín",
-            data: tempMinOnly,
-            showLine: false,
-            pointRadius: 6,
-            pointHoverRadius: 8,
-            pointHitRadius: 14,
-            borderWidth: 0,
-            pointStyle: "triangle"
-          },
-
-          // Punt MÀX
-          {
-            label: "Màx",
-            data: tempMaxOnly,
-            showLine: false,
-            pointRadius: 6,
-            pointHoverRadius: 8,
-            pointHitRadius: 14,
-            borderWidth: 0,
-            pointStyle: "rectRot"
-          }
-        ]
+window.__chartTemp = new Chart($("chartTemp"), {
+  type: "line",
+  data: {
+    labels,
+    datasets: [
+      // Sèrie principal
+      {
+        label: "",
+        data: temp,
+        tension: 0.25,
+        pointRadius: 2,
+        pointHoverRadius: 7,
+        pointHitRadius: 12,
+        borderWidth: 2,
+        fill: false
       },
-      options: {
-        ...commonBase,
-        plugins: {
-          legend: { display: false },
-          tooltip: commonTooltip("°C", (ctx) => {
-            // si és el punt especial, posa “Mín” o “Màx”; si no, res.
-            const l = (ctx.dataset?.label || "").trim();
-            return (l === "Mín" || l === "Màx") ? l : "";
-          })
+
+      // Línia MIN
+      ...(vMin == null ? [] : [{
+        label: "Mín",
+        data: labels.map(() => vMin),
+        tension: 0,
+        pointRadius: 0,
+        borderWidth: 1.5,
+        borderDash: [4, 4],
+        fill: false
+      }]),
+
+      // Línia MAX
+      ...(vMax == null ? [] : [{
+        label: "Màx",
+        data: labels.map(() => vMax),
+        tension: 0,
+        pointRadius: 0,
+        borderWidth: 1.5,
+        borderDash: [4, 4],
+        fill: false
+      }]),
+    ]
+  },
+  options: {
+    ...commonBase,
+    plugins: {
+      legend: { display: false },
+      tooltip: commonTooltip("°C", (ctx) => {
+        const l = (ctx.dataset?.label || "").trim();
+        // si estàs sobre les línies, que ho digui
+        if (l === "Mín" || l === "Màx") return l;
+        return "";
+      })
+    }
+  },
+  plugins: [
+    // ✅ Plugin local per etiquetar Mín/Màx a la dreta
+    {
+      id: "minMaxLabels",
+      afterDatasetsDraw(chart) {
+        if (vMin == null && vMax == null) return;
+
+        const { ctx, chartArea, scales } = chart;
+        const y = scales?.y;
+        if (!y) return;
+
+        ctx.save();
+        ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
+
+        const xRight = chartArea.right - 6;
+
+        if (vMax != null) {
+          const yMax = y.getPixelForValue(vMax);
+          ctx.fillText(`Màx ${Number(vMax).toFixed(1)} °C`, xRight, yMax);
         }
+
+        if (vMin != null) {
+          const yMin = y.getPixelForValue(vMin);
+          ctx.fillText(`Mín ${Number(vMin).toFixed(1)} °C`, xRight, yMin);
+        }
+
+        ctx.restore();
       }
-    });
+    }
+  ]
+});
 
     // HUM
     window.__chartHum = new Chart($("chartHum"), {
