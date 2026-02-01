@@ -13,25 +13,49 @@
   <!-- cache-buster JS -->
   <script defer src="app.js?v=2026-01-31-3"></script>
 </head>
+
 <body>
   <header class="hero">
     <div class="hero__overlay"></div>
+
     <div class="hero__content">
       <h1>Meteo Valls - Candela</h1>
-      <p id="lastUpdated">Carregant…</p>
-      <p id="statusLine" class="status">—</p>
+
+      <p id="lastUpdated" aria-live="polite">Carregant…</p>
+      <p id="statusLine" class="status" aria-live="polite">—</p>
     </div>
   </header>
 
   <main class="grid">
+    <!-- ACTUAL -->
     <section class="card">
       <h2>Actual</h2>
+
+      <!-- NOU: línia d'origen/font (history / realtime / fallback) -->
+      <div id="sourceLine" class="source">—</div>
+
       <div class="kpis">
-        <div class="kpi"><div class="kpi__v" id="temp">—</div><div class="kpi__l">Temperatura (°C)</div></div>
-        <div class="kpi"><div class="kpi__v" id="hum">—</div><div class="kpi__l">Humitat (%)</div></div>
-        <div class="kpi"><div class="kpi__v" id="wind">—</div><div class="kpi__l">Vent (km/h)</div></div>
-        <div class="kpi"><div class="kpi__v" id="rainDay">—</div><div class="kpi__l">Pluja dia (mm)</div></div>
+        <div class="kpi">
+          <div class="kpi__v" id="temp">—</div>
+          <div class="kpi__l">Temperatura (°C)</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi__v" id="hum">—</div>
+          <div class="kpi__l">Humitat (%)</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi__v" id="wind">—</div>
+          <div class="kpi__l">Vent (km/h)</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi__v" id="rainDay">—</div>
+          <div class="kpi__l">Pluja dia (mm)</div>
+        </div>
       </div>
+
       <div class="subs">
         <div id="tempSub">—</div>
         <div id="tempMinMax">—</div>
@@ -40,17 +64,19 @@
       </div>
     </section>
 
+    <!-- TEMPERATURA 24H -->
     <section class="card chart-box">
       <h2>Temperatura (24h)</h2>
       <canvas id="chartTemp"></canvas>
     </section>
 
+    <!-- HUMITAT 24H -->
     <section class="card chart-box">
       <h2>Humitat (24h)</h2>
       <canvas id="chartHum"></canvas>
     </section>
 
-    <!-- NOVA: Vent + Ratxa -->
+    <!-- VENT + RATXA 24H -->
     <section class="card chart-box">
       <h2>Vent i ratxa (24h)</h2>
       <canvas id="chartWind"></canvas>
