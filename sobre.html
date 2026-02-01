@@ -5,142 +5,108 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
 
   <title>Sobre l’estació · MeteoCandela (Barri de la Candela, Valls)</title>
-  <meta name="description" content="Context i metodologia de l’estació MeteoCandela al Barri de la Candela (Valls, Alt Camp). Ubicació aproximada, actualització, limitacions i com interpretar les dades.">
+  <meta name="description" content="Informació sobre l’estació meteorològica MeteoCandela, situada al Barri de la Candela de Valls (Alt Camp): ubicació, criteris de mesura i limitacions.">
   <link rel="canonical" href="https://meteocandela.cat/sobre.html">
 
   <meta name="robots" content="index,follow">
   <meta name="theme-color" content="#0b1220">
 
   <!-- Open Graph -->
-  <meta property="og:type" content="website">
+  <meta property="og:type" content="article">
   <meta property="og:site_name" content="MeteoCandela">
   <meta property="og:locale" content="ca_ES">
-  <meta property="og:title" content="Sobre l’estació · MeteoCandela (Barri de la Candela, Valls)">
-  <meta property="og:description" content="Context local del Barri de la Candela i criteris de mesura: actualització, sensors i limitacions.">
+  <meta property="og:title" content="Sobre l’estació · MeteoCandela (Barri de la Candela)">
+  <meta property="og:description" content="Context local i informació de l’estació meteorològica MeteoCandela al Barri de la Candela de Valls.">
   <meta property="og:url" content="https://meteocandela.cat/sobre.html">
   <meta property="og:image" content="https://meteocandela.cat/og-image.png">
 
-  <!-- Icons -->
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-  <link rel="manifest" href="/site.webmanifest">
-
-  <!-- CSS: reutilitza el mateix -->
-  <link rel="stylesheet" href="style.css?v=2026-02-01-99">
+  <link rel="stylesheet" href="style.css?v=2026-02-02-01">
 </head>
 
 <body>
 
+  <!-- HERO -->
   <header class="hero hero--small">
     <div class="hero__overlay"></div>
     <div class="hero__content">
       <h1>Sobre l’estació</h1>
-      <p class="status">MeteoCandela · Barri de la Candela (Valls, Alt Camp)</p>
-
-      <div style="margin-top:10px;">
-        <a class="btn" href="/" aria-label="Tornar a l'inici">← Tornar</a>
-      </div>
+      <p>MeteoCandela · Barri de la Candela (Valls)</p>
     </div>
   </header>
 
   <main class="grid">
 
+    <!-- CONTEXT LOCAL -->
     <section class="card span2">
-      <h2>Context local</h2>
+      <h2>Context i ubicació</h2>
       <p>
-        <strong>MeteoCandela</strong> és una estació meteorològica automàtica situada a <strong>Valls</strong> (comarca de l’Alt Camp, Tarragona),
-        en un entorn urbà del <strong>Barri de la Candela</strong>.
+        <strong>MeteoCandela</strong> és una estació meteorològica automàtica situada al
+        <strong>Barri de la Candela</strong>, dins del nucli urbà de
+        <strong>Valls (Alt Camp, Tarragona)</strong>.
       </p>
       <p>
-        L’objectiu és oferir una lectura <strong>representativa del microclima urbà</strong> del sector: variació de temperatura i humitat,
-        episodis de vent, ratxes i pluja, amb gràfiques diàries fàcils d’interpretar.
-      </p>
-      <p class="muted" style="margin-top:10px;">
-        Nota: per privacitat i seguretat, la ubicació exacta no es publica. El context “Barri de la Candela” és orientatiu a nivell de zona.
+        La ubicació reflecteix un entorn urbà residencial típic de la ciutat, amb influència
+        de l’orografia propera i de la circulació atmosfèrica pròpia del Camp de Tarragona.
       </p>
     </section>
 
+    <!-- OBJECTIU -->
     <section class="card">
-      <h2>Què hi mesurem</h2>
-      <ul class="list">
-        <li><strong>Temperatura</strong> i <strong>humitat relativa</strong>.</li>
-        <li><strong>Vent mitjà</strong> i <strong>ratxa màxima</strong> (punts de vent).</li>
-        <li><strong>Pluja diària</strong> i <strong>intensitat</strong> (mm/h).</li>
-      </ul>
-      <p class="muted" style="margin-top:10px;">
-        Les dades es mostren en temps real i també en sèries del dia (gràfiques).
+      <h2>Objectiu del projecte</h2>
+      <p>
+        L’objectiu de MeteoCandela és oferir dades meteorològiques
+        <strong>clares, accessibles i en temps gairebé real</strong>
+        per a ús informatiu, divulgatiu i de seguiment local.
+      </p>
+      <p>
+        El projecte neix amb vocació personal i comunitària, sense finalitat comercial.
       </p>
     </section>
 
+    <!-- QUÈ MESURA -->
     <section class="card">
-      <h2>Actualització i latència</h2>
-      <p>
-        Les actualitzacions són habitualment <strong>cada ~5 minuts</strong> (segons recepció del sensor i connexió).
-        En episodis puntuals poden aparèixer retards o buits.
-      </p>
-      <p class="muted">
-        Quan hi ha latència, al capdamunt de la pàgina principal veuràs “Dada: fa X min · Workflow: fa X min”.
-      </p>
-    </section>
-
-    <section class="card span2">
-      <h2>Limitacions (important)</h2>
-      <p>
-        Com qualsevol estació en entorn urbà, hi ha factors que poden afectar les mesures:
-        radiació/ombra, reescalfament per superfícies, turbulència entre edificis, i obstacles al vent.
-      </p>
+      <h2>Variables mesurades</h2>
       <ul class="list">
-        <li>El <strong>vent</strong> pot quedar infravalorat si hi ha apantallament.</li>
-        <li>La <strong>temperatura</strong> pot reflectir l’efecte d’illa de calor urbana (especialment de nit).</li>
-        <li>La <strong>pluja</strong> pot variar dins el mateix barri segons intensitat i vent.</li>
+        <li>Temperatura de l’aire</li>
+        <li>Humitat relativa</li>
+        <li>Vent mitjà i direcció</li>
+        <li>Ratxa màxima de vent</li>
+        <li>Pluja acumulada diària</li>
+        <li>Intensitat de precipitació</li>
       </ul>
     </section>
 
-    <!-- FAQ visible per usuaris (col·lapsable) -->
-    <section class="card span2" id="faq">
-      <h2>Preguntes freqüents</h2>
-
-      <details>
-        <summary>On és exactament l’estació?</summary>
-        <p>
-          Es troba al <strong>Barri de la Candela</strong> (Valls). No publiquem el punt exacte per privacitat,
-          però la zona és representativa del microclima urbà del sector.
-        </p>
-      </details>
-
-      <details>
-        <summary>Les dades són oficials?</summary>
-        <p>
-          No. Són dades d’una estació privada amb finalitat informativa i divulgativa.
-          Poden diferir d’estacions oficials per ubicació, entorn i instrumentació.
-        </p>
-      </details>
-
-      <details>
-        <summary>Per què a vegades falten dades?</summary>
-        <p>
-          Pot ser per interrupcions temporals de connexió, manteniment, pèrdues puntuals de senyal o actualitzacions del sistema.
-          Normalment es resol en pocs minuts.
-        </p>
-      </details>
-
-      <details>
-        <summary>Quina diferència hi ha entre vent i ratxa?</summary>
-        <p>
-          El <strong>vent</strong> és una velocitat més “mitjana” (en un interval curt), mentre que la <strong>ratxa</strong>
-          és el pic màxim puntual. En dies variables, la ratxa pot ser força superior al vent mitjà.
-        </p>
-      </details>
-
+    <!-- ACTUALITZACIÓ -->
+    <section class="card span2">
+      <h2>Actualització de dades</h2>
+      <p>
+        Les dades s’actualitzen aproximadament cada <strong>5 minuts</strong>,
+        en funció de la comunicació amb els sensors i la disponibilitat de connexió.
+      </p>
+      <p>
+        Les gràfiques diàries permeten consultar l’evolució de cada variable al llarg del dia,
+        així com dies anteriors disponibles a l’històric.
+      </p>
     </section>
 
-    <!-- SEO curt (no visible) -->
-    <section class="sr-only">
-      <h2>MeteoCandela al Barri de la Candela (Valls)</h2>
+    <!-- LIMITACIONS -->
+    <section class="card span2">
+      <h2>Limitacions i consideracions</h2>
       <p>
-        Estació meteorològica automàtica a Valls (Alt Camp) amb dades en temps real i gràfiques diàries.
-        Context local del Barri de la Candela, limitacions i interpretació de mesures.
+        Les dades de MeteoCandela <strong>no tenen caràcter oficial</strong>.
+        Provenen d’una estació meteorològica privada i poden diferir
+        de les estacions professionals o de xarxes oficials.
+      </p>
+      <p>
+        Factors com l’entorn urbà, edificacions properes o episodis de manteniment
+        poden influir puntualment en les mesures.
+      </p>
+    </section>
+
+    <!-- ENLLAÇ DE TORNADA -->
+    <section class="card span2" style="text-align:center">
+      <p>
+        <a href="/" aria-label="Tornar a la pàgina principal">← Tornar a MeteoCandela</a>
       </p>
     </section>
 
@@ -148,25 +114,10 @@
 
   <footer class="footer">
     <span>© <span id="year"></span> MeteoCandela</span>
-    <span style="margin-left:12px;">
-      <a href="/" style="color:inherit; text-decoration:underline;">Inici</a>
-    </span>
   </footer>
 
   <script>
-    // any: any - set year + FAQ "només una oberta"
-    document.getElementById("year").textContent = String(new Date().getFullYear());
-
-    const faq = document.getElementById("faq");
-    if (faq) {
-      const items = Array.from(faq.querySelectorAll("details"));
-      items.forEach((d) => {
-        d.addEventListener("toggle", () => {
-          if (!d.open) return;
-          items.forEach((other) => { if (other !== d) other.open = false; });
-        });
-      });
-    }
+    document.getElementById("year").textContent = new Date().getFullYear();
   </script>
 
 </body>
