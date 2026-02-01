@@ -26,9 +26,7 @@
 
   function fmtTime(tsMs) {
     const d = new Date(tsMs);
-    return new Intl.DateTimeFormat("ca-ES", {
-      hour: "2-digit", minute: "2-digit"
-    }).format(d);
+    return new Intl.DateTimeFormat("ca-ES", { hour: "2-digit", minute: "2-digit" }).format(d);
   }
 
   // ===== utilitats mín/màx del dia =====
@@ -66,7 +64,6 @@
     if (d >= 202.5 && d < 247.5)  return "SW – Garbí";
     if (d >= 247.5 && d < 292.5)  return "W – Ponent";
     if (d >= 292.5 && d < 337.5)  return "NW – Mestral";
-
     return "—";
   }
 
@@ -115,21 +112,25 @@
       wind_dir: (r.wind_dir ?? r.wind_direction ?? null),
       rain_day_mm: rainDay != null ? Number(rainDay) : 0,
       rain_rate_mmh: rainRate != null ? Number(rainRate) : 0,
-      source: r.source ?? null,
     };
   }
 
-  async function fetchJson(url) {
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) throw new Error(`${res.status} ${res.statusText} @ ${url}`);
-    return await res.json();
+  // fetch amb timeout (evita quedar-se penjat)
+  async function fetchJson(url, timeoutMs = 8000) {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { cache: "no-store", signal: ctrl.signal });
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText} @ ${url}`);
+      return await res.json();
+    } finally {
+      clearTimeout(t);
+    }
   }
 
-  // IMPORTANT: x="category" (sense adapter de temps)
   function buildCharts(rows) {
-    // ✅ millor: usar el ts més recent disponible (evita gràfiques “d’ahir” si history va lent)
+    // ✅ usar el ts més recent disponible (evita “d’ahir” si history va lent)
     const now = rows.length ? rows[rows.length - 1].ts : Date.now();
-
     const last24hMs = 24 * 60 * 60 * 1000;
     const r24 = rows.filter(r => r.ts >= (now - last24hMs));
 
@@ -167,34 +168,41 @@
     if (window.__chartHum) window.__chartHum.destroy();
     if (window.__chartWind) window.__chartWind.destroy();
 
-    window.__chartTemp = new Chart($("chartTemp"), {
-      type: "line",
-      data: { labels, datasets: [{
-        data: temp, __unit: "°C", __prefix: "",
-        tension: 0.25, pointRadius: 2, pointHoverRadius: 7, pointHitRadius: 12,
-        borderWidth: 2, fill: false
-      }]},
-      options: commonOpts
-    });
+    const cTemp = $("chartTemp");
+    const cHum = $("chartHum");
+    const cWind = $("chartWind");
 
-    window.__chartHum = new Chart($("chartHum"), {
-      type: "line",
-      data: { labels, datasets: [{
-        data: hum, __unit: "%", __prefix: "",
-        tension: 0.25, pointRadius: 2, pointHoverRadius: 7, pointHitRadius: 12,
-        borderWidth: 2, fill: false
-      }]},
-      options: { ...commonOpts, scales: { ...commonOpts.scales, y: { min: 0, max: 100 } } }
-    });
+    if (cTemp) {
+      window.__chartTemp = new Chart(cTemp, {
+        type: "line",
+        data: { labels, datasets: [{
+          data: temp, __unit: "°C", __prefix: "",
+          tension: 0.25, pointRadius: 2, pointHoverRadius: 7, pointHitRadius: 12,
+          borderWidth: 2, fill: false
+        }]},
+        options: commonOpts
+      });
+    }
 
-    const windCanvas = $("chartWind");
-    if (windCanvas) {
-      window.__chartWind = new Chart(windCanvas, {
+    if (cHum) {
+      window.__chartHum = new Chart(cHum, {
+        type: "line",
+        data: { labels, datasets: [{
+          data: hum, __unit: "%", __prefix: "",
+          tension: 0.25, pointRadius: 2, pointHoverRadius: 7, pointHitRadius: 12,
+          borderWidth: 2, fill: false
+        }]},
+        options: { ...commonOpts, scales: { ...commonOpts.scales, y: { min: 0, max: 100 } } }
+      });
+    }
+
+    if (cWind) {
+      window.__chartWind = new Chart(cWind, {
         type: "line",
         data: {
           labels,
           datasets: [
-            // ✅ ordre invertit perquè al tooltip surti primer Ratxa i després Vent
+            // ✅ ordre invertit: tooltip primer Ratxa i després Vent
             {
               label: "ratxa",
               data: gust,
@@ -279,7 +287,6 @@
 
     $("lastUpdated").textContent = `Actualitzat: ${fmtDate(last.ts)}`;
 
-    // Línia “font”
     if (sourceTag === "realtime") setSourceLine("Origen: dades en temps real");
     else if (sourceTag === "fallback") setSourceLine("Origen: últim registre disponible");
     else setSourceLine("Origen: històric");
@@ -302,7 +309,6 @@
 
     let msg = `Dada: fa ${Math.round(dataAgeMin)} min`;
     if (hbAgeMin != null) msg += ` · Workflow: fa ${Math.round(hbAgeMin)} min`;
-
     if (dataAgeMin > 20) msg += " · ⚠️ Dades antigues (possible aturada o límit).";
     el.textContent = msg;
   }
@@ -310,13 +316,14 @@
   async function main() {
     if ($("year")) $("year").textContent = String(new Date().getFullYear());
 
-    // 1) HISTORY (per gràfics + mín/màx)
+    // 1) HISTORY (gràfics + mín/màx)
     let rawHist = [];
     try {
       const h = await fetchJson(`${HISTORY_URL}?t=${Date.now()}`);
       rawHist = Array.isArray(h) ? h : [];
-    } catch (_) {
+    } catch (e) {
       rawHist = [];
+      if ($("statusLine")) $("statusLine").textContent = `Error history: ${e.message || e}`;
     }
 
     const rows = rawHist
@@ -324,9 +331,9 @@
       .filter(r => Number.isFinite(r.ts))
       .sort((a, b) => a.ts - b.ts);
 
-    // 2) CURRENT (temps real) -> si falla, fallback a l’últim del history
+    // 2) CURRENT (temps real) -> fallback a l’últim del history
     let current = null;
-    let sourceTag = "history"; // default
+    let sourceTag = "history";
 
     try {
       const c = await fetchJson(`${CURRENT_URL}?t=${Date.now()}`);
@@ -334,8 +341,8 @@
         current = normalizeRow(c);
         if (Number.isFinite(current.ts)) sourceTag = "realtime";
       }
-    } catch (_) {
-      // ignore
+    } catch (e) {
+      // no cal espantar: simplement farem fallback
     }
 
     if (!current || !Number.isFinite(current.ts)) {
@@ -345,7 +352,7 @@
       }
     }
 
-    // 3) HEARTBEAT (workflow)
+    // 3) HEARTBEAT
     let hb = null;
     try { hb = await fetchJson(`${HEARTBEAT_URL}?t=${Date.now()}`); } catch (_) {}
 
@@ -354,36 +361,43 @@
       renderCurrent(current, rows, sourceTag);
       renderStatus(current.ts, hb);
     } else {
-      if ($("lastUpdated")) $("lastUpdated").textContent = "Sense dades.";
+      $("lastUpdated").textContent = "Sense dades.";
       setSourceLine("Origen: —");
       renderStatus(null, hb);
+      return;
     }
 
-    // 5) Gràfics (✅ history + current si cal)
+    // 5) Gràfics: history + current (si history va lent)
     const rowsForCharts = rows.slice();
 
     if (current && Number.isFinite(current.ts)) {
       const lastHistTs = rowsForCharts.length ? rowsForCharts[rowsForCharts.length - 1].ts : null;
-      if (!lastHistTs || current.ts > lastHistTs) {
-        rowsForCharts.push(current);
-      }
+      if (!lastHistTs || current.ts > lastHistTs) rowsForCharts.push(current);
     }
 
-    // Dedupe per ts i ordena
+    // Dedupe per ts + ordena
     const byTs = new Map();
     for (const r of rowsForCharts) byTs.set(r.ts, r);
     const mergedCharts = Array.from(byTs.values()).sort((a, b) => a.ts - b.ts);
 
-    if (mergedCharts.length) {
-      try { buildCharts(mergedCharts); } catch (e) { console.warn(e); }
+    // Si Chart.js no ha carregat, ho veurem clar
+    if (typeof Chart === "undefined") {
+      if ($("statusLine")) $("statusLine").textContent = "Error: Chart.js no està carregat (CDN).";
+      return;
+    }
+
+    try {
+      if (mergedCharts.length) buildCharts(mergedCharts);
+    } catch (e) {
+      if ($("statusLine")) $("statusLine").textContent = `Error gràfics: ${e.message || e}`;
+      console.warn(e);
     }
   }
 
   main().catch(err => {
     console.error(err);
     if ($("lastUpdated")) $("lastUpdated").textContent = "Error carregant dades.";
-    if ($("statusLine")) $("statusLine").textContent = String(err);
+    if ($("statusLine")) $("statusLine").textContent = `Error app: ${err.message || err}`;
     setSourceLine("Origen: error");
   });
 })();
-```0
