@@ -8,6 +8,47 @@
 
   const $ = (id) => document.getElementById(id);
 
+  // ====== CREA el selector de dia si falta al HTML ======
+  function ensureDayUI() {
+    // Si ja hi és, no fem res
+    if ($("daySelect") && $("dayPrev") && $("dayNext") && $("dayLabel")) return;
+
+    const grid = document.querySelector("main.grid");
+    if (!grid) return;
+
+    // Intentem inserir-lo després de la primera card (Actual)
+    const firstCard = grid.querySelector(".card");
+
+    const section = document.createElement("section");
+    section.className = "card span2";
+    section.innerHTML = `
+      <div class="daybar">
+        <div class="daybar__left">
+          <div class="daybar__title">Gràfiques del dia</div>
+          <div id="dayLabel" class="daybar__subtitle">—</div>
+        </div>
+
+        <div class="daybar__right">
+          <button id="dayPrev" class="btn" type="button" aria-label="Dia anterior">◀</button>
+
+          <label class="sr-only" for="daySelect">Selecciona dia</label>
+          <select id="daySelect" class="select" aria-label="Selecciona dia">
+            <option>Carregant…</option>
+          </select>
+
+          <button id="dayNext" class="btn" type="button" aria-label="Dia següent">▶</button>
+        </div>
+      </div>
+    `;
+
+    if (firstCard && firstCard.nextSibling) {
+      grid.insertBefore(section, firstCard.nextSibling);
+    } else {
+      grid.insertBefore(section, grid.firstChild);
+    }
+  }
+  // ======================================================
+
   function fToC(f) { return (f - 32) * 5 / 9; }
   function mphToKmh(mph) { return mph * 1.609344; }
 
@@ -32,7 +73,6 @@
   }
 
   function fmtDayLong(dayKey) {
-    // dayKey = YYYY-MM-DD
     const [y, m, d] = dayKey.split("-").map(Number);
     const dt = new Date(y, m - 1, d);
     return new Intl.DateTimeFormat("ca-ES", {
@@ -40,7 +80,6 @@
     }).format(dt);
   }
 
-  // ===== utilitats de dia (hora local) =====
   function dayKeyFromTs(tsMs) {
     const d = new Date(tsMs);
     const y = d.getFullYear();
@@ -63,9 +102,7 @@
     if (!v.length) return { min: null, max: null };
     return { min: Math.min(...v), max: Math.max(...v) };
   }
-  // =========================================
 
-  // Converteix graus a nom de vent en català (8 sectors) amb Garbí
   function degToWindCatalan(deg) {
     if (deg == null || Number.isNaN(Number(deg))) return "—";
     const d = ((Number(deg) % 360) + 360) % 360;
@@ -83,7 +120,6 @@
   }
 
   function normalizeRow(r) {
-    // TEMPERATURA (prioritza temp_c)
     let tempC = (r.temp_c ?? null);
     if (tempC === null || tempC === undefined) {
       if (r.temp_f != null) tempC = fToC(Number(r.temp_f));
@@ -93,27 +129,23 @@
       }
     }
 
-    // ROSADA
     let dewC = (r.dew_c ?? null);
     if (dewC === null || dewC === undefined) {
       if (r.dew_f != null) dewC = fToC(Number(r.dew_f));
     }
 
-    // VENT (prioritza km/h)
     let windKmh = (r.wind_kmh ?? null);
     if (windKmh === null || windKmh === undefined) {
       if (r.wind_mph != null) windKmh = mphToKmh(Number(r.wind_mph));
       else if (r.wind_speed != null) windKmh = Number(r.wind_speed);
     }
 
-    // RATXA (prioritza km/h)
     let gustKmh = (r.gust_kmh ?? null);
     if (gustKmh === null || gustKmh === undefined) {
       if (r.gust_mph != null) gustKmh = mphToKmh(Number(r.gust_mph));
       else if (r.wind_gust != null) gustKmh = Number(r.wind_gust);
     }
 
-    // PLUJA
     const rainDay  = (r.rain_day_mm ?? r.rain_day ?? null);
     const rainRate = (r.rain_rate_mmh ?? r.rain_rate ?? null);
 
@@ -136,42 +168,30 @@
     return await res.json();
   }
 
-  // ===== FIX Chart.js en mòbil (evita canvas blanc) =====
+  // ===== FIX Chart.js mòbil =====
   function fixChartsMobile() {
-    // Alguns navegadors (Android) creen charts quan el contenidor encara no té layout final.
-    // Fem resize/update després d’un parell de ticks del render.
     const doFix = () => {
       const charts = [window.__chartTemp, window.__chartHum, window.__chartWind].filter(Boolean);
       for (const c of charts) {
-        try {
-          c.resize();
-          c.update();
-        } catch {}
+        try { c.resize(); c.update(); } catch {}
       }
     };
-
-    // 1) després del proper frame
     requestAnimationFrame(() => {
       doFix();
-      // 2) i també amb una mica de retard (clau a Android)
       setTimeout(doFix, 200);
     });
   }
-  // ===========================================
 
-  // ===== Charts =====
   function buildChartsForDay(allRows, dayKey) {
     const { start, end } = startEndMsFromDayKey(dayKey);
     const rDay = allRows.filter(r => r.ts >= start && r.ts <= end);
 
-    // Labels i sèries
     const labels = rDay.map(r => fmtTime(r.ts));
     const temp = rDay.map(r => r.temp_c);
     const hum  = rDay.map(r => r.hum_pct);
     const wind = rDay.map(r => r.wind_kmh);
     const gust = rDay.map(r => r.gust_kmh);
 
-    // Títols amb data (sense “24h”)
     const dayTxt = fmtDayLong(dayKey);
     if ($("chartTempTitle")) $("chartTempTitle").textContent = `Temperatura · ${dayTxt}`;
     if ($("chartHumTitle"))  $("chartHumTitle").textContent  = `Humitat · ${dayTxt}`;
@@ -201,34 +221,19 @@
       scales: { x: { type: "category", ticks: { maxTicksLimit: 10 } } }
     };
 
-    // Destroy abans de recrear
     if (window.__chartTemp) window.__chartTemp.destroy();
     if (window.__chartHum) window.__chartHum.destroy();
     if (window.__chartWind) window.__chartWind.destroy();
 
     window.__chartTemp = new Chart($("chartTemp"), {
       type: "line",
-      data: {
-        labels,
-        datasets: [{
-          data: temp, __unit: "°C", __prefix: "",
-          tension: 0.25, pointRadius: 2, pointHoverRadius: 7, pointHitRadius: 12,
-          borderWidth: 2, fill: false
-        }]
-      },
+      data: { labels, datasets: [{ data: temp, __unit: "°C", tension: 0.25, pointRadius: 2, pointHoverRadius: 7, pointHitRadius: 12, borderWidth: 2, fill: false }] },
       options: commonOpts
     });
 
     window.__chartHum = new Chart($("chartHum"), {
       type: "line",
-      data: {
-        labels,
-        datasets: [{
-          data: hum, __unit: "%", __prefix: "",
-          tension: 0.25, pointRadius: 2, pointHoverRadius: 7, pointHitRadius: 12,
-          borderWidth: 2, fill: false
-        }]
-      },
+      data: { labels, datasets: [{ data: hum, __unit: "%", tension: 0.25, pointRadius: 2, pointHoverRadius: 7, pointHitRadius: 12, borderWidth: 2, fill: false }] },
       options: { ...commonOpts, scales: { ...commonOpts.scales, y: { min: 0, max: 100 } } }
     });
 
@@ -239,49 +244,17 @@
         data: {
           labels,
           datasets: [
-            // ordre per tooltip: primer Ratxa, després Vent
-            {
-              label: "ratxa",
-              data: gust,
-              __unit: "km/h",
-              __prefix: "Ratxa: ",
-              tension: 0.25,
-              pointRadius: 2,
-              pointHoverRadius: 6,
-              pointHitRadius: 12,
-              borderWidth: 2,
-              borderDash: [6, 4],
-              fill: false
-            },
-            {
-              label: "vent",
-              data: wind,
-              __unit: "km/h",
-              __prefix: "Vent: ",
-              tension: 0.25,
-              pointRadius: 2,
-              pointHoverRadius: 6,
-              pointHitRadius: 12,
-              borderWidth: 2.5,
-              fill: true
-            }
+            { label: "ratxa", data: gust, __unit: "km/h", __prefix: "Ratxa: ", tension: 0.25, pointRadius: 2, pointHoverRadius: 6, pointHitRadius: 12, borderWidth: 2, borderDash: [6, 4], fill: false },
+            { label: "vent",  data: wind, __unit: "km/h", __prefix: "Vent: ",  tension: 0.25, pointRadius: 2, pointHoverRadius: 6, pointHitRadius: 12, borderWidth: 2.5, fill: true }
           ]
         },
         options: commonOpts
       });
     }
 
-    // Si no hi ha punts aquell dia, avisa (sense trencar res)
     const dayLabel = $("dayLabel");
-    if (dayLabel) {
-      if (rDay.length) {
-        dayLabel.textContent = `${dayTxt} · ${rDay.length} punts`;
-      } else {
-        dayLabel.textContent = `${dayTxt} · sense dades`;
-      }
-    }
+    if (dayLabel) dayLabel.textContent = rDay.length ? `${dayTxt} · ${rDay.length} punts` : `${dayTxt} · sense dades`;
 
-    // ✅ FIX: força resize/update després de crear (evita canvas blanc a mòbil)
     fixChartsMobile();
   }
 
@@ -296,54 +269,33 @@
     $("wind").textContent = current.wind_kmh == null ? "—" : fmt1(current.wind_kmh);
     $("rainDay").textContent = current.rain_day_mm == null ? "—" : fmt1(current.rain_day_mm);
 
-    if ($("tempSub")) {
-      $("tempSub").textContent =
-        current.dew_c == null ? "Punt de rosada: —" : `Punt de rosada: ${fmt1(current.dew_c)} °C`;
-    }
+    if ($("tempSub")) $("tempSub").textContent = current.dew_c == null ? "Punt de rosada: —" : `Punt de rosada: ${fmt1(current.dew_c)} °C`;
 
-    // mín/màx avui a partir de history (i si cal inclou current al càlcul)
     const elMinMax = $("tempMinMax");
     if (elMinMax && Array.isArray(historyRows) && historyRows.length) {
       const todayKey = dayKeyFromTs(Date.now());
       const { start, end } = startEndMsFromDayKey(todayKey);
+      const todayRows = historyRows.filter(r => r.ts >= start && r.ts <= end).slice();
 
-      const todayRows = historyRows
-        .filter(r => r.ts >= start && r.ts <= end)
-        .slice();
-
-      // afegeix current si és d’avui i és més nou
       if (current && Number.isFinite(current.ts) && current.ts >= start && current.ts <= end) {
         const lastHistTs = todayRows.length ? todayRows[todayRows.length - 1].ts : null;
         if (!lastHistTs || current.ts > lastHistTs) todayRows.push(current);
       }
 
       const { min, max } = minMax(todayRows.map(r => r.temp_c));
-      elMinMax.textContent =
-        (min == null || max == null)
-          ? "Temperatura avui: mín — · màx —"
-          : `Temperatura avui: mín ${fmt1(min)} °C · màx ${fmt1(max)} °C`;
+      elMinMax.textContent = (min == null || max == null)
+        ? "Temperatura avui: mín — · màx —"
+        : `Temperatura avui: mín ${fmt1(min)} °C · màx ${fmt1(max)} °C`;
     }
 
-    // direcció vent
     let dirTxt = "—";
     if (current.wind_dir != null && current.wind_dir !== "") {
       const deg = Number(current.wind_dir);
       if (!Number.isNaN(deg)) dirTxt = `${deg.toFixed(0)}° (${degToWindCatalan(deg)})`;
     }
 
-    if ($("gustSub")) {
-      $("gustSub").textContent =
-        current.gust_kmh == null
-          ? `Ratxa: — · Dir: ${dirTxt}`
-          : `Ratxa: ${fmt1(current.gust_kmh)} km/h · Dir: ${dirTxt}`;
-    }
-
-    if ($("rainRateSub")) {
-      $("rainRateSub").textContent =
-        current.rain_rate_mmh == null
-          ? "Intensitat de pluja: —"
-          : `Intensitat de pluja: ${fmt1(current.rain_rate_mmh)} mm/h`;
-    }
+    if ($("gustSub")) $("gustSub").textContent = current.gust_kmh == null ? `Ratxa: — · Dir: ${dirTxt}` : `Ratxa: ${fmt1(current.gust_kmh)} km/h · Dir: ${dirTxt}`;
+    if ($("rainRateSub")) $("rainRateSub").textContent = current.rain_rate_mmh == null ? "Intensitat de pluja: —" : `Intensitat de pluja: ${fmt1(current.rain_rate_mmh)} mm/h`;
 
     $("lastUpdated").textContent = `Actualitzat: ${fmtDate(current.ts)}`;
   }
@@ -355,30 +307,23 @@
     const now = Date.now();
     const hbTs = hb?.run_ts ? Number(hb.run_ts) : null;
 
-    if (!lastTsMs) {
-      el.textContent = "Sense dades (history/current no carregat).";
-      return;
-    }
+    if (!lastTsMs) { el.textContent = "Sense dades (history/current no carregat)."; return; }
 
     const dataAgeMin = (now - lastTsMs) / 60000;
     const hbAgeMin = hbTs ? (now - hbTs) / 60000 : null;
 
     let msg = `Dada: fa ${Math.round(dataAgeMin)} min`;
     if (hbAgeMin != null) msg += ` · Workflow: fa ${Math.round(hbAgeMin)} min`;
-
     if (dataAgeMin > 20) msg += " · ⚠️ Dades antigues (possible aturada o límit).";
     el.textContent = msg;
   }
 
-  // ===== Selector de dia =====
   function getUrlDayParam() {
     try {
       const u = new URL(location.href);
       const v = u.searchParams.get("day");
       return v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
-    } catch {
-      return null;
-    }
+    } catch { return null; }
   }
 
   function setUrlDayParam(dayKey) {
@@ -392,21 +337,14 @@
   function buildDayListFromRows(rows, current) {
     const set = new Set();
     for (const r of rows) set.add(dayKeyFromTs(r.ts));
-
-    // assegura que “avui” hi sigui (si només tens current i history va endarrerit)
-    const todayKey = dayKeyFromTs(Date.now());
-    set.add(todayKey);
-
-    // si current és d’un altre dia (poc probable) també
+    set.add(dayKeyFromTs(Date.now()));
     if (current && Number.isFinite(current.ts)) set.add(dayKeyFromTs(current.ts));
-
-    return Array.from(set).sort(); // asc
+    return Array.from(set).sort();
   }
 
   function labelForDay(dayKey) {
     const today = dayKeyFromTs(Date.now());
     const yesterday = dayKeyFromTs(Date.now() - 24*60*60*1000);
-
     if (dayKey === today) return `Avui (${dayKey.split("-").reverse().join("/")})`;
     if (dayKey === yesterday) return `Ahir (${dayKey.split("-").reverse().join("/")})`;
     return dayKey.split("-").reverse().join("/");
@@ -416,7 +354,6 @@
     const sel = $("daySelect");
     const prev = $("dayPrev");
     const next = $("dayNext");
-
     if (!sel) return;
 
     sel.innerHTML = "";
@@ -430,9 +367,7 @@
     const idx0 = Math.max(0, dayKeys.indexOf(initialKey));
     sel.value = dayKeys[idx0] || dayKeys[dayKeys.length - 1];
 
-    function currentIndex() {
-      return dayKeys.indexOf(sel.value);
-    }
+    function currentIndex() { return dayKeys.indexOf(sel.value); }
 
     function updateButtons() {
       const i = currentIndex();
@@ -444,33 +379,29 @@
       updateButtons();
       setUrlDayParam(sel.value);
       onChange(sel.value);
+      fixChartsMobile();
     });
 
     if (prev) prev.addEventListener("click", () => {
       const i = currentIndex();
-      if (i > 0) {
-        sel.value = dayKeys[i - 1];
-        sel.dispatchEvent(new Event("change"));
-      }
+      if (i > 0) { sel.value = dayKeys[i - 1]; sel.dispatchEvent(new Event("change")); }
     });
 
     if (next) next.addEventListener("click", () => {
       const i = currentIndex();
-      if (i < dayKeys.length - 1) {
-        sel.value = dayKeys[i + 1];
-        sel.dispatchEvent(new Event("change"));
-      }
+      if (i < dayKeys.length - 1) { sel.value = dayKeys[i + 1]; sel.dispatchEvent(new Event("change")); }
     });
 
     updateButtons();
     return sel.value;
   }
 
-  // ===== Main =====
   async function main() {
     if ($("year")) $("year").textContent = String(new Date().getFullYear());
 
-    // Re-fix en casos típics de mòbil (back/forward cache, gir de pantalla)
+    // ✅ IMPORTANT: assegura UI abans d'intentar configurar-la
+    ensureDayUI();
+
     window.addEventListener("orientationchange", () => fixChartsMobile());
     window.addEventListener("pageshow", () => fixChartsMobile());
 
@@ -479,9 +410,7 @@
     try {
       const h = await fetchJson(`${HISTORY_URL}?t=${Date.now()}`);
       rawHist = Array.isArray(h) ? h : [];
-    } catch {
-      rawHist = [];
-    }
+    } catch { rawHist = []; }
 
     const historyRows = rawHist
       .map(normalizeRow)
@@ -496,25 +425,18 @@
         const cc = normalizeRow(c);
         if (Number.isFinite(cc.ts)) current = cc;
       }
-    } catch {
-      current = null;
-    }
+    } catch { current = null; }
 
     // 3) HEARTBEAT
     let hb = null;
     try { hb = await fetchJson(`${HEARTBEAT_URL}?t=${Date.now()}`); } catch {}
 
-    // 4) “Actual” sempre: preferim current, si falla fem fallback a últim history
+    // 4) “Actual”
     let actualRow = null;
     let sourceTag = "històric";
 
-    if (current) {
-      actualRow = current;
-      sourceTag = "dades en temps real";
-    } else if (historyRows.length) {
-      actualRow = historyRows[historyRows.length - 1];
-      sourceTag = "últim registre disponible";
-    }
+    if (current) { actualRow = current; sourceTag = "dades en temps real"; }
+    else if (historyRows.length) { actualRow = historyRows[historyRows.length - 1]; sourceTag = "últim registre disponible"; }
 
     if (actualRow) {
       renderCurrent(actualRow, historyRows);
@@ -526,14 +448,13 @@
       renderStatus(null, hb);
     }
 
-    // 5) Rows per gràfiques: history + (si és avui i és més nou) current
+    // 5) Rows per gràfiques
     const rowsForCharts = historyRows.slice();
     if (current && Number.isFinite(current.ts)) {
       const lastHistTs = rowsForCharts.length ? rowsForCharts[rowsForCharts.length - 1].ts : null;
       if (!lastHistTs || current.ts > lastHistTs) rowsForCharts.push(current);
     }
 
-    // Dedupe per ts i ordena
     const byTs = new Map();
     for (const r of rowsForCharts) byTs.set(r.ts, r);
     const mergedCharts = Array.from(byTs.values()).sort((a, b) => a.ts - b.ts);
@@ -545,11 +466,8 @@
 
     const selected = setupDaySelector(dayKeys, initial, (dayKey) => {
       buildChartsForDay(mergedCharts, dayKey);
-      // ✅ extra: torna a forçar el fix al canvi de dia (mòbil)
-      fixChartsMobile();
     });
 
-    // primera render
     if (selected) {
       buildChartsForDay(mergedCharts, selected);
       fixChartsMobile();
