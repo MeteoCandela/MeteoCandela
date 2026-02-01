@@ -311,3 +311,24 @@ h2{
 .footer a:hover{
   opacity: 1;
 }
+
+/* Botó de tornada a la pàgina principal */
+.back-link{
+  display: inline-block;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--chip2);
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background .2s ease, transform .1s ease;
+}
+
+.back-link:hover{
+  background: var(--chip);
+}
+
+.back-link:active{
+  transform: translateY(1px);
+}
