@@ -332,3 +332,37 @@ h2{
 .back-link:active{
   transform: translateY(1px);
 }
+
+/* Breadcrumb (discret, no “botó”) */
+.breadcrumb{
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.breadcrumb__sep{
+  opacity: .6;
+}
+
+/* IMPORTANT: dins el breadcrumb, la .back-link NO ha de semblar un botó */
+.breadcrumb a.back-link{
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+  font-weight: 650;
+  color: var(--text);
+  text-decoration: none;
+  transition: opacity .15s ease;
+}
+
+.breadcrumb a.back-link:hover{
+  opacity: .85;
+}
+
+.breadcrumb a.back-link:active{
+  transform: none;
+}
