@@ -4,6 +4,9 @@
   --text: rgba(255,255,255,.92);
   --muted: rgba(255,255,255,.70);
   --border: rgba(255,255,255,.12);
+
+  --chip: rgba(255,255,255,.10);
+  --chip2: rgba(255,255,255,.14);
 }
 
 *{ box-sizing: border-box; }
@@ -22,8 +25,6 @@ body{
   padding: 28px 18px;
   display: flex;
   align-items: flex-end;
-
-  /* IMPORTANT: ruta relativa perquè funcioni tant a / com a /MeteoCandela/ */
   background-image: url("assets/valls.jpg");
   background-size: cover;
   background-position: center;
@@ -61,10 +62,12 @@ p{ margin: 0; color: var(--muted); }
   margin: 0 auto;
 }
 
-/* A escriptori: columna esquerra ampla (Actual) i columna dreta estreta (gràfiques en pila) */
 @media (min-width: 900px){
   .grid{ grid-template-columns: 1.2fr .8fr; }
 }
+
+/* permet fer seccions a tota amplada */
+.span2{ grid-column: 1 / -1; }
 
 .card{
   background: var(--card);
@@ -78,6 +81,19 @@ h2{
   margin: 0 0 12px;
   font-size: 16px;
   color: var(--text);
+}
+
+/* Accessibilitat */
+.sr-only{
+  position:absolute!important;
+  width:1px!important;
+  height:1px!important;
+  padding:0!important;
+  margin:-1px!important;
+  overflow:hidden!important;
+  clip:rect(0,0,0,0)!important;
+  white-space:nowrap!important;
+  border:0!important;
 }
 
 /* KPIs */
@@ -108,13 +124,88 @@ h2{
   gap: 6px;
 }
 
+/* línia d’origen */
+.source{
+  display: inline-block;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--chip);
+  margin: 0 0 10px;
+}
+
+/* Day selector bar */
+.daybar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+}
+
+.daybar__left{
+  display:flex;
+  flex-direction:column;
+  gap: 4px;
+}
+
+.daybar__title{
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.daybar__subtitle{
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.daybar__right{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+}
+
+.btn{
+  appearance:none;
+  border: 1px solid var(--border);
+  background: var(--chip);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.btn:hover{ background: var(--chip2); }
+.btn:active{ transform: translateY(1px); }
+
+.select{
+  border: 1px solid var(--border);
+  background: var(--chip);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 8px 10px;
+  min-width: 170px;
+}
+
+.select:focus, .btn:focus{
+  outline: 2px solid rgba(255,255,255,.25);
+  outline-offset: 2px;
+}
+
 /* CHARTS */
-/* IMPORTANT: alçada fixa a mòbil perquè Chart.js no “s’estiri infinit” */
 .chart-box{ height: 260px; }
 
 .chart-box canvas{
   width: 100% !important;
-  height: calc(100% - 26px) !important; /* deixa espai pel títol */
+  height: calc(100% - 26px) !important;
+}
+
+@media (min-width: 900px){
+  /* el vent a tota amplada ja és span2, li donem una mica més d’alçada */
+  #chartWind{ }
+  .card.chart-box.span2{ height: 300px; }
 }
 
 /* Footer */
@@ -123,17 +214,4 @@ h2{
   text-align: center;
   color: var(--muted);
   border-top: 1px solid var(--border);
-}
-
-/* ===== ORIGEN DE DADES (history / realtime / fallback) ===== */
-.source{
-  margin-top: 6px;
-  font-size: 0.85rem;
-  opacity: 0.75;
-  font-weight: 500;
-}
-
-/* Poliment si algun dia la mostres al header */
-.hero__content .source{
-  margin-top: 4px;
 }
