@@ -3,7 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Meteo Valls - Candela</title>
+
+  <!-- SEO core -->
+  <title>MeteoCandela · Estació meteorològica a Valls (Alt Camp) en temps real</title>
+  <meta name="description" content="Estació meteorològica automàtica a Valls (Alt Camp) amb dades en temps real de temperatura, humitat, vent, ratxes, pluja i evolució diària. MeteoCandela." />
+  <link rel="canonical" href="https://meteocandela.cat/" />
+
+  <!-- (Opcional però recomanat) Favicon -->
+  <link rel="icon" href="/favicon.ico">
 
   <!-- cache-buster CSS -->
   <link rel="stylesheet" href="style.css?v=2026-02-01-1">
@@ -15,11 +22,26 @@
 </head>
 
 <body>
+
+  <!-- Text semàntic per a Google (no visible) -->
+  <section style="display:none">
+    <h1>Estació meteorològica a Valls – MeteoCandela</h1>
+    <p>
+      MeteoCandela és una estació meteorològica automàtica situada a Valls, comarca de l’Alt Camp (Tarragona).
+      Ofereix dades meteorològiques en temps real de temperatura, humitat relativa, vent, ratxes màximes,
+      pluja acumulada, intensitat de precipitació i evolució diària.
+    </p>
+    <p>
+      Les dades provenen de sensors meteorològics automàtics i s’actualitzen de manera contínua.
+      Aquest projecte té finalitat informativa i divulgativa sobre el temps a Valls i rodalia.
+    </p>
+  </section>
+
   <header class="hero">
     <div class="hero__overlay"></div>
 
     <div class="hero__content">
-      <h1>Meteo Valls - Candela</h1>
+      <h1>MeteoCandela · Valls</h1>
 
       <p id="lastUpdated" aria-live="polite">Carregant…</p>
       <p id="statusLine" class="status" aria-live="polite">—</p>
@@ -103,7 +125,7 @@
   </main>
 
   <footer class="footer">
-    <span>© <span id="year"></span> Meteo Valls - Candela</span>
+    <span>© <span id="year"></span> MeteoCandela</span>
   </footer>
 </body>
 </html>
