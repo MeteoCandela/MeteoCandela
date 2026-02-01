@@ -6,29 +6,6 @@
 
   const $ = (id) => document.getElementById(id);
 
-  // ===== Debug banner (visible sempre fins que ho arreglem) =====
-  function ensureDebugBanner() {
-    let el = $("debugBanner");
-    if (el) return el;
-
-    el = document.createElement("div");
-    el.id = "debugBanner";
-    el.style.cssText = `
-      position: sticky; top: 0; z-index: 9999;
-      padding: 8px 10px; font: 12px/1.35 system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      background: rgba(0,0,0,.75); color: #fff; border-bottom: 1px solid rgba(255,255,255,.15);
-      white-space: pre-wrap;
-    `;
-    document.body.prepend(el);
-    return el;
-  }
-
-  function dbg(msg) {
-    const el = ensureDebugBanner();
-    el.textContent = msg;
-  }
-  // ============================================================
-
   // ====== Crea selector de dia si falta ======
   function ensureDayUI() {
     if ($("daySelect") && $("dayPrev") && $("dayNext") && $("dayLabel")) return true;
@@ -183,10 +160,10 @@
   }
 
   function renderCurrent(current, historyRows) {
-    $("temp").textContent = current.temp_c == null ? "—" : fmt1(current.temp_c);
-    $("hum").textContent  = current.hum_pct == null ? "—" : String(Math.round(current.hum_pct));
-    $("wind").textContent = current.wind_kmh == null ? "—" : fmt1(current.wind_kmh);
-    $("rainDay").textContent = current.rain_day_mm == null ? "—" : fmt1(current.rain_day_mm);
+    if ($("temp")) $("temp").textContent = current.temp_c == null ? "—" : fmt1(current.temp_c);
+    if ($("hum"))  $("hum").textContent  = current.hum_pct == null ? "—" : String(Math.round(current.hum_pct));
+    if ($("wind")) $("wind").textContent = current.wind_kmh == null ? "—" : fmt1(current.wind_kmh);
+    if ($("rainDay")) $("rainDay").textContent = current.rain_day_mm == null ? "—" : fmt1(current.rain_day_mm);
 
     if ($("tempSub")) $("tempSub").textContent =
       current.dew_c == null ? "Punt de rosada: —" : `Punt de rosada: ${fmt1(current.dew_c)} °C`;
@@ -214,12 +191,16 @@
     }
 
     if ($("gustSub")) $("gustSub").textContent =
-      current.gust_kmh == null ? `Ratxa: — · Dir: ${dirTxt}` : `Ratxa: ${fmt1(current.gust_kmh)} km/h · Dir: ${dirTxt}`;
+      current.gust_kmh == null
+        ? `Ratxa: — · Dir: ${dirTxt}`
+        : `Ratxa: ${fmt1(current.gust_kmh)} km/h · Dir: ${dirTxt}`;
 
     if ($("rainRateSub")) $("rainRateSub").textContent =
-      current.rain_rate_mmh == null ? "Intensitat de pluja: —" : `Intensitat de pluja: ${fmt1(current.rain_rate_mmh)} mm/h`;
+      current.rain_rate_mmh == null
+        ? "Intensitat de pluja: —"
+        : `Intensitat de pluja: ${fmt1(current.rain_rate_mmh)} mm/h`;
 
-    $("lastUpdated").textContent = `Actualitzat: ${fmtDate(current.ts)}`;
+    if ($("lastUpdated")) $("lastUpdated").textContent = `Actualitzat: ${fmtDate(current.ts)}`;
   }
 
   function renderStatus(lastTsMs, hb) {
@@ -325,14 +306,6 @@
     const { start, end } = startEndMsFromDayKey(dayKey);
     const rDay = allRows.filter(r => r.ts >= start && r.ts <= end);
 
-    // Debug útil
-    dbg(
-      `debug: Chart=${typeof window.Chart}\n` +
-      `UI daySelect=${!!$("daySelect")} dayPrev=${!!$("dayPrev")} dayNext=${!!$("dayNext")}\n` +
-      `canvas: T=${!!canvasT} H=${!!canvasH} W=${!!canvasW}\n` +
-      `day=${dayKey} punts=${rDay.length}`
-    );
-
     const labels = rDay.map(r => fmtTime(r.ts));
     const temp = rDay.map(r => r.temp_c);
     const hum  = rDay.map(r => r.hum_pct);
@@ -351,20 +324,52 @@
     if (window.__chartHum) window.__chartHum.destroy();
     if (window.__chartWind) window.__chartWind.destroy();
 
-    if (typeof window.Chart === "undefined") return; // no hi ha Chart.js
+    if (typeof window.Chart === "undefined") return;
 
     const commonOpts = {
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: "nearest", intersect: false, axis: "x" },
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          enabled: true,
+          displayColors: false, // elimina el quadret de color
+          callbacks: {
+            title: (items) => {
+              const label = items?.[0]?.label ?? "";
+              return label ? `${label} h` : "";
+            },
+            label: (ctx) => {
+              const v = ctx.parsed?.y;
+              if (v == null) return "—";
+              const unit = ctx.dataset?.__unit || "";
+              const prefix = ctx.dataset?.__prefix || "";
+              return `${prefix}${Number(v).toFixed(1)}${unit ? ` ${unit}` : ""}`;
+            }
+          }
+        }
+      },
       scales: { x: { type: "category", ticks: { maxTicksLimit: 10 } } }
     };
 
     if (canvasT) {
       window.__chartTemp = new Chart(canvasT, {
         type: "line",
-        data: { labels, datasets: [{ data: temp, tension: 0.25, pointRadius: 2, borderWidth: 2, fill: false }] },
+        data: {
+          labels,
+          datasets: [{
+            data: temp,
+            __unit: "°C",
+            __prefix: "",
+            tension: 0.25,
+            pointRadius: 2,
+            pointHoverRadius: 7,
+            pointHitRadius: 12,
+            borderWidth: 2,
+            fill: false
+          }]
+        },
         options: commonOpts
       });
     }
@@ -372,7 +377,20 @@
     if (canvasH) {
       window.__chartHum = new Chart(canvasH, {
         type: "line",
-        data: { labels, datasets: [{ data: hum, tension: 0.25, pointRadius: 2, borderWidth: 2, fill: false }] },
+        data: {
+          labels,
+          datasets: [{
+            data: hum,
+            __unit: "%",
+            __prefix: "",
+            tension: 0.25,
+            pointRadius: 2,
+            pointHoverRadius: 7,
+            pointHitRadius: 12,
+            borderWidth: 2,
+            fill: false
+          }]
+        },
         options: { ...commonOpts, scales: { ...commonOpts.scales, y: { min: 0, max: 100 } } }
       });
     }
@@ -383,11 +401,41 @@
         data: {
           labels,
           datasets: [
-            { data: gust, tension: 0.25, pointRadius: 2, borderWidth: 2, borderDash: [6,4], fill: false },
-            { data: wind, tension: 0.25, pointRadius: 2, borderWidth: 2.5, fill: true }
+            {
+              label: "Ratxa",
+              data: gust,
+              __unit: "km/h",
+              __prefix: "Ratxa: ",
+              tension: 0.25,
+              pointRadius: 2,
+              pointHoverRadius: 6,
+              pointHitRadius: 12,
+              borderWidth: 2,
+              borderDash: [6, 4],
+              fill: false
+            },
+            {
+              label: "Vent",
+              data: wind,
+              __unit: "km/h",
+              __prefix: "Vent: ",
+              tension: 0.25,
+              pointRadius: 2,
+              pointHoverRadius: 6,
+              pointHitRadius: 12,
+              borderWidth: 2.5,
+              fill: true
+            }
           ]
         },
-        options: commonOpts
+        options: {
+          ...commonOpts,
+          plugins: {
+            ...commonOpts.plugins,
+            // LLEGENDA activa només al vent (identifica colors clarament)
+            legend: { display: true }
+          }
+        }
       });
     }
   }
@@ -396,14 +444,7 @@
   async function main() {
     if ($("year")) $("year").textContent = String(new Date().getFullYear());
 
-    const uiOk = ensureDayUI();
-
-    // Debug inicial
-    dbg(
-      `debug: Chart=${typeof window.Chart}\n` +
-      `UI created=${uiOk} main.grid=${!!document.querySelector("main.grid")}\n` +
-      `path=${location.pathname}`
-    );
+    ensureDayUI();
 
     // 1) HISTORY
     let rawHist = [];
@@ -472,7 +513,6 @@
 
   main().catch(err => {
     console.error(err);
-    dbg(`ERROR:\n${String(err)}`);
     if ($("lastUpdated")) $("lastUpdated").textContent = "Error carregant dades.";
     if ($("statusLine")) $("statusLine").textContent = String(err);
     setSourceLine("Origen: error");
