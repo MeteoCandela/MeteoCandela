@@ -63,27 +63,6 @@
     return { min: Math.min(...v), max: Math.max(...v) };
   }
 
-  // ✅ NOU: índex de mínim/màxim i arrays “només un punt”
-  function minMaxIndex(arr) {
-    let idxMin = -1, idxMax = -1;
-    let vMin = null, vMax = null;
-
-    for (let i = 0; i < arr.length; i++) {
-      const v = arr[i];
-      if (v == null || !Number.isFinite(Number(v))) continue;
-      const n = Number(v);
-
-      if (vMin == null || n < vMin) { vMin = n; idxMin = i; }
-      if (vMax == null || n > vMax) { vMax = n; idxMax = i; }
-    }
-    return { idxMin, idxMax, vMin, vMax };
-  }
-
-  function onlyPoint(arr, idx) {
-    if (idx < 0) return arr.map(() => null);
-    return arr.map((v, i) => (i === idx ? v : null));
-  }
-
   function degToWindCatalan(deg) {
     if (deg == null || Number.isNaN(Number(deg))) return "—";
     const d = ((Number(deg) % 360) + 360) % 360;
@@ -231,7 +210,6 @@
 
     let msg = `Dada: fa ${Math.round(dataAgeMin)} min`;
     if (hbAgeMin != null) msg += ` · Workflow: fa ${Math.round(hbAgeMin)} min`;
-
     if (dataAgeMin > 20) msg += " · ⚠️ Dades antigues (possible aturada o límit).";
     el.textContent = msg;
   }
@@ -323,29 +301,22 @@
 
     const labels = rDay.map(r => fmtTime(r.ts));
 
-    const tempRaw = rDay.map(r => r.temp_c);
+    const temp = rDay.map(r => (Number.isFinite(Number(r.temp_c)) ? Number(r.temp_c) : null));
     const hum  = rDay.map(r => r.hum_pct);
     const wind = rDay.map(r => r.wind_kmh);
     const gust = rDay.map(r => r.gust_kmh);
 
-    // ✅ temperatura en format numèric/null
-    const temp = tempRaw.map(v => (Number.isFinite(Number(v)) ? Number(v) : null));
-    const { idxMin, idxMax } = minMaxIndex(temp);
-    const tempMinOnly = onlyPoint(temp, idxMin);
-    const tempMaxOnly = onlyPoint(temp, idxMax);
+    // Mín/Màx reals del dia
+    const { min: vMin, max: vMax } = minMax(temp);
 
     const dayTxt = fmtDayLong(dayKey);
 
-    // Títols + unitats
     if ($("chartTempTitle")) $("chartTempTitle").textContent = `Temperatura (°C) · ${dayTxt}`;
     if ($("chartHumTitle"))  $("chartHumTitle").textContent  = `Humitat (%) · ${dayTxt}`;
     if ($("chartWindTitle")) $("chartWindTitle").textContent = `Vent i ratxa (km/h) · ${dayTxt}`;
 
-    // ✅ BUGFIX: dayLabel no estava declarat
     const dayLabel = $("dayLabel");
-    if (dayLabel) {
-      dayLabel.textContent = rDay.length ? dayTxt : `${dayTxt} · sense dades`;
-    }
+    if (dayLabel) dayLabel.textContent = rDay.length ? dayTxt : `${dayTxt} · sense dades`;
 
     if (window.__chartTemp) window.__chartTemp.destroy();
     if (window.__chartHum) window.__chartHum.destroy();
@@ -353,7 +324,6 @@
 
     if (typeof window.Chart === "undefined") return;
 
-    // Tooltip comú: hora + "h", sense quadret de color, amb unitats
     function commonTooltip(unit, nameFormatter) {
       return {
         displayColors: false,
@@ -384,94 +354,85 @@
       scales: { x: { type: "category", ticks: { maxTicksLimit: 10 } } }
     };
 
-// ✅ TEMP amb línies MIN/MAX + etiqueta (Opció 1 clara)
-const { vMin, vMax } = minMax(temp);
+    // ===== TEMP amb línies MIN/MAX i etiqueta a la dreta =====
+    window.__chartTemp = new Chart($("chartTemp"), {
+      type: "line",
+      data: {
+        labels,
+        datasets: [
+          {
+            label: "",
+            data: temp,
+            tension: 0.25,
+            pointRadius: 2,
+            pointHoverRadius: 7,
+            pointHitRadius: 12,
+            borderWidth: 2,
+            fill: false
+          },
 
-window.__chartTemp = new Chart($("chartTemp"), {
-  type: "line",
-  data: {
-    labels,
-    datasets: [
-      // Sèrie principal
-      {
-        label: "",
-        data: temp,
-        tension: 0.25,
-        pointRadius: 2,
-        pointHoverRadius: 7,
-        pointHitRadius: 12,
-        borderWidth: 2,
-        fill: false
+          ...(vMin == null ? [] : [{
+            label: "Mín",
+            data: labels.map(() => vMin),
+            tension: 0,
+            pointRadius: 0,
+            borderWidth: 1.5,
+            borderDash: [4, 4],
+            fill: false
+          }]),
+
+          ...(vMax == null ? [] : [{
+            label: "Màx",
+            data: labels.map(() => vMax),
+            tension: 0,
+            pointRadius: 0,
+            borderWidth: 1.5,
+            borderDash: [4, 4],
+            fill: false
+          }]),
+        ]
       },
-
-      // Línia MIN
-      ...(vMin == null ? [] : [{
-        label: "Mín",
-        data: labels.map(() => vMin),
-        tension: 0,
-        pointRadius: 0,
-        borderWidth: 1.5,
-        borderDash: [4, 4],
-        fill: false
-      }]),
-
-      // Línia MAX
-      ...(vMax == null ? [] : [{
-        label: "Màx",
-        data: labels.map(() => vMax),
-        tension: 0,
-        pointRadius: 0,
-        borderWidth: 1.5,
-        borderDash: [4, 4],
-        fill: false
-      }]),
-    ]
-  },
-  options: {
-    ...commonBase,
-    plugins: {
-      legend: { display: false },
-      tooltip: commonTooltip("°C", (ctx) => {
-        const l = (ctx.dataset?.label || "").trim();
-        // si estàs sobre les línies, que ho digui
-        if (l === "Mín" || l === "Màx") return l;
-        return "";
-      })
-    }
-  },
-  plugins: [
-    // ✅ Plugin local per etiquetar Mín/Màx a la dreta
-    {
-      id: "minMaxLabels",
-      afterDatasetsDraw(chart) {
-        if (vMin == null && vMax == null) return;
-
-        const { ctx, chartArea, scales } = chart;
-        const y = scales?.y;
-        if (!y) return;
-
-        ctx.save();
-        ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
-        ctx.textAlign = "right";
-        ctx.textBaseline = "middle";
-
-        const xRight = chartArea.right - 6;
-
-        if (vMax != null) {
-          const yMax = y.getPixelForValue(vMax);
-          ctx.fillText(`Màx ${Number(vMax).toFixed(1)} °C`, xRight, yMax);
+      options: {
+        ...commonBase,
+        plugins: {
+          legend: { display: false },
+          tooltip: commonTooltip("°C", (ctx) => {
+            const l = (ctx.dataset?.label || "").trim();
+            if (l === "Mín" || l === "Màx") return l;
+            return "";
+          })
         }
+      },
+      plugins: [{
+        id: "minMaxLabels",
+        afterDatasetsDraw(chart) {
+          if (vMin == null && vMax == null) return;
 
-        if (vMin != null) {
-          const yMin = y.getPixelForValue(vMin);
-          ctx.fillText(`Mín ${Number(vMin).toFixed(1)} °C`, xRight, yMin);
+          const { ctx, chartArea } = chart;
+          const yScale = chart.scales?.y;
+          if (!yScale) return;
+
+          ctx.save();
+          ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+          ctx.textAlign = "right";
+          ctx.textBaseline = "middle";
+
+          const xRight = chartArea.right - 6;
+
+          if (vMax != null) {
+            const yMax = yScale.getPixelForValue(vMax);
+            ctx.fillText(`Màx ${Number(vMax).toFixed(1)} °C`, xRight, yMax);
+          }
+
+          if (vMin != null) {
+            const yMin = yScale.getPixelForValue(vMin);
+            ctx.fillText(`Mín ${Number(vMin).toFixed(1)} °C`, xRight, yMin);
+          }
+
+          ctx.restore();
         }
-
-        ctx.restore();
-      }
-    }
-  ]
-});
+      }]
+    });
 
     // HUM
     window.__chartHum = new Chart($("chartHum"), {
@@ -495,7 +456,7 @@ window.__chartTemp = new Chart($("chartTemp"), {
       }
     });
 
-    // WIND + GUST (legend ON)
+    // WIND + GUST
     window.__chartWind = new Chart($("chartWind"), {
       type: "line",
       data: {
