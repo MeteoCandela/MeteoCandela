@@ -1,10 +1,9 @@
 (() => {
   // Detecta automàticament si estàs servint sota /MeteoCandela/
-  // i evita hardcodejar rutes que després fan 404.
   const BASE = (location.pathname.includes("/MeteoCandela/")) ? "/MeteoCandela" : "";
 
-  const HISTORY_URL = `${BASE}/data/history.json`;
-  const CURRENT_URL = `${BASE}/data/current.json`;            // <-- NOU
+  const HISTORY_URL   = `${BASE}/data/history.json`;
+  const CURRENT_URL   = `${BASE}/data/current.json`;          // <-- NOU (temps real)
   const HEARTBEAT_URL = `${BASE}/heartbeat/heartbeat.json`;
 
   const $ = (id) => document.getElementById(id);
@@ -32,7 +31,7 @@
     }).format(d);
   }
 
-  // ====== utilitats per mín/màx del dia ======
+  // ===== utilitats mín/màx del dia =====
   function startOfLocalDay(tsMs) {
     const d = new Date(tsMs);
     d.setHours(0, 0, 0, 0);
@@ -52,12 +51,11 @@
     if (!v.length) return { min: null, max: null };
     return { min: Math.min(...v), max: Math.max(...v) };
   }
-  // ==============================================
+  // ====================================
 
   // Converteix graus a nom de vent en català (8 sectors) amb Garbí
   function degToWindCatalan(deg) {
     if (deg == null || Number.isNaN(Number(deg))) return "—";
-
     const d = ((Number(deg) % 360) + 360) % 360;
 
     if (d >= 337.5 || d < 22.5)   return "N – Tramuntana";
@@ -73,7 +71,7 @@
   }
 
   function normalizeRow(r) {
-    // TEMPERATURA (prioritza sempre temp_c)
+    // TEMPERATURA (prioritza temp_c)
     let tempC = (r.temp_c ?? null);
     if (tempC === null || tempC === undefined) {
       if (r.temp_f != null) tempC = fToC(Number(r.temp_f));
@@ -104,7 +102,7 @@
     }
 
     // PLUJA
-    const rainDay = (r.rain_day_mm ?? r.rain_day ?? null);
+    const rainDay  = (r.rain_day_mm ?? r.rain_day ?? null);
     const rainRate = (r.rain_rate_mmh ?? r.rain_rate ?? null);
 
     return {
@@ -117,6 +115,7 @@
       wind_dir: (r.wind_dir ?? r.wind_direction ?? null),
       rain_day_mm: rainDay != null ? Number(rainDay) : 0,
       rain_rate_mmh: rainRate != null ? Number(rainRate) : 0,
+      source: r.source ?? null, // opcional (si el python ho posa)
     };
   }
 
@@ -141,13 +140,7 @@
     const commonOpts = {
       responsive: true,
       maintainAspectRatio: false,
-
-      interaction: {
-        mode: "nearest",
-        intersect: false,
-        axis: "x"
-      },
-
+      interaction: { mode: "nearest", intersect: false, axis: "x" },
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -165,10 +158,7 @@
           }
         }
       },
-
-      scales: {
-        x: { type: "category", ticks: { maxTicksLimit: 8 } }
-      }
+      scales: { x: { type: "category", ticks: { maxTicksLimit: 8 } } }
     };
 
     if (window.__chartTemp) window.__chartTemp.destroy();
@@ -177,88 +167,68 @@
 
     window.__chartTemp = new Chart($("chartTemp"), {
       type: "line",
-      data: {
-        labels,
-        datasets: [{
-          data: temp,
-          __unit: "°C",
-          __prefix: "",
-          tension: 0.25,
-          pointRadius: 2,
-          pointHoverRadius: 7,
-          pointHitRadius: 12,
-          borderWidth: 2,
-          fill: false
-        }]
-      },
+      data: { labels, datasets: [{
+        data: temp, __unit: "°C", __prefix: "",
+        tension: 0.25, pointRadius: 2, pointHoverRadius: 7, pointHitRadius: 12,
+        borderWidth: 2, fill: false
+      }]},
       options: commonOpts
     });
 
     window.__chartHum = new Chart($("chartHum"), {
       type: "line",
-      data: {
-        labels,
-        datasets: [{
-          data: hum,
-          __unit: "%",
-          __prefix: "",
-          tension: 0.25,
-          pointRadius: 2,
-          pointHoverRadius: 7,
-          pointHitRadius: 12,
-          borderWidth: 2,
-          fill: false
-        }]
-      },
-      options: {
-        ...commonOpts,
-        scales: { ...commonOpts.scales, y: { min: 0, max: 100 } }
-      }
+      data: { labels, datasets: [{
+        data: hum, __unit: "%", __prefix: "",
+        tension: 0.25, pointRadius: 2, pointHoverRadius: 7, pointHitRadius: 12,
+        borderWidth: 2, fill: false
+      }]},
+      options: { ...commonOpts, scales: { ...commonOpts.scales, y: { min: 0, max: 100 } } }
     });
 
     const windCanvas = $("chartWind");
     if (windCanvas) {
       window.__chartWind = new Chart(windCanvas, {
         type: "line",
-        data: {
-          labels,
-          datasets: [
-            {
-              label: "vent",
-              data: wind,
-              __unit: "km/h",
-              __prefix: "Vent: ",
-              tension: 0.25,
-              pointRadius: 2,
-              pointHoverRadius: 6,
-              pointHitRadius: 12,
-              borderWidth: 2.5,
-              fill: true
-            },
-            {
-              label: "ratxa",
-              data: gust,
-              __unit: "km/h",
-              __prefix: "Ratxa: ",
-              tension: 0.25,
-              pointRadius: 2,
-              pointHoverRadius: 6,
-              pointHitRadius: 12,
-              borderWidth: 2,
-              borderDash: [6, 4],
-              fill: false
-            }
-          ]
-        },
+        data: { labels, datasets: [
+          {
+            label: "vent",
+            data: wind,
+            __unit: "km/h",
+            __prefix: "Vent: ",
+            tension: 0.25,
+            pointRadius: 2,
+            pointHoverRadius: 6,
+            pointHitRadius: 12,
+            borderWidth: 2.5,
+            fill: true
+          },
+          {
+            label: "ratxa",
+            data: gust,
+            __unit: "km/h",
+            __prefix: "Ratxa: ",
+            tension: 0.25,
+            pointRadius: 2,
+            pointHoverRadius: 6,
+            pointHitRadius: 12,
+            borderWidth: 2,
+            borderDash: [6, 4],
+            fill: false
+          }
+        ]},
         options: commonOpts
       });
     }
   }
 
-  // ====== ara rep també rows per calcular mín/màx d’avui ======
-  function renderCurrent(last, rows) {
+  function setSourceLine(txt) {
+    const el = $("sourceLine");
+    if (el) el.textContent = txt;
+  }
+
+  function renderCurrent(last, rows, sourceTag) {
     $("temp").textContent = last.temp_c == null ? "—" : fmt1(last.temp_c);
-    $("hum").textContent = last.hum_pct == null ? "—" : String(Math.round(last.hum_pct));
+    $("hum").textContent  = last.hum_pct == null ? "—" : String(Math.round(last.hum_pct));
     $("wind").textContent = last.wind_kmh == null ? "—" : fmt1(last.wind_kmh);
     $("rainDay").textContent = last.rain_day_mm == null ? "—" : fmt1(last.rain_day_mm);
 
@@ -267,23 +237,20 @@
         last.dew_c == null ? "Punt de rosada: —" : `Punt de rosada: ${fmt1(last.dew_c)} °C`;
     }
 
-    // ====== Mín/Màx temperatura del dia (avui) a partir de HISTORY ======
+    // Mín/Màx avui (en base a history)
     const elMinMax = $("tempMinMax");
     if (elMinMax && Array.isArray(rows) && rows.length) {
       const todayStart = startOfLocalDay(last.ts);
       const todayRows = rows.filter(r => isSameLocalDay(r.ts, todayStart));
-      // Filtre anti-outlier (evita pics absurds a les gràfiques / minmax)
-      const temps = todayRows.map(r => r.temp_c).filter(t => t != null && t > -30 && t < 45);
-      const { min, max } = minMax(temps);
+      const { min, max } = minMax(todayRows.map(r => r.temp_c));
 
       elMinMax.textContent =
         (min == null || max == null)
           ? "Temperatura avui: mín — · màx —"
           : `Temperatura avui: mín ${fmt1(min)} °C · màx ${fmt1(max)} °C`;
     }
-    // ================================================================
 
-    // Direcció: graus + símbol + nom de vent català
+    // Direcció
     let dirTxt = "—";
     if (last.wind_dir != null && last.wind_dir !== "") {
       const deg = Number(last.wind_dir);
@@ -305,66 +272,44 @@
     }
 
     $("lastUpdated").textContent = `Actualitzat: ${fmtDate(last.ts)}`;
+
+    // Línia “font”
+    if (sourceTag === "realtime") setSourceLine("Origen: temps real (current.json)");
+    else if (sourceTag === "fallback") setSourceLine("Origen: fallback (últim punt d’històric)");
+    else setSourceLine("Origen: històric (sense current.json)");
   }
 
-  // ====== MODIFICAT: distingeix "temps real" vs "històric" ======
-  function renderStatus(rows, hb, currentRow) {
+  function renderStatus(lastTsMs, hb) {
     const el = $("statusLine");
     if (!el) return;
 
     const now = Date.now();
-
-    const lastHistTs = rows.length ? rows[rows.length - 1].ts : null;
     const hbTs = hb?.run_ts ? Number(hb.run_ts) : null;
 
-    const curTs = currentRow?.ts ? Number(currentRow.ts) : null;
-
-    // Si no hi ha current ni history
-    if (!curTs && !lastHistTs) {
-      el.textContent = "Sense dades (current.json i history.json buits o no carregats).";
+    if (!lastTsMs) {
+      el.textContent = "Sense dades (history/current no carregat).";
       return;
     }
 
-    const parts = [];
+    const dataAgeMin = (now - lastTsMs) / 60000;
+    const hbAgeMin = hbTs ? (now - hbTs) / 60000 : null;
 
-    if (curTs) {
-      const curAgeMin = (now - curTs) / 60000;
-      parts.push(`Dada (temps real): fa ${Math.round(curAgeMin)} min`);
-    }
+    let msg = `Dada: fa ${Math.round(dataAgeMin)} min`;
+    if (hbAgeMin != null) msg += ` · Workflow: fa ${Math.round(hbAgeMin)} min`;
 
-    if (lastHistTs) {
-      const histAgeMin = (now - lastHistTs) / 60000;
-      parts.push(`Històric: fa ${Math.round(histAgeMin)} min`);
-    }
-
-    if (hbTs) {
-      const hbAgeMin = (now - hbTs) / 60000;
-      parts.push(`Workflow: fa ${Math.round(hbAgeMin)} min`);
-    }
-
-    // Warning només si el "temps real" està antic (això és el que t’importa)
-    if (curTs) {
-      const curAgeMin = (now - curTs) / 60000;
-      if (curAgeMin > 20) parts.push("⚠️ Dades antigues (possible aturada o límit).");
-    } else if (lastHistTs) {
-      // fallback: si no tenim current, fem servir històric
-      const histAgeMin = (now - lastHistTs) / 60000;
-      if (histAgeMin > 20) parts.push("⚠️ Dades antigues (possible aturada o límit).");
-    }
-
-    el.textContent = parts.join(" · ");
+    if (dataAgeMin > 20) msg += " · ⚠️ Dades antigues (possible aturada o límit).";
+    el.textContent = msg;
   }
 
   async function main() {
     if ($("year")) $("year").textContent = String(new Date().getFullYear());
 
-    // 1) HISTORY (per gràfiques + mín/màx)
+    // 1) HISTORY (per gràfics + mín/màx)
     let rawHist = [];
     try {
-      rawHist = await fetchJson(`${HISTORY_URL}?t=${Date.now()}`);
-      if (!Array.isArray(rawHist)) rawHist = [];
-    } catch (e) {
-      console.warn("No puc carregar history.json", e);
+      const h = await fetchJson(`${HISTORY_URL}?t=${Date.now()}`);
+      rawHist = Array.isArray(h) ? h : [];
+    } catch (_) {
       rawHist = [];
     }
 
@@ -373,36 +318,52 @@
       .filter(r => Number.isFinite(r.ts))
       .sort((a, b) => a.ts - b.ts);
 
-    // 2) CURRENT (temps real per la targeta)
-    let currentRow = null;
+    // 2) CURRENT (temps real) -> si falla, fallback a l’últim del history
+    let current = null;
+    let sourceTag = "history"; // default
+
     try {
-      const rawCur = await fetchJson(`${CURRENT_URL}?t=${Date.now()}`);
-      if (rawCur && typeof rawCur === "object" && rawCur.ts != null) {
-        currentRow = normalizeRow(rawCur);
+      const c = await fetchJson(`${CURRENT_URL}?t=${Date.now()}`);
+      if (c && typeof c === "object") {
+        current = normalizeRow(c);
+        if (Number.isFinite(current.ts)) sourceTag = "realtime";
       }
-    } catch (e) {
-      console.warn("No puc carregar current.json", e);
-      currentRow = null;
+    } catch (_) {
+      // ignore
     }
 
-    // 3) Render: prioritat a current; fallback a l’últim de history
-    if (currentRow) {
-      renderCurrent(currentRow, rows);
-    } else if (rows.length) {
-      renderCurrent(rows[rows.length - 1], rows);
+    if (!current || !Number.isFinite(current.ts)) {
+      if (rows.length) {
+        current = rows[rows.length - 1];
+        sourceTag = "fallback";
+      }
     }
 
+    // 3) HEARTBEAT (workflow)
     let hb = null;
     try { hb = await fetchJson(`${HEARTBEAT_URL}?t=${Date.now()}`); } catch (_) {}
 
-    renderStatus(rows, hb, currentRow);
+    // 4) Render
+    if (current) {
+      renderCurrent(current, rows, sourceTag);
+      renderStatus(current.ts, hb);
+    } else {
+      // ni current ni history
+      if ($("lastUpdated")) $("lastUpdated").textContent = "Sense dades.";
+      setSourceLine("Origen: —");
+      renderStatus(null, hb);
+    }
 
-    try { buildCharts(rows); } catch (e) { console.warn(e); }
+    // 5) Gràfics
+    if (rows.length) {
+      try { buildCharts(rows); } catch (e) { console.warn(e); }
+    }
   }
 
   main().catch(err => {
     console.error(err);
     if ($("lastUpdated")) $("lastUpdated").textContent = "Error carregant dades.";
     if ($("statusLine")) $("statusLine").textContent = String(err);
+    setSourceLine("Origen: error");
   });
 })();
