@@ -387,13 +387,11 @@ jobs:
           hist = [h for h in hist if isinstance(h, dict) and isinstance(h.get("ts"), (int, float))]
           hist.sort(key=lambda x: int(x["ts"]))
 
-          # ====== CANVI: 30 dies de retenció ======
           DAYS_TO_KEEP = 30
           cutoff_ms = now_ms - DAYS_TO_KEEP * 24 * 60 * 60 * 1000
           last_ts_ms = int(hist[-1]["ts"]) if hist else None
 
-          # ====== CANVI: overlap més gran per evitar forats ======
-          OVERLAP_MS = 60 * 60 * 1000  # 60 min
+          OVERLAP_MS = 60 * 60 * 1000  # 60 min (evita forats si l'API va tard)
 
           if last_ts_ms is None:
               start_ms = cutoff_ms
@@ -412,11 +410,27 @@ jobs:
 
           merged = hist + new_rows
 
+          # Dedupe per ts
           by_ts = {}
           for r in merged:
               ts = r.get("ts")
               if isinstance(ts, (int, float)):
                   by_ts[int(ts)] = r
+
+          # =========================
+          # NOU: Persistim el punt realtime també a history
+          # (això evita que "Avui" perdi punts entre runs)
+          # =========================
+          try:
+              cr_ts = int(current_row.get("ts"))
+              if cr_ts:
+                  # guarda una marca d'origen (opcional)
+                  current_row["source"] = "realtime"
+                  # opcional: no guardar si tot és None
+                  if (current_row.get("temp_c") is not None) or (current_row.get("hum_pct") is not None):
+                      by_ts[cr_ts] = current_row
+          except Exception:
+              pass
 
           merged = [by_ts[k] for k in sorted(by_ts.keys())]
           merged = [r for r in merged if int(r["ts"]) >= cutoff_ms]
