@@ -39,11 +39,12 @@ jobs:
           ECOWITT_MAC: ${{ secrets.ECOWITT_MAC }}
         run: |
           python - <<'PY'
-          import json, os, time
+          import json, os, time, socket
           from datetime import datetime, timezone
           from pathlib import Path
           import urllib.request, urllib.parse
 
+          # ====== Config ======
           DATA_DIR = Path("data")
           HISTORY_PATH = DATA_DIR / "history.json"
           CURRENT_PATH = DATA_DIR / "current.json"
@@ -51,11 +52,48 @@ jobs:
           HEARTBEAT_DIR = Path("heartbeat")
           HEARTBEAT_PATH = HEARTBEAT_DIR / "heartbeat.json"
 
+          DAYS_TO_KEEP = 30
+          OVERLAP_MS = 60 * 60 * 1000  # 60 min
+          URL_TIMEOUT = 20             # més curt per evitar penjades llargues
+          RETRIES = 3                  # reintents
+          BACKOFF_BASE = 2             # 1s, 2s, 4s
+
+          socket.setdefaulttimeout(URL_TIMEOUT)
+
           app_key = os.getenv("ECOWITT_APPLICATION_KEY")
           api_key = os.getenv("ECOWITT_API_KEY")
           mac = os.getenv("ECOWITT_MAC")
           if not (app_key and api_key and mac):
               raise SystemExit("Falten secrets: ECOWITT_APPLICATION_KEY / ECOWITT_API_KEY / ECOWITT_MAC")
+
+          def ensure_dirs():
+              DATA_DIR.mkdir(parents=True, exist_ok=True)
+              HEARTBEAT_DIR.mkdir(parents=True, exist_ok=True)
+
+          def write_json(path: Path, obj):
+              path.write_text(json.dumps(obj, ensure_ascii=False), encoding="utf-8")
+
+          def read_json(path: Path, default=None):
+              if path.exists():
+                  try:
+                      return json.loads(path.read_text(encoding="utf-8"))
+                  except Exception:
+                      return default
+              return default
+
+          def read_hist():
+              h = read_json(HISTORY_PATH, default=[])
+              return h if isinstance(h, list) else []
+
+          def write_heartbeat(now_ms, note=""):
+              hb = {
+                  "run_ts": now_ms,
+                  "run_iso_utc": datetime.now(timezone.utc).isoformat(),
+              }
+              if note:
+                  hb["note"] = note
+              write_json(HEARTBEAT_PATH, hb)
+              return hb
 
           def fnum(x):
               try:
@@ -94,47 +132,28 @@ jobs:
                   pass
               return None
 
-          def ensure_dirs():
-              DATA_DIR.mkdir(parents=True, exist_ok=True)
-              HEARTBEAT_DIR.mkdir(parents=True, exist_ok=True)
-
-          def write_json(path: Path, obj):
-              path.write_text(json.dumps(obj, ensure_ascii=False), encoding="utf-8")
-
-          def read_hist():
-              if HISTORY_PATH.exists():
-                  try:
-                      h = json.loads(HISTORY_PATH.read_text(encoding="utf-8"))
-                      if isinstance(h, list):
-                          return h
-                  except Exception:
-                      pass
-              return []
-
-          def write_heartbeat(now_ms, note=""):
-              hb = {
-                  "run_ts": now_ms,
-                  "run_iso_utc": datetime.now(timezone.utc).isoformat(),
-              }
-              if note:
-                  hb["note"] = note
-              write_json(HEARTBEAT_PATH, hb)
-              return hb
-
-          # =========================
-          #  UNITATS: decideix si és Fahrenheit
-          # =========================
           def is_fahrenheit(unit, value):
-              # Si Ecowitt dona unitat, fem-li cas
               if unit:
                   u = str(unit).strip().lower()
                   if u.startswith("f"):
                       return True
                   if u.startswith("c"):
                       return False
-              # Si NO hi ha unitat: en el teu cas Ecowitt tendeix a retornar ºF.
-              # Això evita el bug 45.7 (ºF) interpretat com ºC.
-              return True
+              return True  # al teu cas, Ecowitt sovint ve en ºF sense unitat
+
+          # ====== HTTP robust amb retries ======
+          def fetch_url_json(url):
+              last_err = None
+              for i in range(RETRIES):
+                  try:
+                      with urllib.request.urlopen(url, timeout=URL_TIMEOUT) as r:
+                          return json.loads(r.read().decode("utf-8"))
+                  except Exception as e:
+                      last_err = e
+                      sleep_s = (BACKOFF_BASE ** i)
+                      print(f"[WARN] fetch fail ({i+1}/{RETRIES}) {url} -> {type(e).__name__}: {e}. retry in {sleep_s}s")
+                      time.sleep(sleep_s)
+              raise last_err
 
           # =========================
           #  A) CURRENT (real_time)
@@ -148,9 +167,7 @@ jobs:
                   "call_back": "all"
               }
               url = base_url + "?" + urllib.parse.urlencode(params)
-
-              with urllib.request.urlopen(url, timeout=30) as r:
-                  payload = json.loads(r.read().decode("utf-8"))
+              payload = fetch_url_json(url)
 
               data = payload.get("data", {}) if isinstance(payload, dict) else {}
 
@@ -167,7 +184,6 @@ jobs:
                       return x.get("value"), (x.get("unit") or x.get("units"))
                   return x, None
 
-              # Temperatura/Hum/Rosada
               t_v, t_u = val(pick("outdoor", "temperature") or pick("temperature") or pick("temp"))
               if isinstance(t_v, dict):
                   t_v, t_u = val(t_v)
@@ -191,7 +207,6 @@ jobs:
               if dew_raw is not None and is_fahrenheit(d_u, dew_raw):
                   dew_c = f_to_c(dew_raw)
 
-              # Vent / ratxa
               ws_v, ws_u = val(pick("wind_speed") or pick("wind", "wind_speed"))
               if isinstance(ws_v, dict):
                   ws_v, ws_u = val(ws_v)
@@ -220,7 +235,6 @@ jobs:
                   pick("wind", "wind_direction", "value") or pick("wind", "wind_direction")
               )
 
-              # Pluja
               rd_v, rd_u = val(pick("rainfall_daily") or pick("rainfall", "daily"))
               if isinstance(rd_v, dict):
                   rd_v, rd_u = val(rd_v)
@@ -258,37 +272,24 @@ jobs:
                   "end_time": int(end_s),
               }
               url = base_url + "?" + urllib.parse.urlencode(params)
-
-              with urllib.request.urlopen(url, timeout=30) as r:
-                  payload = json.loads(r.read().decode("utf-8"))
+              payload = fetch_url_json(url)
 
               if not isinstance(payload, dict):
-                  raise SystemExit(f"Resposta inesperada history: {type(payload)}")
+                  raise RuntimeError(f"Resposta inesperada history: {type(payload)}")
 
-              data = payload.get("data")
-              if data is None:
-                  data = payload.get("datas")
-              if data is None:
-                  data = payload.get("result")
-              if data is None:
-                  data = payload.get("records")
-
+              data = payload.get("data") or payload.get("datas") or payload.get("result") or payload.get("records")
               if data is None:
                   return []
 
               if isinstance(data, dict):
-                  data_list = data.get("list")
-                  if data_list is None:
-                      data_list = data.get("data")
-                  if data_list is None:
-                      data_list = data.get("records")
+                  data_list = data.get("list") or data.get("data") or data.get("records")
               else:
                   data_list = data
 
               if data_list is None:
                   return []
               if not isinstance(data_list, list):
-                  raise SystemExit(f"Format history inesperat: {type(data_list)}")
+                  raise RuntimeError(f"Format history inesperat: {type(data_list)}")
 
               def val_unit(x):
                   if isinstance(x, dict):
@@ -311,19 +312,17 @@ jobs:
                       to_ms_epoch(r.get("dateutc")) or
                       None
                   )
-
                   if ts_ms is None and isinstance(r.get("time"), str):
                       try:
                           dt = datetime.strptime(r["time"], "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
                           ts_ms = int(dt.timestamp() * 1000)
                       except Exception:
                           ts_ms = None
-
                   if ts_ms is None:
                       return None
 
                   t_raw, t_unit = val_unit(pick(r, "outdoor", "temperature") or r.get("temperature") or r.get("temp"))
-                  h_raw, _ = val_unit(pick(r, "outdoor", "humidity") or r.get("humidity"))
+                  h_raw, _      = val_unit(pick(r, "outdoor", "humidity") or r.get("humidity"))
                   d_raw, d_unit = val_unit(pick(r, "outdoor", "dew_point") or r.get("dew_point"))
 
                   temp_c = t_raw
@@ -352,13 +351,13 @@ jobs:
                   gust_kmh = norm_w(g_raw, g_unit)
 
                   rd_raw, _ = val_unit(r.get("rainfall_daily") or pick(r, "rainfall", "daily") or r.get("rain_day"))
-                  rr_raw, _ = val_unit(r.get("rain_rate") or pick(r, "rainfall", "rate") or r.get("rain_rate"))
+                  rr_raw, _ = val_unit(r.get("rain_rate")     or pick(r, "rainfall", "rate")  or r.get("rain_rate"))
 
                   return {
                       "ts": int(ts_ms),
                       "temp_c": None if temp_c is None else float(temp_c),
-                      "hum_pct": None if h_raw is None else float(h_raw),
-                      "dew_c": None if dew_c is None else float(dew_c),
+                      "hum_pct": None if h_raw  is None else float(h_raw),
+                      "dew_c":  None if dew_c  is None else float(dew_c),
                       "wind_kmh": None if wind_kmh is None else float(wind_kmh),
                       "gust_kmh": None if gust_kmh is None else float(gust_kmh),
                       "wind_dir": (str(wind_dir) if wind_dir is not None else None),
@@ -377,74 +376,74 @@ jobs:
           # ============= RUN =============
           ensure_dirs()
           now_ms = int(time.time() * 1000)
+          cutoff_ms = now_ms - DAYS_TO_KEEP * 24 * 60 * 60 * 1000
 
-          # A) CURRENT
-          current_row = fetch_realtime_row(now_ms)
-          write_json(CURRENT_PATH, current_row)
-
-          # B) HISTORY (30 dies)
           hist = read_hist()
           hist = [h for h in hist if isinstance(h, dict) and isinstance(h.get("ts"), (int, float))]
           hist.sort(key=lambda x: int(x["ts"]))
-
-          DAYS_TO_KEEP = 30
-          cutoff_ms = now_ms - DAYS_TO_KEEP * 24 * 60 * 60 * 1000
           last_ts_ms = int(hist[-1]["ts"]) if hist else None
 
-          OVERLAP_MS = 60 * 60 * 1000  # 60 min (evita forats si l'API va tard)
+          notes = []
 
-          if last_ts_ms is None:
-              start_ms = cutoff_ms
-          else:
-              start_ms = max(last_ts_ms - OVERLAP_MS, cutoff_ms)
-
-          start_s = int(start_ms / 1000)
-          end_s = int(now_ms / 1000)
-
-          rows = fetch_history_rows(start_s, end_s)
-
-          new_rows = []
-          for r in rows:
-              if last_ts_ms is None or int(r["ts"]) > last_ts_ms:
-                  new_rows.append(r)
-
-          merged = hist + new_rows
-
-          # Dedupe per ts
-          by_ts = {}
-          for r in merged:
-              ts = r.get("ts")
-              if isinstance(ts, (int, float)):
-                  by_ts[int(ts)] = r
-
-          # =========================
-          # NOU: Persistim el punt realtime també a history
-          # (això evita que "Avui" perdi punts entre runs)
-          # =========================
+          # A) CURRENT (robust): si falla, reutilitza l'anterior (no petar workflow)
+          current_row = None
           try:
-              cr_ts = int(current_row.get("ts"))
-              if cr_ts:
-                  # guarda una marca d'origen (opcional)
-                  current_row["source"] = "realtime"
-                  # opcional: no guardar si tot és None
-                  if (current_row.get("temp_c") is not None) or (current_row.get("hum_pct") is not None):
-                      by_ts[cr_ts] = current_row
-          except Exception:
-              pass
+              current_row = fetch_realtime_row(now_ms)
+              write_json(CURRENT_PATH, current_row)
+          except Exception as e:
+              notes.append(f"realtime fail: {type(e).__name__}")
+              prev = read_json(CURRENT_PATH, default=None)
+              if isinstance(prev, dict) and isinstance(prev.get("ts"), (int, float)):
+                  current_row = prev
+                  # no sobreescrivim el current.json si no tenim dades noves fiables
+              else:
+                  current_row = None
 
-          merged = [by_ts[k] for k in sorted(by_ts.keys())]
-          merged = [r for r in merged if int(r["ts"]) >= cutoff_ms]
+          # B) HISTORY (robust)
+          try:
+              if last_ts_ms is None:
+                  start_ms = cutoff_ms
+              else:
+                  start_ms = max(last_ts_ms - OVERLAP_MS, cutoff_ms)
 
-          write_json(HISTORY_PATH, merged)
+              start_s = int(start_ms / 1000)
+              end_s = int(now_ms / 1000)
 
-          note = ""
-          if not new_rows:
-              note = "history: no new 5min row yet (normal delay)"
-          hb = write_heartbeat(now_ms, note=note)
+              rows = fetch_history_rows(start_s, end_s)
 
-          print(f"CURRENT written: {CURRENT_PATH} ts={current_row.get('ts')}")
-          print(f"HISTORY window(s): {start_s}->{end_s} overlap={OVERLAP_MS//60000}min last_ts={last_ts_ms} new={len(new_rows)} total={len(merged)}")
+              new_rows = []
+              for r in rows:
+                  if last_ts_ms is None or int(r["ts"]) > last_ts_ms:
+                      new_rows.append(r)
+
+              merged = hist + new_rows
+
+              # IMPORTANT: també persistim el punt realtime a history (evita que “desaparegui” el dia)
+              if isinstance(current_row, dict) and isinstance(current_row.get("ts"), (int, float)):
+                  merged.append(current_row)
+
+              # dedupe per ts
+              by_ts = {}
+              for r in merged:
+                  ts = r.get("ts")
+                  if isinstance(ts, (int, float)):
+                      by_ts[int(ts)] = r
+
+              merged = [by_ts[k] for k in sorted(by_ts.keys())]
+              merged = [r for r in merged if int(r["ts"]) >= cutoff_ms]
+
+              write_json(HISTORY_PATH, merged)
+
+              if not new_rows:
+                  notes.append("history: no new 5min row yet (normal delay)")
+
+          except Exception as e:
+              notes.append(f"history fail: {type(e).__name__}")
+              # No toquem history.json si ha fallat el fetch; mantenim l'últim estat bo.
+
+          hb = write_heartbeat(now_ms, note=" · ".join(notes))
           print("Heartbeat:", hb)
+          print("History points:", len(read_hist()))
           PY
 
       - name: Commit & push (only if changed)
