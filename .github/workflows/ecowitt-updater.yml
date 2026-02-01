@@ -382,15 +382,19 @@ jobs:
           current_row = fetch_realtime_row(now_ms)
           write_json(CURRENT_PATH, current_row)
 
-          # B) HISTORY (24h)
+          # B) HISTORY (30 dies)
           hist = read_hist()
           hist = [h for h in hist if isinstance(h, dict) and isinstance(h.get("ts"), (int, float))]
           hist.sort(key=lambda x: int(x["ts"]))
 
-          cutoff_ms = now_ms - 24 * 60 * 60 * 1000
+          # ====== CANVI: 30 dies de retenció ======
+          DAYS_TO_KEEP = 30
+          cutoff_ms = now_ms - DAYS_TO_KEEP * 24 * 60 * 60 * 1000
           last_ts_ms = int(hist[-1]["ts"]) if hist else None
 
-          OVERLAP_MS = 15 * 60 * 1000
+          # ====== CANVI: overlap més gran per evitar forats ======
+          OVERLAP_MS = 60 * 60 * 1000  # 60 min
+
           if last_ts_ms is None:
               start_ms = cutoff_ms
           else:
