@@ -427,20 +427,29 @@
             if (!yScale) return;
 
             ctx.save();
-            ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
-            ctx.textAlign = "right";
-            ctx.textBaseline = "middle";
+ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+ctx.textAlign = "right";
+ctx.textBaseline = "middle";
+
+// ✅ millor contrast en fons fosc
+ctx.fillStyle = "rgba(255,255,255,0.85)";
+ctx.strokeStyle = "rgba(0,0,0,0.55)";
+ctx.lineWidth = 3;
 
             const xRight = chartArea.right - 6;
 
             if (vMax != null) {
               const yMax = yScale.getPixelForValue(vMax);
-              ctx.fillText(`Màx ${Number(vMax).toFixed(1)} °C`, xRight, yMax);
+              const tMax = `Màx ${Number(vMax).toFixed(1)} °C`;
+ctx.strokeText(tMax, xRight, yMax);
+ctx.fillText(tMax, xRight, yMax);
             }
 
             if (vMin != null) {
               const yMin = yScale.getPixelForValue(vMin);
-              ctx.fillText(`Mín ${Number(vMin).toFixed(1)} °C`, xRight, yMin);
+              const tMin = `Mín ${Number(vMin).toFixed(1)} °C`;
+ctx.strokeText(tMin, xRight, yMin);
+ctx.fillText(tMin, xRight, yMin);
             }
 
             ctx.restore();
