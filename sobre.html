@@ -20,6 +20,28 @@
   <meta property="og:url" content="https://meteocandela.cat/sobre.html">
   <meta property="og:image" content="https://meteocandela.cat/og-image.png">
 
+  <!-- ✅ Breadcrumb SEO (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Inici",
+        "item": "https://meteocandela.cat/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Sobre l’estació",
+        "item": "https://meteocandela.cat/sobre.html"
+      }
+    ]
+  }
+  </script>
+
   <link rel="stylesheet" href="style.css?v=2026-02-02-01">
 </head>
 
@@ -35,6 +57,15 @@
   </header>
 
   <main class="grid">
+
+    <!-- ✅ BREADCRUMB VISIBLE (lleuger) -->
+    <section class="card span2">
+      <nav class="breadcrumb" aria-label="Ruta de navegació">
+        <a href="/" class="back-link">Inici</a>
+        <span class="breadcrumb__sep" aria-hidden="true">→</span>
+        <span aria-current="page">Sobre l’estació</span>
+      </nav>
+    </section>
 
     <!-- CONTEXT LOCAL -->
     <section class="card span2">
@@ -103,12 +134,12 @@
       </p>
     </section>
 
-    <!-- ENLLAÇ DE TORNADA -->
+    <!-- ENLLAÇ DE TORNADA (es manté) -->
     <section class="card span2" style="text-align:center">
       <p>
         <a href="/" class="back-link" aria-label="Tornar a la pàgina principal">
-  ← Tornar a MeteoCandela
-</a>
+          ← Tornar a MeteoCandela
+        </a>
       </p>
     </section>
 
