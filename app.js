@@ -26,20 +26,34 @@
 
   function fmtTime(tsMs) {
     const d = new Date(tsMs);
-    return new Intl.DateTimeFormat("ca-ES", { hour: "2-digit", minute: "2-digit" }).format(d);
+    return new Intl.DateTimeFormat("ca-ES", {
+      hour: "2-digit", minute: "2-digit"
+    }).format(d);
   }
 
-  // ===== utilitats mín/màx del dia =====
-  function startOfLocalDay(tsMs) {
-    const d = new Date(tsMs);
-    d.setHours(0, 0, 0, 0);
-    return d.getTime();
+  function fmtDayLong(dayKey) {
+    // dayKey = YYYY-MM-DD
+    const [y, m, d] = dayKey.split("-").map(Number);
+    const dt = new Date(y, m - 1, d);
+    return new Intl.DateTimeFormat("ca-ES", {
+      weekday: "long", year: "numeric", month: "2-digit", day: "2-digit"
+    }).format(dt);
   }
 
-  function isSameLocalDay(tsMs, dayStartMs) {
+  // ===== utilitats de dia (hora local) =====
+  function dayKeyFromTs(tsMs) {
     const d = new Date(tsMs);
-    d.setHours(0, 0, 0, 0);
-    return d.getTime() === dayStartMs;
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const da = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${da}`;
+  }
+
+  function startEndMsFromDayKey(dayKey) {
+    const [y, m, d] = dayKey.split("-").map(Number);
+    const start = new Date(y, m - 1, d, 0, 0, 0, 0).getTime();
+    const end   = new Date(y, m - 1, d, 23, 59, 59, 999).getTime();
+    return { start, end };
   }
 
   function minMax(values) {
@@ -49,7 +63,7 @@
     if (!v.length) return { min: null, max: null };
     return { min: Math.min(...v), max: Math.max(...v) };
   }
-  // ====================================
+  // =========================================
 
   // Converteix graus a nom de vent en català (8 sectors) amb Garbí
   function degToWindCatalan(deg) {
@@ -64,6 +78,7 @@
     if (d >= 202.5 && d < 247.5)  return "SW – Garbí";
     if (d >= 247.5 && d < 292.5)  return "W – Ponent";
     if (d >= 292.5 && d < 337.5)  return "NW – Mestral";
+
     return "—";
   }
 
@@ -115,30 +130,29 @@
     };
   }
 
-  // fetch amb timeout (evita quedar-se penjat)
-  async function fetchJson(url, timeoutMs = 8000) {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), timeoutMs);
-    try {
-      const res = await fetch(url, { cache: "no-store", signal: ctrl.signal });
-      if (!res.ok) throw new Error(`${res.status} ${res.statusText} @ ${url}`);
-      return await res.json();
-    } finally {
-      clearTimeout(t);
-    }
+  async function fetchJson(url) {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText} @ ${url}`);
+    return await res.json();
   }
 
-  function buildCharts(rows) {
-    // ✅ usar el ts més recent disponible (evita “d’ahir” si history va lent)
-    const now = rows.length ? rows[rows.length - 1].ts : Date.now();
-    const last24hMs = 24 * 60 * 60 * 1000;
-    const r24 = rows.filter(r => r.ts >= (now - last24hMs));
+  // ===== Charts =====
+  function buildChartsForDay(allRows, dayKey) {
+    const { start, end } = startEndMsFromDayKey(dayKey);
+    const rDay = allRows.filter(r => r.ts >= start && r.ts <= end);
 
-    const labels = r24.map(r => fmtTime(r.ts));
-    const temp = r24.map(r => r.temp_c);
-    const hum  = r24.map(r => r.hum_pct);
-    const wind = r24.map(r => r.wind_kmh);
-    const gust = r24.map(r => r.gust_kmh);
+    // Labels i sèries
+    const labels = rDay.map(r => fmtTime(r.ts));
+    const temp = rDay.map(r => r.temp_c);
+    const hum  = rDay.map(r => r.hum_pct);
+    const wind = rDay.map(r => r.wind_kmh);
+    const gust = rDay.map(r => r.gust_kmh);
+
+    // Títols amb data (sense “24h”)
+    const dayTxt = fmtDayLong(dayKey);
+    if ($("chartTempTitle")) $("chartTempTitle").textContent = `Temperatura · ${dayTxt}`;
+    if ($("chartHumTitle"))  $("chartHumTitle").textContent  = `Humitat · ${dayTxt}`;
+    if ($("chartWindTitle")) $("chartWindTitle").textContent = `Vent i ratxa · ${dayTxt}`;
 
     const commonOpts = {
       responsive: true,
@@ -161,48 +175,48 @@
           }
         }
       },
-      scales: { x: { type: "category", ticks: { maxTicksLimit: 8 } } }
+      scales: { x: { type: "category", ticks: { maxTicksLimit: 10 } } }
     };
 
+    // Destroy abans de recrear
     if (window.__chartTemp) window.__chartTemp.destroy();
     if (window.__chartHum) window.__chartHum.destroy();
     if (window.__chartWind) window.__chartWind.destroy();
 
-    const cTemp = $("chartTemp");
-    const cHum = $("chartHum");
-    const cWind = $("chartWind");
-
-    if (cTemp) {
-      window.__chartTemp = new Chart(cTemp, {
-        type: "line",
-        data: { labels, datasets: [{
+    window.__chartTemp = new Chart($("chartTemp"), {
+      type: "line",
+      data: {
+        labels,
+        datasets: [{
           data: temp, __unit: "°C", __prefix: "",
           tension: 0.25, pointRadius: 2, pointHoverRadius: 7, pointHitRadius: 12,
           borderWidth: 2, fill: false
-        }]},
-        options: commonOpts
-      });
-    }
+        }]
+      },
+      options: commonOpts
+    });
 
-    if (cHum) {
-      window.__chartHum = new Chart(cHum, {
-        type: "line",
-        data: { labels, datasets: [{
+    window.__chartHum = new Chart($("chartHum"), {
+      type: "line",
+      data: {
+        labels,
+        datasets: [{
           data: hum, __unit: "%", __prefix: "",
           tension: 0.25, pointRadius: 2, pointHoverRadius: 7, pointHitRadius: 12,
           borderWidth: 2, fill: false
-        }]},
-        options: { ...commonOpts, scales: { ...commonOpts.scales, y: { min: 0, max: 100 } } }
-      });
-    }
+        }]
+      },
+      options: { ...commonOpts, scales: { ...commonOpts.scales, y: { min: 0, max: 100 } } }
+    });
 
-    if (cWind) {
-      window.__chartWind = new Chart(cWind, {
+    const windCanvas = $("chartWind");
+    if (windCanvas) {
+      window.__chartWind = new Chart(windCanvas, {
         type: "line",
         data: {
           labels,
           datasets: [
-            // ✅ ordre invertit: tooltip primer Ratxa i després Vent
+            // ordre per tooltip: primer Ratxa, després Vent
             {
               label: "ratxa",
               data: gust,
@@ -233,6 +247,16 @@
         options: commonOpts
       });
     }
+
+    // Si no hi ha punts aquell dia, avisa (sense trencar res)
+    const dayLabel = $("dayLabel");
+    if (dayLabel) {
+      if (rDay.length) {
+        dayLabel.textContent = `${dayTxt} · ${rDay.length} punts`;
+      } else {
+        dayLabel.textContent = `${dayTxt} · sense dades`;
+      }
+    }
   }
 
   function setSourceLine(txt) {
@@ -240,56 +264,62 @@
     if (el) el.textContent = txt;
   }
 
-  function renderCurrent(last, rows, sourceTag) {
-    $("temp").textContent = last.temp_c == null ? "—" : fmt1(last.temp_c);
-    $("hum").textContent  = last.hum_pct == null ? "—" : String(Math.round(last.hum_pct));
-    $("wind").textContent = last.wind_kmh == null ? "—" : fmt1(last.wind_kmh);
-    $("rainDay").textContent = last.rain_day_mm == null ? "—" : fmt1(last.rain_day_mm);
+  function renderCurrent(current, historyRows) {
+    $("temp").textContent = current.temp_c == null ? "—" : fmt1(current.temp_c);
+    $("hum").textContent  = current.hum_pct == null ? "—" : String(Math.round(current.hum_pct));
+    $("wind").textContent = current.wind_kmh == null ? "—" : fmt1(current.wind_kmh);
+    $("rainDay").textContent = current.rain_day_mm == null ? "—" : fmt1(current.rain_day_mm);
 
     if ($("tempSub")) {
       $("tempSub").textContent =
-        last.dew_c == null ? "Punt de rosada: —" : `Punt de rosada: ${fmt1(last.dew_c)} °C`;
+        current.dew_c == null ? "Punt de rosada: —" : `Punt de rosada: ${fmt1(current.dew_c)} °C`;
     }
 
-    // Mín/Màx avui (en base a history)
+    // mín/màx avui a partir de history (i si cal inclou current al càlcul)
     const elMinMax = $("tempMinMax");
-    if (elMinMax && Array.isArray(rows) && rows.length) {
-      const todayStart = startOfLocalDay(last.ts);
-      const todayRows = rows.filter(r => isSameLocalDay(r.ts, todayStart));
-      const { min, max } = minMax(todayRows.map(r => r.temp_c));
+    if (elMinMax && Array.isArray(historyRows) && historyRows.length) {
+      const todayKey = dayKeyFromTs(Date.now());
+      const { start, end } = startEndMsFromDayKey(todayKey);
 
+      const todayRows = historyRows
+        .filter(r => r.ts >= start && r.ts <= end)
+        .slice();
+
+      // afegeix current si és d’avui i és més nou
+      if (current && Number.isFinite(current.ts) && current.ts >= start && current.ts <= end) {
+        const lastHistTs = todayRows.length ? todayRows[todayRows.length - 1].ts : null;
+        if (!lastHistTs || current.ts > lastHistTs) todayRows.push(current);
+      }
+
+      const { min, max } = minMax(todayRows.map(r => r.temp_c));
       elMinMax.textContent =
         (min == null || max == null)
           ? "Temperatura avui: mín — · màx —"
           : `Temperatura avui: mín ${fmt1(min)} °C · màx ${fmt1(max)} °C`;
     }
 
-    // Direcció
+    // direcció vent
     let dirTxt = "—";
-    if (last.wind_dir != null && last.wind_dir !== "") {
-      const deg = Number(last.wind_dir);
+    if (current.wind_dir != null && current.wind_dir !== "") {
+      const deg = Number(current.wind_dir);
       if (!Number.isNaN(deg)) dirTxt = `${deg.toFixed(0)}° (${degToWindCatalan(deg)})`;
     }
 
     if ($("gustSub")) {
       $("gustSub").textContent =
-        last.gust_kmh == null
+        current.gust_kmh == null
           ? `Ratxa: — · Dir: ${dirTxt}`
-          : `Ratxa: ${fmt1(last.gust_kmh)} km/h · Dir: ${dirTxt}`;
+          : `Ratxa: ${fmt1(current.gust_kmh)} km/h · Dir: ${dirTxt}`;
     }
 
     if ($("rainRateSub")) {
       $("rainRateSub").textContent =
-        last.rain_rate_mmh == null
+        current.rain_rate_mmh == null
           ? "Intensitat de pluja: —"
-          : `Intensitat de pluja: ${fmt1(last.rain_rate_mmh)} mm/h`;
+          : `Intensitat de pluja: ${fmt1(current.rain_rate_mmh)} mm/h`;
     }
 
-    $("lastUpdated").textContent = `Actualitzat: ${fmtDate(last.ts)}`;
-
-    if (sourceTag === "realtime") setSourceLine("Origen: dades en temps real");
-    else if (sourceTag === "fallback") setSourceLine("Origen: últim registre disponible");
-    else setSourceLine("Origen: històric");
+    $("lastUpdated").textContent = `Actualitzat: ${fmtDate(current.ts)}`;
   }
 
   function renderStatus(lastTsMs, hb) {
@@ -309,95 +339,192 @@
 
     let msg = `Dada: fa ${Math.round(dataAgeMin)} min`;
     if (hbAgeMin != null) msg += ` · Workflow: fa ${Math.round(hbAgeMin)} min`;
+
     if (dataAgeMin > 20) msg += " · ⚠️ Dades antigues (possible aturada o límit).";
     el.textContent = msg;
   }
 
+  // ===== Selector de dia =====
+  function getUrlDayParam() {
+    try {
+      const u = new URL(location.href);
+      const v = u.searchParams.get("day");
+      return v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function setUrlDayParam(dayKey) {
+    try {
+      const u = new URL(location.href);
+      u.searchParams.set("day", dayKey);
+      history.replaceState(null, "", u.toString());
+    } catch {}
+  }
+
+  function buildDayListFromRows(rows, current) {
+    const set = new Set();
+    for (const r of rows) set.add(dayKeyFromTs(r.ts));
+
+    // assegura que “avui” hi sigui (si només tens current i history va endarrerit)
+    const todayKey = dayKeyFromTs(Date.now());
+    set.add(todayKey);
+
+    // si current és d’un altre dia (poc probable) també
+    if (current && Number.isFinite(current.ts)) set.add(dayKeyFromTs(current.ts));
+
+    return Array.from(set).sort(); // asc
+  }
+
+  function labelForDay(dayKey) {
+    const today = dayKeyFromTs(Date.now());
+    const yesterday = dayKeyFromTs(Date.now() - 24*60*60*1000);
+
+    if (dayKey === today) return `Avui (${dayKey.split("-").reverse().join("/")})`;
+    if (dayKey === yesterday) return `Ahir (${dayKey.split("-").reverse().join("/")})`;
+    return dayKey.split("-").reverse().join("/");
+  }
+
+  function setupDaySelector(dayKeys, initialKey, onChange) {
+    const sel = $("daySelect");
+    const prev = $("dayPrev");
+    const next = $("dayNext");
+
+    if (!sel) return;
+
+    sel.innerHTML = "";
+    for (const k of dayKeys) {
+      const opt = document.createElement("option");
+      opt.value = k;
+      opt.textContent = labelForDay(k);
+      sel.appendChild(opt);
+    }
+
+    const idx0 = Math.max(0, dayKeys.indexOf(initialKey));
+    sel.value = dayKeys[idx0] || dayKeys[dayKeys.length - 1];
+
+    function currentIndex() {
+      return dayKeys.indexOf(sel.value);
+    }
+
+    function updateButtons() {
+      const i = currentIndex();
+      if (prev) prev.disabled = (i <= 0);
+      if (next) next.disabled = (i >= dayKeys.length - 1);
+    }
+
+    sel.addEventListener("change", () => {
+      updateButtons();
+      setUrlDayParam(sel.value);
+      onChange(sel.value);
+    });
+
+    if (prev) prev.addEventListener("click", () => {
+      const i = currentIndex();
+      if (i > 0) {
+        sel.value = dayKeys[i - 1];
+        sel.dispatchEvent(new Event("change"));
+      }
+    });
+
+    if (next) next.addEventListener("click", () => {
+      const i = currentIndex();
+      if (i < dayKeys.length - 1) {
+        sel.value = dayKeys[i + 1];
+        sel.dispatchEvent(new Event("change"));
+      }
+    });
+
+    updateButtons();
+    return sel.value;
+  }
+
+  // ===== Main =====
   async function main() {
     if ($("year")) $("year").textContent = String(new Date().getFullYear());
 
-    // 1) HISTORY (gràfics + mín/màx)
+    // 1) HISTORY
     let rawHist = [];
     try {
       const h = await fetchJson(`${HISTORY_URL}?t=${Date.now()}`);
       rawHist = Array.isArray(h) ? h : [];
-    } catch (e) {
+    } catch {
       rawHist = [];
-      if ($("statusLine")) $("statusLine").textContent = `Error history: ${e.message || e}`;
     }
 
-    const rows = rawHist
+    const historyRows = rawHist
       .map(normalizeRow)
       .filter(r => Number.isFinite(r.ts))
       .sort((a, b) => a.ts - b.ts);
 
-    // 2) CURRENT (temps real) -> fallback a l’últim del history
+    // 2) CURRENT
     let current = null;
-    let sourceTag = "history";
-
     try {
       const c = await fetchJson(`${CURRENT_URL}?t=${Date.now()}`);
       if (c && typeof c === "object") {
-        current = normalizeRow(c);
-        if (Number.isFinite(current.ts)) sourceTag = "realtime";
+        const cc = normalizeRow(c);
+        if (Number.isFinite(cc.ts)) current = cc;
       }
-    } catch (e) {
-      // no cal espantar: simplement farem fallback
-    }
-
-    if (!current || !Number.isFinite(current.ts)) {
-      if (rows.length) {
-        current = rows[rows.length - 1];
-        sourceTag = "fallback";
-      }
+    } catch {
+      current = null;
     }
 
     // 3) HEARTBEAT
     let hb = null;
-    try { hb = await fetchJson(`${HEARTBEAT_URL}?t=${Date.now()}`); } catch (_) {}
+    try { hb = await fetchJson(`${HEARTBEAT_URL}?t=${Date.now()}`); } catch {}
 
-    // 4) Render
+    // 4) “Actual” sempre: preferim current, si falla fem fallback a últim history
+    let actualRow = null;
+    let sourceTag = "històric";
+
     if (current) {
-      renderCurrent(current, rows, sourceTag);
-      renderStatus(current.ts, hb);
-    } else {
-      $("lastUpdated").textContent = "Sense dades.";
-      setSourceLine("Origen: —");
-      renderStatus(null, hb);
-      return;
+      actualRow = current;
+      sourceTag = "dades en temps real";
+    } else if (historyRows.length) {
+      actualRow = historyRows[historyRows.length - 1];
+      sourceTag = "últim registre disponible";
     }
 
-    // 5) Gràfics: history + current (si history va lent)
-    const rowsForCharts = rows.slice();
+    if (actualRow) {
+      renderCurrent(actualRow, historyRows);
+      renderStatus(actualRow.ts, hb);
+      setSourceLine(`Origen: ${sourceTag}`);
+    } else {
+      if ($("lastUpdated")) $("lastUpdated").textContent = "Sense dades.";
+      setSourceLine("Origen: —");
+      renderStatus(null, hb);
+    }
 
+    // 5) Rows per gràfiques: history + (si és avui i és més nou) current
+    const rowsForCharts = historyRows.slice();
     if (current && Number.isFinite(current.ts)) {
       const lastHistTs = rowsForCharts.length ? rowsForCharts[rowsForCharts.length - 1].ts : null;
       if (!lastHistTs || current.ts > lastHistTs) rowsForCharts.push(current);
     }
 
-    // Dedupe per ts + ordena
+    // Dedupe per ts i ordena
     const byTs = new Map();
     for (const r of rowsForCharts) byTs.set(r.ts, r);
     const mergedCharts = Array.from(byTs.values()).sort((a, b) => a.ts - b.ts);
 
-    // Si Chart.js no ha carregat, ho veurem clar
-    if (typeof Chart === "undefined") {
-      if ($("statusLine")) $("statusLine").textContent = "Error: Chart.js no està carregat (CDN).";
-      return;
-    }
+    // 6) Selector de dies
+    const dayKeys = buildDayListFromRows(mergedCharts, current);
+    const todayKey = dayKeyFromTs(Date.now());
+    const initial = getUrlDayParam() || todayKey;
 
-    try {
-      if (mergedCharts.length) buildCharts(mergedCharts);
-    } catch (e) {
-      if ($("statusLine")) $("statusLine").textContent = `Error gràfics: ${e.message || e}`;
-      console.warn(e);
-    }
+    const selected = setupDaySelector(dayKeys, initial, (dayKey) => {
+      buildChartsForDay(mergedCharts, dayKey);
+    });
+
+    // primera render
+    if (selected) buildChartsForDay(mergedCharts, selected);
   }
 
   main().catch(err => {
     console.error(err);
     if ($("lastUpdated")) $("lastUpdated").textContent = "Error carregant dades.";
-    if ($("statusLine")) $("statusLine").textContent = `Error app: ${err.message || err}`;
+    if ($("statusLine")) $("statusLine").textContent = String(err);
     setSourceLine("Origen: error");
   });
 })();
