@@ -211,19 +211,25 @@ h2{
   outline-offset: 2px;
 }
 
-/* CHARTS */
-.chart-box{ height: 260px; }
+/* CHARTS (FIX: Chart.js no es quedi en blanc) */
+.chart-box{
+  height: 260px;
+  display: flex;              /* clau */
+  flex-direction: column;     /* clau */
+}
 
 /* ✅ RETOC: títol consistent i canvas que omple la resta */
 .card.chart-box h2{
-  margin-bottom: 10px; /* una mica més d’aire */
+  margin: 0 0 10px;           /* consistent */
   line-height: 1.2;
 }
 
-/* Canvas ocupa la resta (el 42px és marge+títol aprox, estable visualment) */
+/* ✅ FIX: res de calc(); el canvas omple l’espai restant */
 .chart-box canvas{
   width: 100% !important;
-  height: calc(100% - 42px) !important;
+  flex: 1 1 auto !important;
+  height: auto !important;
+  display: block;
 }
 
 @media (min-width: 900px){
