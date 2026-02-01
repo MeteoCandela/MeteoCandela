@@ -4,14 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
 
+  <!-- SEO bàsic -->
   <title>MeteoCandela · Meteo Valls (Alt Camp) en temps real</title>
-  <meta name="description" content="Estació meteorològica automàtica a Valls (Alt Camp) amb dades en temps real de temperatura, humitat, vent, ratxes, pluja i evolució diària. Gràfiques actualitzades cada 5 minuts.">
+  <meta name="description" content="Estació meteorològica automàtica a Valls (Alt Camp) amb dades en temps real de temperatura, humitat, vent, ratxes i pluja. Gràfiques actualitzades cada 5 minuts.">
   <link rel="canonical" href="https://meteocandela.cat/">
 
   <meta name="robots" content="index,follow">
   <meta name="theme-color" content="#0b1220">
 
-  <!-- Open Graph (WhatsApp / Facebook / Instagram) -->
+  <!-- Open Graph (WhatsApp / Facebook / Telegram) -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="MeteoCandela">
   <meta property="og:locale" content="ca_ES">
@@ -20,6 +21,7 @@
   <meta property="og:url" content="https://meteocandela.cat/">
 
   <meta property="og:image" content="https://meteocandela.cat/og-image.png">
+  <meta property="og:image:url" content="https://meteocandela.cat/og-image.png">
   <meta property="og:image:secure_url" content="https://meteocandela.cat/og-image.png">
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
@@ -28,14 +30,12 @@
 
   <!-- Twitter / X -->
   <meta name="twitter:card" content="summary_large_image">
-  <!-- Opcional: posa el teu @ si en tens; si no, pots esborrar aquesta línia -->
-  <!-- <meta name="twitter:site" content="@meteocandela"> -->
   <meta name="twitter:title" content="MeteoCandela · Meteo Valls (Alt Camp) en temps real">
   <meta name="twitter:description" content="Dades en temps real de temperatura, humitat, vent, ratxes i pluja. Gràfiques diàries cada 5 minuts.">
   <meta name="twitter:image" content="https://meteocandela.cat/og-image.png">
   <meta name="twitter:image:alt" content="MeteoCandela · Meteo Valls en temps real: temperatura, vent, ratxes i pluja">
 
-  <!-- Schema.org -->
+  <!-- Schema.org: Estació meteorològica -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -56,135 +56,98 @@
   }
   </script>
 
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": [
-    {
-      "@type": "Question",
-      "name": "Cada quant s’actualitzen les dades?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Les dades s’actualitzen aproximadament cada 5 minuts, segons la recepció dels sensors i la connexió."
+  <!-- Schema.org: FAQ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Cada quant s’actualitzen les dades?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Les dades s’actualitzen aproximadament cada 5 minuts, segons la recepció dels sensors i la connexió."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "On està situada l’estació MeteoCandela?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "L’estació és a Valls (Alt Camp, Tarragona), en un entorn urbà representatiu de la zona."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Les dades són oficials?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. Són dades d’una estació meteorològica automàtica privada amb finalitat informativa i divulgativa."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Per què de vegades falten dades?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Pot ser per interrupcions temporals de connexió, manteniment o pèrdues puntuals de senyal."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Què és una ratxa de vent?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "És la velocitat màxima puntual del vent registrada en un interval curt, diferent del vent mitjà."
+        }
       }
-    },
-    {
-      "@type": "Question",
-      "name": "On està situada l’estació MeteoCandela?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "L’estació és a Valls (Alt Camp, Tarragona), en un entorn urbà representatiu de la zona."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Les dades són oficials?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "No. Són dades d’una estació meteorològica automàtica privada amb finalitat informativa i divulgativa."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Per què de vegades falten dades o hi ha valors a “—”?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Pot passar per interrupcions temporals de connexió, manteniment, bateria/energia del sensor o pèrdues puntuals de senyal."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Què vol dir “ratxa de vent”?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "La ratxa és la velocitat màxima puntual del vent registrada en un interval curt (una punta de vent), diferent del vent mitjà."
-      }
-    }
-  ]
-}
-</script>
-  
-  <!-- Icons (favicon / mòbil / PWA) -->
-  <!-- Si tens favicon.ico, deixa aquesta línia. Si no el tens, no passa res: les PNG de sota ho cobreixen. -->
-  <link rel="icon" href="/favicon.ico">
-  <link rel="shortcut icon" href="/favicon.ico">
+    ]
+  }
+  </script>
 
-  <!-- IMPORTANT: aquestes 2 són les que realment fan que navegadors moderns trobin el favicon -->
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.png">
-
-  <!-- Apple iOS -->
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-  <meta name="apple-mobile-web-app-title" content="MeteoCandela">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-  <!-- PWA -->
+  <!-- Icons -->
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest">
 
-  <!-- cache-buster CSS -->
+  <!-- CSS / JS -->
   <link rel="stylesheet" href="style.css?v=2026-02-01-1">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- cache-buster JS -->
   <script defer src="app.js?v=2026-02-01-1"></script>
 </head>
 
 <body>
 
-  <!-- Text semàntic per a Google (no visible) -->
-  <section style="display:none">
+  <!-- Contingut semàntic accessible -->
+  <section class="sr-only">
     <h1>Estació meteorològica a Valls – MeteoCandela</h1>
     <p>
       MeteoCandela és una estació meteorològica automàtica situada a Valls, comarca de l’Alt Camp (Tarragona).
-      Ofereix dades meteorològiques en temps real de temperatura, humitat relativa, vent, ratxes màximes,
-      pluja acumulada, intensitat de precipitació i evolució diària.
-    </p>
-    <p>
-      Les dades provenen de sensors meteorològics automàtics i s’actualitzen de manera contínua.
-      Aquest projecte té finalitat informativa i divulgativa sobre el temps a Valls i rodalia.
+      Ofereix dades meteorològiques en temps real de temperatura, humitat, vent, ratxes i pluja.
     </p>
   </section>
 
   <header class="hero">
     <div class="hero__overlay"></div>
-
     <div class="hero__content">
       <h1>MeteoCandela · Valls</h1>
-
-      <p id="lastUpdated" aria-live="polite">Carregant…</p>
-      <p id="statusLine" class="status" aria-live="polite">—</p>
+      <p id="lastUpdated">Carregant…</p>
+      <p id="statusLine" class="status">—</p>
     </div>
   </header>
 
   <main class="grid">
-    <!-- ACTUAL -->
+
     <section class="card">
       <h2>Actual</h2>
-
-      <!-- línia d'origen/font (temps real / últim registre / històric) -->
       <div id="sourceLine" class="source">—</div>
 
       <div class="kpis">
-        <div class="kpi">
-          <div class="kpi__v" id="temp">—</div>
-          <div class="kpi__l">Temperatura (°C)</div>
-        </div>
-
-        <div class="kpi">
-          <div class="kpi__v" id="hum">—</div>
-          <div class="kpi__l">Humitat (%)</div>
-        </div>
-
-        <div class="kpi">
-          <div class="kpi__v" id="wind">—</div>
-          <div class="kpi__l">Vent (km/h)</div>
-        </div>
-
-        <div class="kpi">
-          <div class="kpi__v" id="rainDay">—</div>
-          <div class="kpi__l">Pluja dia (mm)</div>
-        </div>
+        <div class="kpi"><div class="kpi__v" id="temp">—</div><div class="kpi__l">Temperatura (°C)</div></div>
+        <div class="kpi"><div class="kpi__v" id="hum">—</div><div class="kpi__l">Humitat (%)</div></div>
+        <div class="kpi"><div class="kpi__v" id="wind">—</div><div class="kpi__l">Vent (km/h)</div></div>
+        <div class="kpi"><div class="kpi__v" id="rainDay">—</div><div class="kpi__l">Pluja dia (mm)</div></div>
       </div>
 
       <div class="subs">
@@ -195,76 +158,26 @@
       </div>
     </section>
 
-    <!-- SELECTOR DE DIA (full width) -->
-    <section class="card span2">
-      <div class="daybar">
-        <div class="daybar__left">
-          <div class="daybar__title">Gràfiques del dia</div>
-          <div id="dayLabel" class="daybar__subtitle">—</div>
-        </div>
-
-        <div class="daybar__right">
-          <button id="dayPrev" class="btn" type="button" aria-label="Dia anterior">◀</button>
-
-          <label class="sr-only" for="daySelect">Selecciona dia</label>
-          <select id="daySelect" class="select" aria-label="Selecciona dia">
-            <option>Carregant…</option>
-          </select>
-
-          <button id="dayNext" class="btn" type="button" aria-label="Dia següent">▶</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- GRÀFIQUES -->
-    <section class="card chart-box">
-      <h2 id="chartTempTitle">Temperatura</h2>
+    <section class="card span2 chart-box">
+      <h2>Temperatura</h2>
       <canvas id="chartTemp"></canvas>
     </section>
 
     <section class="card chart-box">
-      <h2 id="chartHumTitle">Humitat</h2>
+      <h2>Humitat</h2>
       <canvas id="chartHum"></canvas>
     </section>
 
     <section class="card chart-box span2">
-      <h2 id="chartWindTitle">Vent i ratxa</h2>
+      <h2>Vent i ratxa</h2>
       <canvas id="chartWind"></canvas>
     </section>
+
   </main>
 
-<!-- FAQ (visible) -->
-  <section class="card span2" id="faq" aria-label="Preguntes freqüents">
-    <h2>Preguntes freqüents (FAQ)</h2>
-
-    <details>
-      <summary><strong>Cada quant s’actualitzen les dades?</strong></summary>
-      <p>Les dades s’actualitzen aproximadament cada 5 minuts, segons la recepció dels sensors i la connexió.</p>
-    </details>
-
-    <details>
-      <summary><strong>On està situada l’estació MeteoCandela?</strong></summary>
-      <p>L’estació és a Valls (Alt Camp, Tarragona), en un entorn urbà representatiu de la zona.</p>
-    </details>
-
-    <details>
-      <summary><strong>Les dades són oficials?</strong></summary>
-      <p>No. Són dades d’una estació meteorològica automàtica privada amb finalitat informativa i divulgativa.</p>
-    </details>
-
-    <details>
-      <summary><strong>Per què de vegades falten dades o hi ha valors a “—”?</strong></summary>
-      <p>Pot passar per interrupcions temporals de connexió, manteniment, bateria/energia del sensor o pèrdues puntuals de senyal.</p>
-    </details>
-
-    <details>
-      <summary><strong>Què vol dir “ratxa de vent”?</strong></summary>
-      <p>La ratxa és la velocitat màxima puntual del vent registrada en un interval curt (una punta de vent), diferent del vent mitjà.</p>
-    </details>
-  </section>
-  
   <footer class="footer">
     <span>© <span id="year"></span> MeteoCandela</span>
   </footer>
+
 </body>
 </html>
