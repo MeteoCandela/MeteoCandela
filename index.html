@@ -56,6 +56,55 @@
   }
   </script>
 
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Cada quant s’actualitzen les dades?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Les dades s’actualitzen aproximadament cada 5 minuts, segons la recepció dels sensors i la connexió."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "On està situada l’estació MeteoCandela?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "L’estació és a Valls (Alt Camp, Tarragona), en un entorn urbà representatiu de la zona."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Les dades són oficials?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Són dades d’una estació meteorològica automàtica privada amb finalitat informativa i divulgativa."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Per què de vegades falten dades o hi ha valors a “—”?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Pot passar per interrupcions temporals de connexió, manteniment, bateria/energia del sensor o pèrdues puntuals de senyal."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Què vol dir “ratxa de vent”?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "La ratxa és la velocitat màxima puntual del vent registrada en un interval curt (una punta de vent), diferent del vent mitjà."
+      }
+    }
+  ]
+}
+</script>
+  
   <!-- Icons (favicon / mòbil / PWA) -->
   <!-- Si tens favicon.ico, deixa aquesta línia. Si no el tens, no passa res: les PNG de sota ho cobreixen. -->
   <link rel="icon" href="/favicon.ico">
@@ -184,6 +233,36 @@
     </section>
   </main>
 
+<!-- FAQ (visible) -->
+  <section class="card span2" id="faq" aria-label="Preguntes freqüents">
+    <h2>Preguntes freqüents (FAQ)</h2>
+
+    <details>
+      <summary><strong>Cada quant s’actualitzen les dades?</strong></summary>
+      <p>Les dades s’actualitzen aproximadament cada 5 minuts, segons la recepció dels sensors i la connexió.</p>
+    </details>
+
+    <details>
+      <summary><strong>On està situada l’estació MeteoCandela?</strong></summary>
+      <p>L’estació és a Valls (Alt Camp, Tarragona), en un entorn urbà representatiu de la zona.</p>
+    </details>
+
+    <details>
+      <summary><strong>Les dades són oficials?</strong></summary>
+      <p>No. Són dades d’una estació meteorològica automàtica privada amb finalitat informativa i divulgativa.</p>
+    </details>
+
+    <details>
+      <summary><strong>Per què de vegades falten dades o hi ha valors a “—”?</strong></summary>
+      <p>Pot passar per interrupcions temporals de connexió, manteniment, bateria/energia del sensor o pèrdues puntuals de senyal.</p>
+    </details>
+
+    <details>
+      <summary><strong>Què vol dir “ratxa de vent”?</strong></summary>
+      <p>La ratxa és la velocitat màxima puntual del vent registrada en un interval curt (una punta de vent), diferent del vent mitjà.</p>
+    </details>
+  </section>
+  
   <footer class="footer">
     <span>© <span id="year"></span> MeteoCandela</span>
   </footer>
