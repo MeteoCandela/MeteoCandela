@@ -122,8 +122,9 @@
       wind_kmh: windKmh != null ? Number(windKmh) : null,
       gust_kmh: gustKmh != null ? Number(gustKmh) : null,
       wind_dir: (r.wind_dir ?? r.wind_direction ?? null),
-      rain_day_mm: rainDay != null ? Number(rainDay) : 0,
-      rain_rate_mmh: rainRate != null ? Number(rainRate) : 0,
+      // IMPORTANT: si falta pluja, millor null (no 0) per detectar "sense sensor"
+      rain_day_mm: (rainDay != null && Number.isFinite(Number(rainDay))) ? Number(rainDay) : null,
+      rain_rate_mmh: (rainRate != null && Number.isFinite(Number(rainRate))) ? Number(rainRate) : null,
     };
   }
 
@@ -306,6 +307,12 @@
     const wind = rDay.map(r => r.wind_kmh);
     const gust = rDay.map(r => r.gust_kmh);
 
+    // ✅ Pluja acumulada del dia (a cada punt)
+    const rainAcc = rDay.map(r => {
+      const v = r.rain_day_mm;
+      return (v == null || !Number.isFinite(Number(v))) ? null : Number(v);
+    });
+
     const { min: vMin, max: vMax } = minMax(temp);
 
     const dayTxt = fmtDayLong(dayKey);
@@ -313,13 +320,39 @@
     if ($("chartTempTitle")) $("chartTempTitle").textContent = `Temperatura (°C) · ${dayTxt}`;
     if ($("chartHumTitle"))  $("chartHumTitle").textContent  = `Humitat (%) · ${dayTxt}`;
     if ($("chartWindTitle")) $("chartWindTitle").textContent = `Vent i ratxa (km/h) · ${dayTxt}`;
+    if ($("chartRainTitle")) $("chartRainTitle").textContent = `Pluja acumulada (mm) · ${dayTxt}`;
 
     const dayLabel = $("dayLabel");
     if (dayLabel) dayLabel.textContent = rDay.length ? dayTxt : `${dayTxt} · sense dades`;
 
+    // ✅ Missatge "sense precipitació"
+    const rainMsgEl = $("rainMsg");
+    const lastRain = (() => {
+      for (let i = rainAcc.length - 1; i >= 0; i--) {
+        if (rainAcc[i] != null && Number.isFinite(rainAcc[i])) return rainAcc[i];
+      }
+      return null;
+    })();
+
+    const hasRainSensorData = rainAcc.some(v => v != null && Number.isFinite(v));
+    const isZeroRain = hasRainSensorData && (lastRain != null) && (Number(lastRain) <= 0);
+
+    if (rainMsgEl) {
+      if (!rDay.length) rainMsgEl.textContent = "";
+      else if (!hasRainSensorData) rainMsgEl.textContent = "Sense dades de precipitació per al dia seleccionat.";
+      else if (isZeroRain) rainMsgEl.textContent = "Sense precipitació en el dia actual.";
+      else rainMsgEl.textContent = "";
+    } else {
+      // si no tens #rainMsg, fem fallback discret al títol
+      if ($("chartRainTitle") && rDay.length && hasRainSensorData && isZeroRain) {
+        $("chartRainTitle").textContent = `Pluja acumulada (mm) · ${dayTxt} · Sense precipitació en el dia actual`;
+      }
+    }
+
     if (window.__chartTemp) window.__chartTemp.destroy();
     if (window.__chartHum) window.__chartHum.destroy();
     if (window.__chartWind) window.__chartWind.destroy();
+    if (window.__chartRain) window.__chartRain.destroy();
 
     if (typeof window.Chart === "undefined") return;
 
@@ -327,7 +360,6 @@
     function tooltipMainTempOnly(unit) {
       return {
         displayColors: false,
-        // ✅ clau: només sèrie principal (dataset 0)
         filter: (item) => item.datasetIndex === 0,
         callbacks: {
           title: (items) => {
@@ -375,13 +407,12 @@
       scales: { x: { type: "category", ticks: { maxTicksLimit: 10 } } }
     };
 
-    // ===== TEMP amb línies MIN/MAX i etiqueta a la dreta (ALT CONTRAST) =====
+    // TEMP (amb min/max)
     window.__chartTemp = new Chart($("chartTemp"), {
       type: "line",
       data: {
         labels,
         datasets: [
-          // Sèrie principal
           {
             label: "",
             data: temp,
@@ -392,8 +423,6 @@
             borderWidth: 2,
             fill: false
           },
-
-          // Línia MIN
           ...(vMin == null ? [] : [{
             label: "Mín",
             data: labels.map(() => vMin),
@@ -403,8 +432,6 @@
             borderDash: [4, 4],
             fill: false
           }]),
-
-          // Línia MAX
           ...(vMax == null ? [] : [{
             label: "Màx",
             data: labels.map(() => vMax),
@@ -420,7 +447,7 @@
         ...commonBase,
         plugins: {
           legend: { display: false },
-          tooltip: tooltipMainTempOnly("°C") // ✅ Opció A
+          tooltip: tooltipMainTempOnly("°C")
         }
       },
       plugins: [{
@@ -437,7 +464,6 @@
           ctx.textAlign = "right";
           ctx.textBaseline = "middle";
 
-          // ✅ contrast (blanc + contorn fosc)
           ctx.fillStyle = "rgba(255,255,255,0.88)";
           ctx.strokeStyle = "rgba(0,0,0,0.55)";
           ctx.lineWidth = 3;
@@ -522,6 +548,34 @@
         }
       }
     });
+
+    // ✅ RAIN (pluja acumulada del dia)
+    const rainCanvas = $("chartRain");
+    if (rainCanvas) {
+      window.__chartRain = new Chart(rainCanvas, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [{
+            label: "",
+            data: rainAcc,
+            tension: 0.2,
+            pointRadius: 2,
+            pointHoverRadius: 7,
+            pointHitRadius: 12,
+            borderWidth: 2,
+            fill: true
+          }]
+        },
+        options: {
+          ...commonBase,
+          plugins: {
+            legend: { display: false },
+            tooltip: commonTooltip("mm")
+          }
+        }
+      });
+    }
   }
 
   // ===== Main =====
@@ -581,33 +635,4 @@
     }
 
     // 5) Merge per charts
-    const rowsForCharts = historyRows.slice();
-    if (current && Number.isFinite(current.ts)) {
-      const lastHistTs = rowsForCharts.length ? rowsForCharts[rowsForCharts.length - 1].ts : null;
-      if (!lastHistTs || current.ts > lastHistTs) rowsForCharts.push(current);
-    }
-
-    const byTs = new Map();
-    for (const r of rowsForCharts) byTs.set(r.ts, r);
-    const mergedCharts = Array.from(byTs.values()).sort((a, b) => a.ts - b.ts);
-
-    // 6) Selector dies
-    const dayKeys = buildDayListFromRows(mergedCharts, current);
-    const todayKey = dayKeyFromTs(Date.now());
-    const initial = getUrlDayParam() || todayKey;
-
-    const selected = setupDaySelector(dayKeys, initial, (dayKey) => {
-      buildChartsForDay(mergedCharts, dayKey);
-    });
-
-    if (selected) buildChartsForDay(mergedCharts, selected);
-    else buildChartsForDay(mergedCharts, initial);
-  }
-
-  main().catch(err => {
-    console.error(err);
-    if ($("lastUpdated")) $("lastUpdated").textContent = "Error carregant dades.";
-    if ($("statusLine")) $("statusLine").textContent = String(err);
-    setSourceLine("Origen: error");
-  });
-})();
+    const ro
