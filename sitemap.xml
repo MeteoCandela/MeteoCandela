@@ -17,4 +17,12 @@
     <priority>0.6</priority>
   </url>
 
+  <url>
+  <loc>https://meteocandela.cat/historic.html</loc>
+  <lastmod>2026-02-02</lastmod>
+  <changefreq>daily</changefreq>
+  <priority>0.6</priority>
+</url>
+  
 </urlset>
+
