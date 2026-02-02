@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
 
   <title>Històric · MeteoCandela (Barri de la Candela, Valls)</title>
-  <meta name="description" content="Històric diari resumit de MeteoCandela (Barri de la Candela, Valls): mínimes i màximes, pluja i ratxa de vent.">
-  <link rel="canonical" href="https://meteocandela.cat/historic.html">
+  <meta name="description" content="Històric diari de MeteoCandela (Barri de la Candela, Valls): temperatura mínima/màxima i mitjana, pluja, ratxa màxima i vent mitjà.">
+  <link rel="canonical" href="https://meteocandela.cat/hist%C3%B2ric.html">
 
   <meta name="robots" content="index,follow">
   <meta name="theme-color" content="#0b1220">
@@ -16,8 +16,8 @@
   <meta property="og:site_name" content="MeteoCandela">
   <meta property="og:locale" content="ca_ES">
   <meta property="og:title" content="Històric · MeteoCandela (Barri de la Candela)">
-  <meta property="og:description" content="Històric diari resumit: mínimes i màximes, pluja i ratxa de vent a Valls (Barri de la Candela).">
-  <meta property="og:url" content="https://meteocandela.cat/historic.html">
+  <meta property="og:description" content="Històric diari: mín/màx i mitjana, pluja, ratxa màxima i vent mitjà.">
+  <meta property="og:url" content="https://meteocandela.cat/hist%C3%B2ric.html">
   <meta property="og:image" content="https://meteocandela.cat/og-image.png">
 
   <link rel="stylesheet" href="style.css?v=2026-02-02-01">
@@ -49,9 +49,9 @@
     <section class="card span2">
       <h2>Resum diari</h2>
       <p>
-        Aquí trobaràs un <strong>resum per dies</strong> amb els valors principals registrats per l’estació
-        <strong>MeteoCandela</strong> al <strong>Barri de la Candela</strong> (Valls).
-        És una manera lleugera de conservar l’històric durant mesos o anys.
+        Taula amb el <strong>resum per dies</strong> de l’estació <strong>MeteoCandela</strong>
+        al <strong>Barri de la Candela</strong> (Valls): temperatura mínima/màxima i mitjana,
+        pluja, ratxa màxima i vent mitjà.
       </p>
       <p class="muted-line" id="histInfo" aria-live="polite">Carregant dades…</p>
     </section>
@@ -99,14 +99,15 @@
           <thead>
             <tr>
               <th>Data</th>
-              <th>T mín (°C)</th>
-              <th>T màx (°C)</th>
+              <th>T mín / màx (°C)</th>
+              <th>T mitjana (°C)</th>
               <th>Pluja (mm)</th>
-              <th>Ratxa (km/h)</th>
+              <th>Ratxa màxima (km/h)</th>
+              <th>Vent mitjà (km/h)</th>
             </tr>
           </thead>
           <tbody id="histBody">
-            <tr><td colspan="5" class="muted-cell">Carregant…</td></tr>
+            <tr><td colspan="6" class="muted-cell">Carregant…</td></tr>
           </tbody>
         </table>
       </div>
@@ -143,13 +144,10 @@
     }
 
     function fmtDateCA(ymd) {
-      // ymd: "YYYY-MM-DD"
       try {
         const [y, m, d] = ymd.split("-").map(Number);
         const dt = new Date(y, m - 1, d);
-        return new Intl.DateTimeFormat("ca-ES", {
-          year: "numeric", month: "2-digit", day: "2-digit"
-        }).format(dt);
+        return new Intl.DateTimeFormat("ca-ES", { year:"numeric", month:"2-digit", day:"2-digit" }).format(dt);
       } catch {
         return ymd;
       }
@@ -195,27 +193,29 @@
       if (!tbody) return;
 
       if (!rows.length) {
-        tbody.innerHTML = `<tr><td colspan="5" class="muted-cell">Sense dades per al filtre seleccionat.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="muted-cell">Sense dades per al filtre seleccionat.</td></tr>`;
         return;
       }
 
-      // ordre descendent (últim dia primer)
       const sorted = rows.slice().sort((a,b) => String(b.date).localeCompare(String(a.date)));
 
       tbody.innerHTML = sorted.map(r => {
         const date = String(r.date || "");
         const tmin = fmt1(r.t_min);
         const tmax = fmt1(r.t_max);
-        const rain = (r.rain_mm == null || Number.isNaN(Number(r.rain_mm))) ? "—" : Number(r.rain_mm).toFixed(1);
-        const gust = (r.gust_max == null || Number.isNaN(Number(r.gust_max))) ? "—" : Number(r.gust_max).toFixed(1);
+        const tavg = fmt1(r.t_avg);
+        const rain = fmt1(r.rain_mm);
+        const gust = fmt1(r.gust_max);
+        const wind = fmt1(r.wind_avg);
 
         return `
           <tr>
             <td data-label="Data">${fmtDateCA(date)}</td>
-            <td data-label="T mín (°C)">${tmin}</td>
-            <td data-label="T màx (°C)">${tmax}</td>
+            <td data-label="T mín / màx (°C)">${tmin} / ${tmax}</td>
+            <td data-label="T mitjana (°C)">${tavg}</td>
             <td data-label="Pluja (mm)">${rain}</td>
-            <td data-label="Ratxa (km/h)">${gust}</td>
+            <td data-label="Ratxa màxima (km/h)">${gust}</td>
+            <td data-label="Vent mitjà (km/h)">${wind}</td>
           </tr>
         `;
       }).join("");
@@ -228,10 +228,8 @@
         if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
         const data = await res.json();
         return Array.isArray(data) ? data : [];
-      } catch (e) {
-        if (info) {
-          info.textContent = "Encara no hi ha fitxer d’històric (daily-summary.json) o no es pot carregar.";
-        }
+      } catch {
+        if (info) info.textContent = "Encara no hi ha fitxer d’històric (daily-summary.json) o no es pot carregar.";
         return [];
       }
     }
@@ -288,4 +286,4 @@
   </script>
 
 </body>
-  </html>
+</html>
