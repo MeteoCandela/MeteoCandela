@@ -167,7 +167,7 @@ h2{
   gap: 8px;
 }
 
-/* ✅ RETOC: a mòbil, que no s’aixafi (bar a 2 línies) */
+/* a mòbil, que no s’aixafi */
 @media (max-width: 520px){
   .daybar{
     flex-direction: column;
@@ -211,7 +211,7 @@ h2{
   outline-offset: 2px;
 }
 
-/* CHARTS (FIX: Chart.js no es quedi en blanc) */
+/* CHARTS (Chart.js) */
 .chart-box{
   height: 260px;
   display: flex;
@@ -234,7 +234,7 @@ h2{
   .card.chart-box.span2{ height: 300px; }
 }
 
-/* ✅ FAQ (details/summary) */
+/* FAQ */
 #faq details{
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -322,28 +322,34 @@ h2{
 .back-link:hover{ background: var(--chip); }
 .back-link:active{ transform: translateY(1px); }
 
-/* ===== Breadcrumb / Nav compacte (usable a sobre.html i historic.html) ===== */
+/* ===== Breadcrumb / Ruta (funciona per a sobre.html i historic.html) ===== */
+/* IMPORTANT: suportem 2 formats:
+   A) <nav class="crumbs"><a>..</a> → <span>..</span></nav>  (historic.html)
+   B) <nav class="crumbs"><div class="crumbs__left">..</div><div class="crumbs__right">..</div></nav> (sobre.html)
+*/
 .crumbs{
   display:flex;
   align-items:center;
   justify-content: space-between;
   gap: 12px;
-}
-
-.crumbs__left{
-  display:flex;
-  align-items:center;
-  gap: 10px;
+  flex-wrap: wrap;
   font-size: 13px;
   color: var(--muted);
 }
 
-.crumbs__left a{
+.crumbs a{
   color: var(--text);
   text-decoration: none;
   border-bottom: 1px dotted rgba(255,255,255,.35);
 }
-.crumbs__left a:hover{ opacity: .9; }
+.crumbs a:hover{ opacity: .9; }
+
+/* si existeixen wrappers left/right */
+.crumbs__left{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+}
 
 .crumbs__right{
   display:flex;
@@ -352,21 +358,7 @@ h2{
   flex-wrap: wrap;
 }
 
-/* Botonet petit (per enllaçar a Històric / Sobre des del breadcrumb) */
-.crumbs__btn{
-  display:inline-block;
-  padding: 8px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--chip);
-  color: var(--text);
-  text-decoration: none;
-  font-weight: 650;
-  font-size: 13px;
-  line-height: 1;
-}
-.crumbs__btn:hover{ background: var(--chip2); }
-
+/* a mòbil: apila i respira */
 @media (max-width: 520px){
   .crumbs{
     flex-direction: column;
@@ -376,6 +368,64 @@ h2{
     justify-content: flex-start;
   }
 }
+
+/* ===== Navegació ràpida (botons “Històric / Sobre”) ===== */
+.quick-nav{
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.quick-nav__btn{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--chip);
+  color: var(--text);
+  font-weight: 650;
+  text-decoration: none;
+  font-size: 14px;
+  transition: background .2s ease, transform .1s ease, opacity .15s ease;
+}
+
+.quick-nav__btn:hover{
+  background: var(--chip2);
+}
+
+.quick-nav__btn:active{
+  transform: translateY(1px);
+}
+
+/* a mòbil: si vols que s’estirin i quedin alineats */
+@media (max-width: 520px){
+  .quick-nav__btn{
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
+
+/* ✅ Alias: si a sobre.html tens <a class="crumbs__btn">... */
+/* el convertim al mateix estil que quick-nav__btn perquè tot “parli igual” */
+.crumbs__btn{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--chip);
+  color: var(--text);
+  font-weight: 650;
+  text-decoration: none;
+  font-size: 14px;
+  line-height: 1;
+  transition: background .2s ease, transform .1s ease, opacity .15s ease;
+}
+.crumbs__btn:hover{ background: var(--chip2); }
+.crumbs__btn:active{ transform: translateY(1px); }
 
 /* ===== Històric ===== */
 .muted-line{
@@ -455,42 +505,5 @@ h2{
     content: attr(data-label);
     color: var(--muted);
     padding-right: 10px;
-  }
-}
-
-/* Navegació ràpida sota el hero */
-.quick-nav{
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.quick-nav__btn{
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 16px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--chip);
-  color: var(--text);
-  font-weight: 650;
-  text-decoration: none;
-  font-size: 14px;
-  transition: background .2s ease, transform .1s ease;
-}
-
-.quick-nav__btn:hover{
-  background: var(--chip2);
-}
-
-.quick-nav__btn:active{
-  transform: translateY(1px);
-}
-
-/* A mòbil: botons ben respirats */
-@media (max-width: 520px){
-  .quick-nav{
-    justify-content: flex-start;
   }
 }
