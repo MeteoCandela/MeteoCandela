@@ -394,13 +394,11 @@ h2{
   justify-content:space-between;
   gap: 12px;
 }
-
 .hist-controls__left{
   display:flex;
   flex-direction:column;
   gap: 4px;
 }
-
 .hist-controls__right{
   display:flex;
   align-items:center;
@@ -423,6 +421,7 @@ h2{
   border-bottom: 1px solid var(--border);
   padding: 10px 8px;
   text-align: left;
+  white-space: nowrap;
 }
 
 .hist-table th{
@@ -438,7 +437,7 @@ h2{
 }
 
 /* Taula “stack” a mòbil */
-@media (max-width: 620px){
+@media (max-width: 720px){
   .hist-table thead{ display:none; }
   .hist-table tr{
     display:block;
@@ -454,9 +453,11 @@ h2{
     gap: 12px;
     border-bottom: 0;
     padding: 8px 0;
+    white-space: normal;
   }
   .hist-table td::before{
     content: attr(data-label);
     color: var(--muted);
+    padding-right: 10px;
   }
 }
