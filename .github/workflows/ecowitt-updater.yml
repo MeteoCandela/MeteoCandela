@@ -40,474 +40,478 @@ jobs:
         run: |
           python - <<'PY'
           import json, os, time, socket
-from datetime import datetime, timezone
-from pathlib import Path
-import urllib.request, urllib.parse
-
-# ====== Config ======
-DATA_DIR = Path("data")
-HISTORY_PATH = DATA_DIR / "history.json"
-CURRENT_PATH = DATA_DIR / "current.json"
-
-HEARTBEAT_DIR = Path("heartbeat")
-HEARTBEAT_PATH = HEARTBEAT_DIR / "heartbeat.json"
-
-DAYS_TO_KEEP = 30
-OVERLAP_MS = 60 * 60 * 1000  # 60 min
-URL_TIMEOUT = 20
-RETRIES = 3
-BACKOFF_BASE = 2
-
-socket.setdefaulttimeout(URL_TIMEOUT)
-
-app_key = os.getenv("ECOWITT_APPLICATION_KEY")
-api_key = os.getenv("ECOWITT_API_KEY")
-mac = os.getenv("ECOWITT_MAC")
-if not (app_key and api_key and mac):
-    raise SystemExit("Falten secrets: ECOWITT_APPLICATION_KEY / ECOWITT_API_KEY / ECOWITT_MAC")
-
-def ensure_dirs():
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    HEARTBEAT_DIR.mkdir(parents=True, exist_ok=True)
-
-def write_json(path: Path, obj):
-    path.write_text(json.dumps(obj, ensure_ascii=False), encoding="utf-8")
-
-def read_json(path: Path, default=None):
-    if path.exists():
-        try:
-            return json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
-            return default
-    return default
-
-def read_hist():
-    h = read_json(HISTORY_PATH, default=[])
-    return h if isinstance(h, list) else []
-
-def write_heartbeat(now_ms, note=""):
-    hb = {
-        "run_ts": now_ms,
-        "run_iso_utc": datetime.now(timezone.utc).isoformat(),
-    }
-    if note:
-        hb["note"] = note
-    write_json(HEARTBEAT_PATH, hb)
-    return hb
-
-def fnum(x):
-    try:
-        return float(x)
-    except Exception:
-        return None
-
-def f_to_c(v):
-    try:
-        return (float(v) - 32.0) * 5.0 / 9.0
-    except Exception:
-        return None
-
-def mph_to_kmh(v):
-    try:
-        return float(v) * 1.609344
-    except Exception:
-        return None
-
-def ms_to_kmh(v):
-    try:
-        return float(v) * 3.6
-    except Exception:
-        return None
-
-def inch_to_mm(v):
-    try:
-        return float(v) * 25.4
-    except Exception:
-        return None
-
-def cm_to_mm(v):
-    try:
-        return float(v) * 10.0
-    except Exception:
-        return None
-
-def norm_rain(v, unit):
-    """Retorna pluja en mm (o mm/h)."""
-    if v is None:
-        return None
-    u = (str(unit).strip().lower() if unit else "")
-    if "in" in u:
-        return inch_to_mm(v)
-    if "cm" in u:
-        return cm_to_mm(v)
-    return float(v)
-
-def to_ms_epoch(s):
-    if s is None:
-        return None
-    try:
-        x = float(s)
-        if x > 1e12:  # ms
-            return int(x)
-        if x > 1e9:   # s
-            return int(x * 1000)
-    except Exception:
-        pass
-    return None
-
-def is_fahrenheit(unit, value):
-    if unit:
-        u = str(unit).strip().lower()
-        if u.startswith("f"):
-            return True
-        if u.startswith("c"):
-            return False
-    return True  # Ecowitt sovint ve en ºF sense unitat
-
-# ====== HTTP robust amb retries ======
-def fetch_url_json(url):
-    last_err = None
-    for i in range(RETRIES):
-        try:
-            with urllib.request.urlopen(url, timeout=URL_TIMEOUT) as r:
-                return json.loads(r.read().decode("utf-8"))
-        except Exception as e:
-            last_err = e
-            sleep_s = (BACKOFF_BASE ** i)
-            print(f"[WARN] fetch fail ({i+1}/{RETRIES}) {url} -> {type(e).__name__}: {e}. retry in {sleep_s}s")
-            time.sleep(sleep_s)
-    raise last_err
-
-# =========================
-#  A) CURRENT (real_time)
-# =========================
-def fetch_realtime_row(now_ms):
-    base_url = "https://api.ecowitt.net/api/v3/device/real_time"
-    params = {
-        "application_key": app_key,
-        "api_key": api_key,
-        "mac": mac,
-        "call_back": "all"
-    }
-    url = base_url + "?" + urllib.parse.urlencode(params)
-    payload = fetch_url_json(url)
-
-    data = payload.get("data", {}) if isinstance(payload, dict) else {}
-
-    # DEBUG temporal (treu-ho quan ja funcioni)
-    print("[DEBUG] keys rainfall:", [k for k in data.keys() if "rain" in k.lower()])
-    print("[DEBUG] rainfall:", data.get("rainfall"))
-    print("[DEBUG] rainfall_piezo:", data.get("rainfall_piezo"))
-
-    def pick(*keys):
-        cur = data
-        for k in keys:
-            if not isinstance(cur, dict) or k not in cur:
-                return None
-            cur = cur[k]
-        return cur
-
-    def val(x):
-        if isinstance(x, dict):
-            return x.get("value"), (x.get("unit") or x.get("units"))
-        return x, None
-
-    t_v, t_u = val(pick("outdoor", "temperature") or pick("temperature") or pick("temp"))
-    if isinstance(t_v, dict):
-        t_v, t_u = val(t_v)
-    t_raw = fnum(t_v)
-
-    h_v, h_u = val(pick("outdoor", "humidity") or pick("humidity"))
-    if isinstance(h_v, dict):
-        h_v, h_u = val(h_v)
-    hum = fnum(h_v)
-
-    d_v, d_u = val(pick("outdoor", "dew_point") or pick("dew_point"))
-    if isinstance(d_v, dict):
-        d_v, d_u = val(d_v)
-    dew_raw = fnum(d_v)
-
-    temp_c = t_raw
-    if t_raw is not None and is_fahrenheit(t_u, t_raw):
-        temp_c = f_to_c(t_raw)
-
-    dew_c = dew_raw
-    if dew_raw is not None and is_fahrenheit(d_u, dew_raw):
-        dew_c = f_to_c(dew_raw)
-
-    ws_v, ws_u = val(pick("wind_speed") or pick("wind", "wind_speed"))
-    if isinstance(ws_v, dict):
-        ws_v, ws_u = val(ws_v)
-
-    gs_v, gs_u = val(pick("wind_gust") or pick("wind", "wind_gust"))
-    if isinstance(gs_v, dict):
-        gs_v, gs_u = val(gs_v)
-
-    w_raw = fnum(ws_v)
-    g_raw = fnum(gs_v)
-
-    def norm_w(v, unit):
-        if v is None:
-            return None
-        u = (str(unit).lower() if unit else "")
-        if "mph" in u:
-            return mph_to_kmh(v)
-        if u in ("m/s", "ms", "mps"):
-            return ms_to_kmh(v)
-        return float(v)
-
-    wind_kmh = norm_w(w_raw, ws_u)
-    gust_kmh = norm_w(g_raw, gs_u)
-
-    wind_dir = (
-        pick("wind_direction", "value") or pick("wind_direction") or
-        pick("wind", "wind_direction", "value") or pick("wind", "wind_direction")
-    )
-
-    # --- PLUJA (rainfall o rainfall_piezo) ---
-    rd_v, rd_u = val(
-        pick("rainfall", "daily")
-        or pick("rainfall_piezo", "daily")
-        or pick("rainfall_daily")
-        or pick("rain_day")
-        or pick("daily_rain")
-    )
-
-    rr_v, rr_u = val(
-        pick("rainfall", "rate")
-        or pick("rainfall_piezo", "rate")
-        or pick("rain_rate")
-        or pick("rainfall", "rain_rate")
-        or pick("rainfall_piezo", "rain_rate")
-    )
-
-    rain_day  = norm_rain(fnum(rd_v), rd_u)
-    rain_rate = norm_rain(fnum(rr_v), rr_u)
-
-    return {
-        "ts": now_ms,
-        "temp_c": None if temp_c is None else float(temp_c),
-        "hum_pct": None if hum is None else float(hum),
-        "dew_c": None if dew_c is None else float(dew_c),
-        "wind_kmh": None if wind_kmh is None else float(wind_kmh),
-        "gust_kmh": None if gust_kmh is None else float(gust_kmh),
-        "wind_dir": (str(wind_dir) if wind_dir is not None else None),
-        "rain_day_mm": rain_day,
-        "rain_rate_mmh": rain_rate,
-    }
-
-# =========================
-#  B) HISTORY (5min)
-# =========================
-def fetch_history_rows(start_s, end_s):
-    base_url = "https://api.ecowitt.net/api/v3/device/history"
-    params = {
-        "application_key": app_key,
-        "api_key": api_key,
-        "mac": mac,
-        "cycle_type": "5min",
-        "call_back": "all",
-        "start_time": int(start_s),
-        "end_time": int(end_s),
-    }
-    url = base_url + "?" + urllib.parse.urlencode(params)
-    payload = fetch_url_json(url)
-
-    if not isinstance(payload, dict):
-        raise RuntimeError(f"Resposta inesperada history: {type(payload)}")
-
-    data = payload.get("data") or payload.get("datas") or payload.get("result") or payload.get("records")
-    if data is None:
-        return []
-
-    if isinstance(data, dict):
-        data_list = data.get("list") or data.get("data") or data.get("records")
-    else:
-        data_list = data
-
-    if data_list is None:
-        return []
-    if not isinstance(data_list, list):
-        raise RuntimeError(f"Format history inesperat: {type(data_list)}")
-
-    def val_unit(x):
-        if isinstance(x, dict):
-            return fnum(x.get("value")), (x.get("unit") or x.get("units"))
-        return fnum(x), None
-
-    def pick(d, *keys):
-        cur = d
-        for k in keys:
-            if not isinstance(cur, dict) or k not in cur:
-                return None
-            cur = cur[k]
-        return cur
-
-    def parse_row(r):
-        ts_ms = (
-            to_ms_epoch(r.get("ts")) or
-            to_ms_epoch(r.get("time")) or
-            to_ms_epoch(r.get("timestamp")) or
-            to_ms_epoch(r.get("dateutc")) or
-            None
-        )
-        if ts_ms is None and isinstance(r.get("time"), str):
-            try:
-                dt = datetime.strptime(r["time"], "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
-                ts_ms = int(dt.timestamp() * 1000)
-            except Exception:
-                ts_ms = None
-        if ts_ms is None:
-            return None
-
-        t_raw, t_unit = val_unit(pick(r, "outdoor", "temperature") or r.get("temperature") or r.get("temp"))
-        h_raw, _      = val_unit(pick(r, "outdoor", "humidity") or r.get("humidity"))
-        d_raw, d_unit = val_unit(pick(r, "outdoor", "dew_point") or r.get("dew_point"))
-
-        temp_c = t_raw
-        if t_raw is not None and is_fahrenheit(t_unit, t_raw):
-            temp_c = f_to_c(t_raw)
-
-        dew_c = d_raw
-        if d_raw is not None and is_fahrenheit(d_unit, d_raw):
-            dew_c = f_to_c(d_raw)
-
-        w_raw, w_unit = val_unit(r.get("wind_speed") or pick(r, "wind", "wind_speed"))
-        g_raw, g_unit = val_unit(r.get("wind_gust") or pick(r, "wind", "wind_gust"))
-        wind_dir = (r.get("wind_direction") or pick(r, "wind", "wind_direction"))
-
-        def norm_w(v, unit):
-            if v is None:
-                return None
-            u = (str(unit).lower() if unit else "")
-            if "mph" in u:
-                return mph_to_kmh(v)
-            if u in ("m/s", "ms", "mps"):
-                return ms_to_kmh(v)
-            return float(v)
-
-        wind_kmh = norm_w(w_raw, w_unit)
-        gust_kmh = norm_w(g_raw, g_unit)
-
-        rd_raw, rd_u = val_unit(
-            pick(r, "rainfall", "daily")
-            or pick(r, "rainfall_piezo", "daily")
-            or r.get("rainfall_daily")
-            or r.get("rain_day")
-            or r.get("daily_rain")
-        )
-
-        rr_raw, rr_u = val_unit(
-            pick(r, "rainfall", "rate")
-            or pick(r, "rainfall_piezo", "rate")
-            or r.get("rain_rate")
-            or pick(r, "rainfall", "rain_rate")
-            or pick(r, "rainfall_piezo", "rain_rate")
-        )
-
-        rd_mm = norm_rain(rd_raw, rd_u)
-        rr_mm = norm_rain(rr_raw, rr_u)
-
-        return {
-            "ts": int(ts_ms),
-            "temp_c": None if temp_c is None else float(temp_c),
-            "hum_pct": None if h_raw  is None else float(h_raw),
-            "dew_c":  None if dew_c  is None else float(dew_c),
-            "wind_kmh": None if wind_kmh is None else float(wind_kmh),
-            "gust_kmh": None if gust_kmh is None else float(gust_kmh),
-            "wind_dir": (str(wind_dir) if wind_dir is not None else None),
-            "rain_day_mm": rd_mm,
-            "rain_rate_mmh": rr_mm,
-        }
-
-    out = []
-    for r in data_list:
-        if isinstance(r, dict):
-            row = parse_row(r)
-            if row:
-                out.append(row)
-    return out
-
-# ============= RUN =============
-ensure_dirs()
-now_ms = int(time.time() * 1000)
-cutoff_ms = now_ms - DAYS_TO_KEEP * 24 * 60 * 60 * 1000
-
-hist = read_hist()
-hist = [h for h in hist if isinstance(h, dict) and isinstance(h.get("ts"), (int, float))]
-hist.sort(key=lambda x: int(x["ts"]))
-last_ts_ms = int(hist[-1]["ts"]) if hist else None
-
-notes = []
-
-# A) CURRENT
-current_row = None
-try:
-    current_row = fetch_realtime_row(now_ms)
-
-    # Reutilitza pluja anterior si ara ve null (només pluja)
-    prev = read_json(CURRENT_PATH, default=None)
-    if isinstance(prev, dict) and isinstance(current_row, dict):
-        if current_row.get("rain_day_mm") is None and prev.get("rain_day_mm") is not None:
-            current_row["rain_day_mm"] = prev["rain_day_mm"]
-        if current_row.get("rain_rate_mmh") is None and prev.get("rain_rate_mmh") is not None:
-            current_row["rain_rate_mmh"] = prev["rain_rate_mmh"]
-
-    write_json(CURRENT_PATH, current_row)
-
-except Exception as e:
-    notes.append(f"realtime fail: {type(e).__name__}")
-    prev = read_json(CURRENT_PATH, default=None)
-    if isinstance(prev, dict) and isinstance(prev.get("ts"), (int, float)):
-        current_row = prev
-    else:
-        current_row = None
-
-# B) HISTORY
-try:
-    if last_ts_ms is None:
-        start_ms = cutoff_ms
-    else:
-        start_ms = max(last_ts_ms - OVERLAP_MS, cutoff_ms)
-
-    start_s = int(start_ms / 1000)
-    end_s = int(now_ms / 1000)
-
-    rows = fetch_history_rows(start_s, end_s)
-
-    new_rows = []
-    for r in rows:
-        if last_ts_ms is None or int(r["ts"]) > last_ts_ms:
-            new_rows.append(r)
-
-    merged = hist + new_rows
-
-    # També persistim el punt realtime
-    if isinstance(current_row, dict) and isinstance(current_row.get("ts"), (int, float)):
-        merged.append(current_row)
-
-    # dedupe per ts
-    by_ts = {}
-    for r in merged:
-        ts = r.get("ts")
-        if isinstance(ts, (int, float)):
-            by_ts[int(ts)] = r
-
-    merged = [by_ts[k] for k in sorted(by_ts.keys())]
-    merged = [r for r in merged if int(r["ts"]) >= cutoff_ms]
-
-    write_json(HISTORY_PATH, merged)
-
-    if not new_rows:
-        notes.append("history: no new 5min row yet (normal delay)")
-
-except Exception as e:
-    notes.append(f"history fail: {type(e).__name__}")
-
-hb = write_heartbeat(now_ms, note=" · ".join(notes))
-print("Heartbeat:", hb)
-print("History points:", len(read_hist()))
-          
+          from datetime import datetime, timezone
+          from pathlib import Path
+          import urllib.request, urllib.parse
+
+          # ====== Config ======
+          DATA_DIR = Path("data")
+          HISTORY_PATH = DATA_DIR / "history.json"
+          CURRENT_PATH = DATA_DIR / "current.json"
+
+          HEARTBEAT_DIR = Path("heartbeat")
+          HEARTBEAT_PATH = HEARTBEAT_DIR / "heartbeat.json"
+
+          DAYS_TO_KEEP = 30
+          OVERLAP_MS = 60 * 60 * 1000  # 60 min
+          URL_TIMEOUT = 20
+          RETRIES = 3
+          BACKOFF_BASE = 2
+
+          socket.setdefaulttimeout(URL_TIMEOUT)
+
+          app_key = os.getenv("ECOWITT_APPLICATION_KEY")
+          api_key = os.getenv("ECOWITT_API_KEY")
+          mac = os.getenv("ECOWITT_MAC")
+          if not (app_key and api_key and mac):
+              raise SystemExit("Falten secrets: ECOWITT_APPLICATION_KEY / ECOWITT_API_KEY / ECOWITT_MAC")
+
+          def ensure_dirs():
+              DATA_DIR.mkdir(parents=True, exist_ok=True)
+              HEARTBEAT_DIR.mkdir(parents=True, exist_ok=True)
+
+          def write_json(path: Path, obj):
+              path.write_text(json.dumps(obj, ensure_ascii=False), encoding="utf-8")
+
+          def read_json(path: Path, default=None):
+              if path.exists():
+                  try:
+                      return json.loads(path.read_text(encoding="utf-8"))
+                  except Exception:
+                      return default
+              return default
+
+          def read_hist():
+              h = read_json(HISTORY_PATH, default=[])
+              return h if isinstance(h, list) else []
+
+          def write_heartbeat(now_ms, note=""):
+              hb = {
+                  "run_ts": now_ms,
+                  "run_iso_utc": datetime.now(timezone.utc).isoformat(),
+              }
+              if note:
+                  hb["note"] = note
+              write_json(HEARTBEAT_PATH, hb)
+              return hb
+
+          def fnum(x):
+              try:
+                  return float(x)
+              except Exception:
+                  return None
+
+          def f_to_c(v):
+              try:
+                  return (float(v) - 32.0) * 5.0 / 9.0
+              except Exception:
+                  return None
+
+          def mph_to_kmh(v):
+              try:
+                  return float(v) * 1.609344
+              except Exception:
+                  return None
+
+          def ms_to_kmh(v):
+              try:
+                  return float(v) * 3.6
+              except Exception:
+                  return None
+
+          def inch_to_mm(v):
+              try:
+                  return float(v) * 25.4
+              except Exception:
+                  return None
+
+          def cm_to_mm(v):
+              try:
+                  return float(v) * 10.0
+              except Exception:
+                  return None
+
+          def norm_rain(v, unit):
+              """Retorna pluja en mm (o mm/h)."""
+              if v is None:
+                  return None
+              u = (str(unit).strip().lower() if unit else "")
+              if "in" in u:
+                  return inch_to_mm(v)
+              if "cm" in u:
+                  return cm_to_mm(v)
+              # per defecte assumim mm / mmh
+              return float(v)
+
+          def to_ms_epoch(s):
+              if s is None:
+                  return None
+              try:
+                  x = float(s)
+                  if x > 1e12:  # ms
+                      return int(x)
+                  if x > 1e9:   # s
+                      return int(x * 1000)
+              except Exception:
+                  pass
+              return None
+
+          def is_fahrenheit(unit, value):
+              if unit:
+                  u = str(unit).strip().lower()
+                  if u.startswith("f"):
+                      return True
+                  if u.startswith("c"):
+                      return False
+              return True  # Ecowitt sovint ve en ºF sense unitat
+
+          # ====== HTTP robust amb retries ======
+          def fetch_url_json(url):
+              last_err = None
+              for i in range(RETRIES):
+                  try:
+                      with urllib.request.urlopen(url, timeout=URL_TIMEOUT) as r:
+                          return json.loads(r.read().decode("utf-8"))
+                  except Exception as e:
+                      last_err = e
+                      sleep_s = (BACKOFF_BASE ** i)
+                      print(f"[WARN] fetch fail ({i+1}/{RETRIES}) {url} -> {type(e).__name__}: {e}. retry in {sleep_s}s")
+                      time.sleep(sleep_s)
+              raise last_err
+
+          # =========================
+          #  A) CURRENT (real_time)
+          # =========================
+          def fetch_realtime_row(now_ms):
+              base_url = "https://api.ecowitt.net/api/v3/device/real_time"
+              params = {
+                  "application_key": app_key,
+                  "api_key": api_key,
+                  "mac": mac,
+                  "call_back": "all"
+              }
+              url = base_url + "?" + urllib.parse.urlencode(params)
+              payload = fetch_url_json(url)
+
+              data = payload.get("data", {}) if isinstance(payload, dict) else {}
+
+              # DEBUG temporal (treu-ho quan ja funcioni)
+              print("[DEBUG] keys rainfall:", [k for k in data.keys() if "rain" in k.lower()])
+              print("[DEBUG] rainfall:", data.get("rainfall"))
+              print("[DEBUG] rainfall_piezo:", data.get("rainfall_piezo"))
+
+              def pick(*keys):
+                  cur = data
+                  for k in keys:
+                      if not isinstance(cur, dict) or k not in cur:
+                          return None
+                      cur = cur[k]
+                  return cur
+
+              def val(x):
+                  if isinstance(x, dict):
+                      return x.get("value"), (x.get("unit") or x.get("units"))
+                  return x, None
+
+              # Temperatura
+              t_v, t_u = val(pick("outdoor", "temperature") or pick("temperature") or pick("temp"))
+              if isinstance(t_v, dict):
+                  t_v, t_u = val(t_v)
+              t_raw = fnum(t_v)
+
+              # Humitat
+              h_v, h_u = val(pick("outdoor", "humidity") or pick("humidity"))
+              if isinstance(h_v, dict):
+                  h_v, h_u = val(h_v)
+              hum = fnum(h_v)
+
+              # Rosada
+              d_v, d_u = val(pick("outdoor", "dew_point") or pick("dew_point"))
+              if isinstance(d_v, dict):
+                  d_v, d_u = val(d_v)
+              dew_raw = fnum(d_v)
+
+              temp_c = t_raw
+              if t_raw is not None and is_fahrenheit(t_u, t_raw):
+                  temp_c = f_to_c(t_raw)
+
+              dew_c = dew_raw
+              if dew_raw is not None and is_fahrenheit(d_u, dew_raw):
+                  dew_c = f_to_c(dew_raw)
+
+              # Vent / ratxa
+              ws_v, ws_u = val(pick("wind_speed") or pick("wind", "wind_speed"))
+              if isinstance(ws_v, dict):
+                  ws_v, ws_u = val(ws_v)
+
+              gs_v, gs_u = val(pick("wind_gust") or pick("wind", "wind_gust"))
+              if isinstance(gs_v, dict):
+                  gs_v, gs_u = val(gs_v)
+
+              w_raw = fnum(ws_v)
+              g_raw = fnum(gs_v)
+
+              def norm_w(v, unit):
+                  if v is None:
+                      return None
+                  u = (str(unit).lower() if unit else "")
+                  if "mph" in u:
+                      return mph_to_kmh(v)
+                  if u in ("m/s", "ms", "mps"):
+                      return ms_to_kmh(v)
+                  return float(v)
+
+              wind_kmh = norm_w(w_raw, ws_u)
+              gust_kmh = norm_w(g_raw, gs_u)
+
+              wind_dir = (
+                  pick("wind_direction", "value") or pick("wind_direction") or
+                  pick("wind", "wind_direction", "value") or pick("wind", "wind_direction")
+              )
+
+              # --- PLUJA (rainfall o rainfall_piezo) ---
+              rd_v, rd_u = val(
+                  pick("rainfall", "daily")
+                  or pick("rainfall_piezo", "daily")
+                  or pick("rainfall_daily")
+                  or pick("rain_day")
+                  or pick("daily_rain")
+              )
+
+              rr_v, rr_u = val(
+                  pick("rainfall", "rate")
+                  or pick("rainfall_piezo", "rate")
+                  or pick("rain_rate")
+                  or pick("rainfall", "rain_rate")
+                  or pick("rainfall_piezo", "rain_rate")
+              )
+
+              rain_day  = norm_rain(fnum(rd_v), rd_u)
+              rain_rate = norm_rain(fnum(rr_v), rr_u)
+
+              return {
+                  "ts": now_ms,
+                  "temp_c": None if temp_c is None else float(temp_c),
+                  "hum_pct": None if hum is None else float(hum),
+                  "dew_c": None if dew_c is None else float(dew_c),
+                  "wind_kmh": None if wind_kmh is None else float(wind_kmh),
+                  "gust_kmh": None if gust_kmh is None else float(gust_kmh),
+                  "wind_dir": (str(wind_dir) if wind_dir is not None else None),
+                  "rain_day_mm": rain_day,
+                  "rain_rate_mmh": rain_rate,
+              }
+
+          # =========================
+          #  B) HISTORY (5min)
+          # =========================
+          def fetch_history_rows(start_s, end_s):
+              base_url = "https://api.ecowitt.net/api/v3/device/history"
+              params = {
+                  "application_key": app_key,
+                  "api_key": api_key,
+                  "mac": mac,
+                  "cycle_type": "5min",
+                  "call_back": "all",
+                  "start_time": int(start_s),
+                  "end_time": int(end_s),
+              }
+              url = base_url + "?" + urllib.parse.urlencode(params)
+              payload = fetch_url_json(url)
+
+              if not isinstance(payload, dict):
+                  raise RuntimeError(f"Resposta inesperada history: {type(payload)}")
+
+              data = payload.get("data") or payload.get("datas") or payload.get("result") or payload.get("records")
+              if data is None:
+                  return []
+
+              if isinstance(data, dict):
+                  data_list = data.get("list") or data.get("data") or data.get("records")
+              else:
+                  data_list = data
+
+              if data_list is None:
+                  return []
+              if not isinstance(data_list, list):
+                  raise RuntimeError(f"Format history inesperat: {type(data_list)}")
+
+              def val_unit(x):
+                  if isinstance(x, dict):
+                      return fnum(x.get("value")), (x.get("unit") or x.get("units"))
+                  return fnum(x), None
+
+              def pick(d, *keys):
+                  cur = d
+                  for k in keys:
+                      if not isinstance(cur, dict) or k not in cur:
+                          return None
+                      cur = cur[k]
+                  return cur
+
+              def parse_row(r):
+                  ts_ms = (
+                      to_ms_epoch(r.get("ts")) or
+                      to_ms_epoch(r.get("time")) or
+                      to_ms_epoch(r.get("timestamp")) or
+                      to_ms_epoch(r.get("dateutc")) or
+                      None
+                  )
+                  if ts_ms is None and isinstance(r.get("time"), str):
+                      try:
+                          dt = datetime.strptime(r["time"], "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
+                          ts_ms = int(dt.timestamp() * 1000)
+                      except Exception:
+                          ts_ms = None
+                  if ts_ms is None:
+                      return None
+
+                  t_raw, t_unit = val_unit(pick(r, "outdoor", "temperature") or r.get("temperature") or r.get("temp"))
+                  h_raw, _      = val_unit(pick(r, "outdoor", "humidity") or r.get("humidity"))
+                  d_raw, d_unit = val_unit(pick(r, "outdoor", "dew_point") or r.get("dew_point"))
+
+                  temp_c = t_raw
+                  if t_raw is not None and is_fahrenheit(t_unit, t_raw):
+                      temp_c = f_to_c(t_raw)
+
+                  dew_c = d_raw
+                  if d_raw is not None and is_fahrenheit(d_unit, d_raw):
+                      dew_c = f_to_c(d_raw)
+
+                  w_raw, w_unit = val_unit(r.get("wind_speed") or pick(r, "wind", "wind_speed"))
+                  g_raw, g_unit = val_unit(r.get("wind_gust") or pick(r, "wind", "wind_gust"))
+                  wind_dir = (r.get("wind_direction") or pick(r, "wind", "wind_direction"))
+
+                  def norm_w(v, unit):
+                      if v is None:
+                          return None
+                      u = (str(unit).lower() if unit else "")
+                      if "mph" in u:
+                          return mph_to_kmh(v)
+                      if u in ("m/s", "ms", "mps"):
+                          return ms_to_kmh(v)
+                      return float(v)
+
+                  wind_kmh = norm_w(w_raw, w_unit)
+                  gust_kmh = norm_w(g_raw, g_unit)
+
+                  rd_raw, rd_u = val_unit(
+                      pick(r, "rainfall", "daily")
+                      or pick(r, "rainfall_piezo", "daily")
+                      or r.get("rainfall_daily")
+                      or r.get("rain_day")
+                      or r.get("daily_rain")
+                  )
+
+                  rr_raw, rr_u = val_unit(
+                      pick(r, "rainfall", "rate")
+                      or pick(r, "rainfall_piezo", "rate")
+                      or r.get("rain_rate")
+                      or pick(r, "rainfall", "rain_rate")
+                      or pick(r, "rainfall_piezo", "rain_rate")
+                  )
+
+                  rd_mm = norm_rain(rd_raw, rd_u)
+                  rr_mm = norm_rain(rr_raw, rr_u)
+
+                  return {
+                      "ts": int(ts_ms),
+                      "temp_c": None if temp_c is None else float(temp_c),
+                      "hum_pct": None if h_raw  is None else float(h_raw),
+                      "dew_c":  None if dew_c  is None else float(dew_c),
+                      "wind_kmh": None if wind_kmh is None else float(wind_kmh),
+                      "gust_kmh": None if gust_kmh is None else float(gust_kmh),
+                      "wind_dir": (str(wind_dir) if wind_dir is not None else None),
+                      "rain_day_mm": rd_mm,
+                      "rain_rate_mmh": rr_mm,
+                  }
+
+              out = []
+              for r in data_list:
+                  if isinstance(r, dict):
+                      row = parse_row(r)
+                      if row:
+                          out.append(row)
+              return out
+
+          # ============= RUN =============
+          ensure_dirs()
+          now_ms = int(time.time() * 1000)
+          cutoff_ms = now_ms - DAYS_TO_KEEP * 24 * 60 * 60 * 1000
+
+          hist = read_hist()
+          hist = [h for h in hist if isinstance(h, dict) and isinstance(h.get("ts"), (int, float))]
+          hist.sort(key=lambda x: int(x["ts"]))
+          last_ts_ms = int(hist[-1]["ts"]) if hist else None
+
+          notes = []
+
+          # A) CURRENT
+          current_row = None
+          try:
+              current_row = fetch_realtime_row(now_ms)
+
+              # Reutilitza pluja anterior si ara ve null (només pluja)
+              prev = read_json(CURRENT_PATH, default=None)
+              if isinstance(prev, dict) and isinstance(current_row, dict):
+                  if current_row.get("rain_day_mm") is None and prev.get("rain_day_mm") is not None:
+                      current_row["rain_day_mm"] = prev["rain_day_mm"]
+                  if current_row.get("rain_rate_mmh") is None and prev.get("rain_rate_mmh") is not None:
+                      current_row["rain_rate_mmh"] = prev["rain_rate_mmh"]
+
+              write_json(CURRENT_PATH, current_row)
+
+          except Exception as e:
+              notes.append(f"realtime fail: {type(e).__name__}")
+              prev = read_json(CURRENT_PATH, default=None)
+              if isinstance(prev, dict) and isinstance(prev.get("ts"), (int, float)):
+                  current_row = prev
+              else:
+                  current_row = None
+
+          # B) HISTORY
+          try:
+              if last_ts_ms is None:
+                  start_ms = cutoff_ms
+              else:
+                  start_ms = max(last_ts_ms - OVERLAP_MS, cutoff_ms)
+
+              start_s = int(start_ms / 1000)
+              end_s = int(now_ms / 1000)
+
+              rows = fetch_history_rows(start_s, end_s)
+
+              new_rows = []
+              for r in rows:
+                  if last_ts_ms is None or int(r["ts"]) > last_ts_ms:
+                      new_rows.append(r)
+
+              merged = hist + new_rows
+
+              # També persistim el punt realtime
+              if isinstance(current_row, dict) and isinstance(current_row.get("ts"), (int, float)):
+                  merged.append(current_row)
+
+              # dedupe per ts
+              by_ts = {}
+              for r in merged:
+                  ts = r.get("ts")
+                  if isinstance(ts, (int, float)):
+                      by_ts[int(ts)] = r
+
+              merged = [by_ts[k] for k in sorted(by_ts.keys())]
+              merged = [r for r in merged if int(r["ts"]) >= cutoff_ms]
+
+              write_json(HISTORY_PATH, merged)
+
+              if not new_rows:
+                  notes.append("history: no new 5min row yet (normal delay)")
+
+          except Exception as e:
+              notes.append(f"history fail: {type(e).__name__}")
+
+          hb = write_heartbeat(now_ms, note=" · ".join(notes))
+          print("Heartbeat:", hb)
+          print("History points:", len(read_hist()))
           PY
 
       - name: Commit & push (only if changed)
