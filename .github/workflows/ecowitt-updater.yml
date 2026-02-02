@@ -384,10 +384,25 @@ rain_rate = norm_rain(fnum(rr_v), rr_u)
                   wind_kmh = norm_w(w_raw, w_unit)
                   gust_kmh = norm_w(g_raw, g_unit)
 
-                  rd_raw, _ = val_unit(r.get("rainfall_daily") or pick(r, "rainfall", "daily") or r.get("rain_day"))
-                  rr_raw, _ = val_unit(r.get("rain_rate")     or pick(r, "rainfall", "rate")  or r.get("rain_rate"))
+                  rd_raw, rd_u = val_unit(
+    pick(r, "rainfall", "daily")
+    or pick(r, "rainfall_piezo", "daily")
+    or r.get("rainfall_daily")
+    or r.get("rain_day")
+    or r.get("daily_rain")
+)
 
-                  return {
+rr_raw, rr_u = val_unit(
+    pick(r, "rainfall", "rate")
+    or pick(r, "rainfall_piezo", "rate")
+    or r.get("rain_rate")
+    or pick(r, "rainfall", "rain_rate")
+    or pick(r, "rainfall_piezo", "rain_rate")
+)
+
+rd_mm = norm_rain(rd_raw, rd_u)
+rr_mm = norm_rain(rr_raw, rr_u)
+return {
                       "ts": int(ts_ms),
                       "temp_c": None if temp_c is None else float(temp_c),
                       "hum_pct": None if h_raw  is None else float(h_raw),
@@ -395,8 +410,8 @@ rain_rate = norm_rain(fnum(rr_v), rr_u)
                       "wind_kmh": None if wind_kmh is None else float(wind_kmh),
                       "gust_kmh": None if gust_kmh is None else float(gust_kmh),
                       "wind_dir": (str(wind_dir) if wind_dir is not None else None),
-                      "rain_day_mm": rd_raw,
-                      "rain_rate_mmh": rr_raw,
+                      "rain_day_mm": rd_mm,
+"rain_rate_mmh": rr_mm,
                   }
 
               out = []
