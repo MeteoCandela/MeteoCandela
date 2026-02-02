@@ -366,3 +366,97 @@ h2{
 .breadcrumb a.back-link:active{
   transform: none;
 }
+
+/* ===== Històric ===== */
+.crumbs{
+  display:flex;
+  gap: 10px;
+  align-items:center;
+  font-size: 13px;
+  color: var(--muted);
+}
+.crumbs a{
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(255,255,255,.35);
+}
+.crumbs a:hover{ opacity: .9; }
+
+.muted-line{
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.hist-controls{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+}
+
+.hist-controls__left{
+  display:flex;
+  flex-direction:column;
+  gap: 4px;
+}
+
+.hist-controls__right{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.table-wrap{
+  width: 100%;
+  overflow-x: auto;
+}
+
+.hist-table{
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.hist-table th, .hist-table td{
+  border-bottom: 1px solid var(--border);
+  padding: 10px 8px;
+  text-align: left;
+}
+
+.hist-table th{
+  color: var(--text);
+  font-weight: 650;
+  background: rgba(255,255,255,.04);
+}
+
+.muted-cell{
+  color: var(--muted);
+  text-align: center;
+  padding: 16px 10px;
+}
+
+/* Taula “stack” a mòbil */
+@media (max-width: 620px){
+  .hist-table thead{ display:none; }
+  .hist-table tr{
+    display:block;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin: 10px 0;
+    padding: 6px 10px;
+    background: rgba(255,255,255,.03);
+  }
+  .hist-table td{
+    display:flex;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 0;
+    padding: 8px 0;
+  }
+  .hist-table td::before{
+    content: attr(data-label);
+    color: var(--muted);
+  }
+}
