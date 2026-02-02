@@ -118,6 +118,30 @@ jobs:
                   return float(v) * 3.6
               except Exception:
                   return None
+def inch_to_mm(v):
+    try:
+        return float(v) * 25.4
+    except Exception:
+        return None
+
+def cm_to_mm(v):
+    try:
+        return float(v) * 10.0
+    except Exception:
+        return None
+
+def norm_rain(v, unit):
+    """Retorna pluja en mm (o mm/h)."""
+    if v is None:
+        return None
+    u = (str(unit).strip().lower() if unit else "")
+    # típics: "mm", "mm/h", "in", "in/h", "cm"
+    if "in" in u:
+        return inch_to_mm(v)
+    if "cm" in u:
+        return cm_to_mm(v)
+    # per defecte assumim mm
+    return float(v)
 
           def to_ms_epoch(s):
               if s is None:
