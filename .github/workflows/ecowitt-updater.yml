@@ -259,15 +259,25 @@ def norm_rain(v, unit):
                   pick("wind", "wind_direction", "value") or pick("wind", "wind_direction")
               )
 
-              rd_v, rd_u = val(pick("rainfall_daily") or pick("rainfall", "daily"))
-              if isinstance(rd_v, dict):
-                  rd_v, rd_u = val(rd_v)
-              rr_v, rr_u = val(pick("rain_rate") or pick("rainfall", "rate"))
-              if isinstance(rr_v, dict):
-                  rr_v, rr_u = val(rr_v)
+              # --- PLUJA (molts dispositius la posen a rainfall o rainfall_piezo) ---
+rd_v, rd_u = val(
+    pick("rainfall", "daily")
+    or pick("rainfall_piezo", "daily")
+    or pick("rainfall_daily")
+    or pick("rain_day")
+    or pick("daily_rain")
+)
 
-              rain_day = fnum(rd_v)
-              rain_rate = fnum(rr_v)
+rr_v, rr_u = val(
+    pick("rainfall", "rate")
+    or pick("rainfall_piezo", "rate")
+    or pick("rain_rate")
+    or pick("rainfall", "rain_rate")
+    or pick("rainfall_piezo", "rain_rate")
+)
+
+rain_day  = norm_rain(fnum(rd_v), rd_u)
+rain_rate = norm_rain(fnum(rr_v), rr_u)
 
               return {
                   "ts": now_ms,
