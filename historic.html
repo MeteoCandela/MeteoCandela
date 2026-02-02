@@ -130,160 +130,160 @@
     <span>© <span id="year"></span> MeteoCandela</span>
   </footer>
 
-  <script>
-    document.getElementById("year").textContent = new Date().getFullYear();
+        <script>
+  document.getElementById("year").textContent = new Date().getFullYear();
 
-    const BASE = (location.pathname.includes("/MeteoCandela/")) ? "/MeteoCandela" : "";
-    const SUMMARY_URL = `${BASE}/data/daily-summary.json`;
+  const BASE = (location.pathname.includes("/MeteoCandela/")) ? "/MeteoCandela" : "";
+  const SUMMARY_URL = `${BASE}/data/daily-summary.json`;
 
-    const $ = (id) => document.getElementById(id);
+  const $ = (id) => document.getElementById(id);
 
-    function fmt1(x) {
-      if (x === null || x === undefined || Number.isNaN(Number(x))) return "—";
-      return Number(x).toFixed(1);
+  function fmt1(x) {
+    if (x === null || x === undefined || Number.isNaN(Number(x))) return "—";
+    return Number(x).toFixed(1);
+  }
+
+  function fmtDateCA(ymd) {
+    try {
+      const [y, m, d] = ymd.split("-").map(Number);
+      const dt = new Date(y, m - 1, d);
+      return new Intl.DateTimeFormat("ca-ES", { year:"numeric", month:"2-digit", day:"2-digit" }).format(dt);
+    } catch {
+      return ymd;
+    }
+  }
+
+  function yearsFromRows(rows) {
+    const set = new Set(rows.map(r => String(r.day || "").slice(0,4)).filter(Boolean));
+    return Array.from(set).sort();
+  }
+
+  function getUrlFilters() {
+    try {
+      const u = new URL(location.href);
+      const y = u.searchParams.get("y") || "";
+      const m = u.searchParams.get("m") || "";
+      return { y, m };
+    } catch {
+      return { y: "", m: "" };
+    }
+  }
+
+  function setUrlFilters(y, m) {
+    try {
+      const u = new URL(location.href);
+      if (y) u.searchParams.set("y", y); else u.searchParams.delete("y");
+      if (m) u.searchParams.set("m", m); else u.searchParams.delete("m");
+      history.replaceState(null, "", u.toString());
+    } catch {}
+  }
+
+  function applyFilters(rows, y, m) {
+    return rows.filter(r => {
+      const day = String(r.day || "");
+      if (day.length < 10) return false;
+      if (y && day.slice(0,4) !== y) return false;
+      if (m && day.slice(5,7) !== m) return false;
+      return true;
+    });
+  }
+
+  function render(rows) {
+    const tbody = $("histBody");
+    if (!tbody) return;
+
+    if (!rows.length) {
+      tbody.innerHTML = `<tr><td colspan="6" class="muted-cell">Sense dades per al filtre seleccionat.</td></tr>`;
+      return;
     }
 
-    function fmtDateCA(ymd) {
-      try {
-        const [y, m, d] = ymd.split("-").map(Number);
-        const dt = new Date(y, m - 1, d);
-        return new Intl.DateTimeFormat("ca-ES", { year:"numeric", month:"2-digit", day:"2-digit" }).format(dt);
-      } catch {
-        return ymd;
+    const sorted = rows.slice().sort((a,b) => String(b.day).localeCompare(String(a.day)));
+
+    tbody.innerHTML = sorted.map(r => {
+      const day  = String(r.day || "");
+      const tmin = fmt1(r.temp_min_c);
+      const tmax = fmt1(r.temp_max_c);
+      const tavg = fmt1(r.temp_avg_c);
+      const rain = fmt1(r.rain_mm);
+      const gust = fmt1(r.gust_max_kmh);
+      const wind = fmt1(r.wind_avg_kmh);
+
+      return `
+        <tr>
+          <td data-label="Data">${fmtDateCA(day)}</td>
+          <td data-label="T mín / màx (°C)">${tmin} / ${tmax}</td>
+          <td data-label="T mitjana (°C)">${tavg}</td>
+          <td data-label="Pluja (mm)">${rain}</td>
+          <td data-label="Ratxa màxima (km/h)">${gust}</td>
+          <td data-label="Vent mitjà (km/h)">${wind}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  async function fetchSummary() {
+    const info = $("histInfo");
+    try {
+      const res = await fetch(`${SUMMARY_URL}?t=${Date.now()}`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    } catch {
+      if (info) info.textContent = "Encara no hi ha fitxer d’històric (daily-summary.json) o no es pot carregar.";
+      return [];
+    }
+  }
+
+  async function main() {
+    const all = await fetchSummary();
+    const info = $("histInfo");
+
+    if (!all.length) {
+      render([]);
+      return;
+    }
+
+    const yrs = yearsFromRows(all);
+    const yearSel = $("yearSelect");
+    const monthSel = $("monthSelect");
+
+    yearSel.innerHTML = yrs.map(y => `<option value="${y}">${y}</option>`).join("");
+
+    const { y: y0, m: m0 } = getUrlFilters();
+    const defaultY = y0 && yrs.includes(y0) ? y0 : yrs[yrs.length - 1];
+
+    yearSel.value = defaultY;
+    monthSel.value = m0 || "";
+
+    function refresh() {
+      const y = yearSel.value || "";
+      const m = monthSel.value || "";
+      setUrlFilters(y, m);
+
+      const filtered = applyFilters(all, y, m);
+      render(filtered);
+
+      if (info) {
+        const count = filtered.length;
+        const labelM = m ? ` · mes ${m}` : "";
+        info.textContent = `Mostrant ${count} dia/dies · any ${y}${labelM}.`;
       }
     }
 
-    function yearsFromRows(rows) {
-      const set = new Set(rows.map(r => String(r.date || "").slice(0,4)).filter(Boolean));
-      return Array.from(set).sort();
-    }
+    yearSel.addEventListener("change", refresh);
+    monthSel.addEventListener("change", refresh);
 
-    function getUrlFilters() {
-      try {
-        const u = new URL(location.href);
-        const y = u.searchParams.get("y") || "";
-        const m = u.searchParams.get("m") || "";
-        return { y, m };
-      } catch {
-        return { y: "", m: "" };
-      }
-    }
-
-    function setUrlFilters(y, m) {
-      try {
-        const u = new URL(location.href);
-        if (y) u.searchParams.set("y", y); else u.searchParams.delete("y");
-        if (m) u.searchParams.set("m", m); else u.searchParams.delete("m");
-        history.replaceState(null, "", u.toString());
-      } catch {}
-    }
-
-    function applyFilters(rows, y, m) {
-      return rows.filter(r => {
-        const date = String(r.date || "");
-        if (date.length < 10) return false;
-        if (y && date.slice(0,4) !== y) return false;
-        if (m && date.slice(5,7) !== m) return false;
-        return true;
-      });
-    }
-
-    function render(rows) {
-      const tbody = $("histBody");
-      if (!tbody) return;
-
-      if (!rows.length) {
-        tbody.innerHTML = `<tr><td colspan="6" class="muted-cell">Sense dades per al filtre seleccionat.</td></tr>`;
-        return;
-      }
-
-      const sorted = rows.slice().sort((a,b) => String(b.date).localeCompare(String(a.date)));
-
-      tbody.innerHTML = sorted.map(r => {
-        const date = String(r.date || "");
-        const tmin = fmt1(r.t_min);
-        const tmax = fmt1(r.t_max);
-        const tavg = fmt1(r.t_avg);
-        const rain = fmt1(r.rain_mm);
-        const gust = fmt1(r.gust_max);
-        const wind = fmt1(r.wind_avg);
-
-        return `
-          <tr>
-            <td data-label="Data">${fmtDateCA(date)}</td>
-            <td data-label="T mín / màx (°C)">${tmin} / ${tmax}</td>
-            <td data-label="T mitjana (°C)">${tavg}</td>
-            <td data-label="Pluja (mm)">${rain}</td>
-            <td data-label="Ratxa màxima (km/h)">${gust}</td>
-            <td data-label="Vent mitjà (km/h)">${wind}</td>
-          </tr>
-        `;
-      }).join("");
-    }
-
-    async function fetchSummary() {
-      const info = $("histInfo");
-      try {
-        const res = await fetch(`${SUMMARY_URL}?t=${Date.now()}`, { cache: "no-store" });
-        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-        const data = await res.json();
-        return Array.isArray(data) ? data : [];
-      } catch {
-        if (info) info.textContent = "Encara no hi ha fitxer d’històric (daily-summary.json) o no es pot carregar.";
-        return [];
-      }
-    }
-
-    async function main() {
-      const all = await fetchSummary();
-      const info = $("histInfo");
-
-      if (!all.length) {
-        render([]);
-        return;
-      }
-
-      const yrs = yearsFromRows(all);
-      const yearSel = $("yearSelect");
-      const monthSel = $("monthSelect");
-
-      yearSel.innerHTML = yrs.map(y => `<option value="${y}">${y}</option>`).join("");
-
-      const { y: y0, m: m0 } = getUrlFilters();
-      const defaultY = y0 && yrs.includes(y0) ? y0 : yrs[yrs.length - 1];
-
-      yearSel.value = defaultY;
-      monthSel.value = m0 || "";
-
-      function refresh() {
-        const y = yearSel.value || "";
-        const m = monthSel.value || "";
-        setUrlFilters(y, m);
-
-        const filtered = applyFilters(all, y, m);
-        render(filtered);
-
-        if (info) {
-          const count = filtered.length;
-          const labelM = m ? ` · mes ${m}` : "";
-          info.textContent = `Mostrant ${count} dia/dies · any ${y}${labelM}.`;
-        }
-      }
-
-      yearSel.addEventListener("change", refresh);
-      monthSel.addEventListener("change", refresh);
-
-      $("clearBtn").addEventListener("click", () => {
-        yearSel.value = yrs[yrs.length - 1];
-        monthSel.value = "";
-        refresh();
-      });
-
+    $("clearBtn").addEventListener("click", () => {
+      yearSel.value = yrs[yrs.length - 1];
+      monthSel.value = "";
       refresh();
-    }
+    });
 
-    main();
-  </script>
+    refresh();
+  }
+
+  main();
+</script>
 
 </body>
 </html>
