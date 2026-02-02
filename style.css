@@ -457,3 +457,40 @@ h2{
     padding-right: 10px;
   }
 }
+
+/* Navegació ràpida sota el hero */
+.quick-nav{
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.quick-nav__btn{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--chip);
+  color: var(--text);
+  font-weight: 650;
+  text-decoration: none;
+  font-size: 14px;
+  transition: background .2s ease, transform .1s ease;
+}
+
+.quick-nav__btn:hover{
+  background: var(--chip2);
+}
+
+.quick-nav__btn:active{
+  transform: translateY(1px);
+}
+
+/* A mòbil: botons ben respirats */
+@media (max-width: 520px){
+  .quick-nav{
+    justify-content: flex-start;
+  }
+}
