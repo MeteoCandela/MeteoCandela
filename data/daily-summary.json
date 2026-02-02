@@ -1,2 +1,29 @@
 [
+  {
+    "day": "2026-02-02",
+    "temp_min_c": 6.5,
+    "temp_max_c": 7.3,
+    "temp_avg_c": 6.8,
+    "rain_mm": 0,
+    "gust_max_kmh": 4.3,
+    "wind_avg_kmh": 2.3
+  },
+  {
+    "day": "2026-02-01",
+    "temp_min_c": 7.1,
+    "temp_max_c": 15.4,
+    "temp_avg_c": 10.3,
+    "rain_mm": 0,
+    "gust_max_kmh": 19.8,
+    "wind_avg_kmh": 4
+  },
+  {
+    "day": "2026-01-31",
+    "temp_min_c": 10.8,
+    "temp_max_c": 63.5,
+    "temp_avg_c": 19.9,
+    "rain_mm": 0,
+    "gust_max_kmh": 48.6,
+    "wind_avg_kmh": 11.4
+  }
 ]
