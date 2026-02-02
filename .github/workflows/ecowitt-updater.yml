@@ -37,6 +37,8 @@ jobs:
           ECOWITT_APPLICATION_KEY: ${{ secrets.ECOWITT_APPLICATION_KEY }}
           ECOWITT_API_KEY: ${{ secrets.ECOWITT_API_KEY }}
           ECOWITT_MAC: ${{ secrets.ECOWITT_MAC }}
+          # Posa-ho a "1" temporalment si vols veure el payload de pluja a logs
+          ECOWITT_DEBUG: "0"
         run: |
           python - <<'PY'
           import json, os, time, socket
@@ -57,6 +59,8 @@ jobs:
           URL_TIMEOUT = 20
           RETRIES = 3
           BACKOFF_BASE = 2
+
+          DEBUG = (os.getenv("ECOWITT_DEBUG", "0").strip() == "1")
 
           socket.setdefaulttimeout(URL_TIMEOUT)
 
@@ -95,6 +99,7 @@ jobs:
               write_json(HEARTBEAT_PATH, hb)
               return hb
 
+          # ====== numeric helpers ======
           def fnum(x):
               try:
                   return float(x)
@@ -133,14 +138,15 @@ jobs:
 
           def norm_rain(v, unit):
               """Retorna pluja en mm (o mm/h) a partir d'unitats Ecowitt."""
+              v = fnum(v)
               if v is None:
                   return None
               u = (str(unit).strip().lower() if unit else "")
+              # típics: "in", "in/hr", "mm", "mm/h", "cm"
               if "in" in u:
                   return inch_to_mm(v)
               if "cm" in u:
                   return cm_to_mm(v)
-              # per defecte: mm o mm/h
               return float(v)
 
           def to_ms_epoch(s):
@@ -157,15 +163,16 @@ jobs:
               return None
 
           def is_fahrenheit(unit):
+              """Heurística Ecowitt: si unit és 'F' -> F; si 'C' -> C; si falta, sovint ve en F."""
               if unit:
                   u = str(unit).strip().lower()
                   if u.startswith("f"):
                       return True
                   if u.startswith("c"):
                       return False
-              # en molts payloads Ecowitt, si no hi ha unit, outdoor temp ve en F
               return True
 
+          # ====== HTTP robust ======
           def fetch_url_json(url):
               last_err = None
               for i in range(RETRIES):
@@ -179,7 +186,7 @@ jobs:
                       time.sleep(sleep_s)
               raise last_err
 
-          # ========= helpers per extreure valors =========
+          # ====== extraction helpers ======
           def deep_get(d, *keys):
               cur = d
               for k in keys:
@@ -209,7 +216,13 @@ jobs:
               payload = fetch_url_json(url)
               data = payload.get("data", {}) if isinstance(payload, dict) else {}
 
-              # --- temperatura / humitat / rosada ---
+              if DEBUG:
+                  rain_keys = [k for k in (data.keys() if isinstance(data, dict) else []) if "rain" in k.lower()]
+                  print("[DEBUG] rain keys:", rain_keys)
+                  print("[DEBUG] rainfall:", data.get("rainfall") if isinstance(data, dict) else None)
+                  print("[DEBUG] rainfall_piezo:", data.get("rainfall_piezo") if isinstance(data, dict) else None)
+
+              # temperatura / humitat / rosada
               t_v, t_u = val_unit(deep_get(data, "outdoor", "temperature") or data.get("temperature") or data.get("temp"))
               h_v, _   = val_unit(deep_get(data, "outdoor", "humidity") or data.get("humidity"))
               d_v, d_u = val_unit(deep_get(data, "outdoor", "dew_point") or data.get("dew_point"))
@@ -221,7 +234,7 @@ jobs:
               temp_c = f_to_c(t_raw) if (t_raw is not None and is_fahrenheit(t_u)) else t_raw
               dew_c  = f_to_c(d_raw) if (d_raw is not None and is_fahrenheit(d_u)) else d_raw
 
-              # --- vent / ratxa ---
+              # vent / ratxa
               ws_v, ws_u = val_unit(data.get("wind_speed") or deep_get(data, "wind", "wind_speed"))
               gs_v, gs_u = val_unit(data.get("wind_gust")  or deep_get(data, "wind", "wind_gust"))
 
@@ -247,26 +260,32 @@ jobs:
               )
               wind_dir = str(wind_dir) if wind_dir is not None else None
 
-              # --- PLUJA ---
-              # WS85 (piezo) -> data["rainfall_piezo"]["rain_rate"] i ["daily"] (unitats sovint in/hr i in)
+              # ---- PLUJA ----
+              # IMPORTANT:
+              #  - En WS85: data["rainfall_piezo"]["daily"] unit 'in'
+              #  - En WS85: data["rainfall_piezo"]["rain_rate"] unit 'in/hr'
               rd_v, rd_u = val_unit(
-                  deep_get(data, "rainfall", "daily")
-                  or deep_get(data, "rainfall_piezo", "daily")
+                  deep_get(data, "rainfall_piezo", "daily")
+                  or deep_get(data, "rainfall", "daily")
                   or data.get("rainfall_daily")
                   or data.get("rain_day")
                   or data.get("daily_rain")
               )
 
               rr_v, rr_u = val_unit(
-                  deep_get(data, "rainfall", "rate")
-                  or deep_get(data, "rainfall_piezo", "rain_rate")  # ✅ clau correcta pel teu log
-                  or data.get("rain_rate")
+                  deep_get(data, "rainfall_piezo", "rain_rate")   # ✅ clau bona WS85
                   or deep_get(data, "rainfall", "rain_rate")
-                  or deep_get(data, "rainfall_piezo", "rate")       # fallback antic si algun model l'usa
+                  or data.get("rain_rate")
+                  or deep_get(data, "rainfall_piezo", "rate")      # fallback antic
+                  or deep_get(data, "rainfall", "rate")
               )
 
-              rain_day  = norm_rain(fnum(rd_v), rd_u)
-              rain_rate = norm_rain(fnum(rr_v), rr_u)
+              rain_day  = norm_rain(rd_v, rd_u)
+              rain_rate = norm_rain(rr_v, rr_u)
+
+              # si no ve intensitat, NO fem fallback: posem 0.0 per no quedar enganxat
+              if rain_rate is None:
+                  rain_rate = 0.0
 
               return {
                   "ts": now_ms,
@@ -276,8 +295,8 @@ jobs:
                   "wind_kmh": None if wind_kmh is None else float(wind_kmh),
                   "gust_kmh": None if gust_kmh is None else float(gust_kmh),
                   "wind_dir": wind_dir,
-                  "rain_day_mm": None if rain_day  is None else float(rain_day),
-                  "rain_rate_mmh": None if rain_rate is None else float(rain_rate),
+                  "rain_day_mm": None if rain_day is None else float(rain_day),
+                  "rain_rate_mmh": float(rain_rate),
               }
 
           # =========================
@@ -303,13 +322,14 @@ jobs:
               if data is None:
                   return []
 
-              data_list = None
               if isinstance(data, dict):
                   data_list = data.get("list") or data.get("data") or data.get("records")
               elif isinstance(data, list):
                   data_list = data
+              else:
+                  data_list = None
 
-              if not data_list or not isinstance(data_list, list):
+              if not isinstance(data_list, list):
                   return []
 
               def parse_row(r):
@@ -323,7 +343,6 @@ jobs:
                       or to_ms_epoch(r.get("dateutc"))
                   )
                   if ts_ms is None and isinstance(r.get("time"), str):
-                      # alguns history venen "YYYY-MM-DD HH:MM" en UTC
                       try:
                           dt = datetime.strptime(r["time"], "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
                           ts_ms = int(dt.timestamp() * 1000)
@@ -363,25 +382,27 @@ jobs:
                   wind_dir = (r.get("wind_direction") or deep_get(r, "wind", "wind_direction"))
                   wind_dir = str(wind_dir) if wind_dir is not None else None
 
-                  # pluja (inclou piezo variants)
+                  # pluja: history sovint no dona rain_rate; si falta -> 0.0 (no enganxar)
                   rd_v, rd_u = val_unit(
-                      deep_get(r, "rainfall", "daily")
-                      or deep_get(r, "rainfall_piezo", "daily")
+                      deep_get(r, "rainfall_piezo", "daily")
+                      or deep_get(r, "rainfall", "daily")
                       or r.get("rainfall_daily")
                       or r.get("rain_day")
                       or r.get("daily_rain")
-                      or deep_get(r, "rainfall_piezo", "event")   # fallback
-                  )
-                  rr_v, rr_u = val_unit(
-                      deep_get(r, "rainfall", "rate")
-                      or deep_get(r, "rainfall_piezo", "rain_rate")
-                      or r.get("rain_rate")
-                      or deep_get(r, "rainfall", "rain_rate")
-                      or deep_get(r, "rainfall_piezo", "rate")
                   )
 
-                  rain_day  = norm_rain(fnum(rd_v), rd_u)
-                  rain_rate = norm_rain(fnum(rr_v), rr_u)
+                  rr_v, rr_u = val_unit(
+                      deep_get(r, "rainfall_piezo", "rain_rate")
+                      or deep_get(r, "rainfall", "rain_rate")
+                      or r.get("rain_rate")
+                      or deep_get(r, "rainfall_piezo", "rate")
+                      or deep_get(r, "rainfall", "rate")
+                  )
+
+                  rain_day  = norm_rain(rd_v, rd_u)
+                  rain_rate = norm_rain(rr_v, rr_u)
+                  if rain_rate is None:
+                      rain_rate = 0.0
 
                   return {
                       "ts": int(ts_ms),
@@ -391,8 +412,8 @@ jobs:
                       "wind_kmh": None if wind_kmh is None else float(wind_kmh),
                       "gust_kmh": None if gust_kmh is None else float(gust_kmh),
                       "wind_dir": wind_dir,
-                      "rain_day_mm": None if rain_day  is None else float(rain_day),
-                      "rain_rate_mmh": None if rain_rate is None else float(rain_rate),
+                      "rain_day_mm": None if rain_day is None else float(rain_day),
+                      "rain_rate_mmh": float(rain_rate),
                   }
 
               out = []
@@ -419,9 +440,9 @@ jobs:
           try:
               current_row = fetch_realtime_row(now_ms)
 
-              # Fallback pluja: només si el prev és del mateix "dia UTC" que current
+              # fallback només per pluja diària (mateix dia UTC), MAI per rain_rate
               prev = read_json(CURRENT_PATH, default=None)
-              if isinstance(prev, dict) and isinstance(current_row, dict):
+              if isinstance(prev, dict) and isinstance(current_row, dict) and "ts" in prev and "ts" in current_row:
                   try:
                       prev_day = datetime.fromtimestamp(int(prev["ts"])/1000, tz=timezone.utc).date()
                       cur_day  = datetime.fromtimestamp(int(current_row["ts"])/1000, tz=timezone.utc).date()
@@ -431,8 +452,10 @@ jobs:
                   if prev_day == cur_day:
                       if current_row.get("rain_day_mm") is None and prev.get("rain_day_mm") is not None:
                           current_row["rain_day_mm"] = prev["rain_day_mm"]
-                      if current_row.get("rain_rate_mmh") is None and prev.get("rain_rate_mmh") is not None:
-                          current_row["rain_rate_mmh"] = prev["rain_rate_mmh"]
+
+              # assegurem intensitat sempre numèrica
+              if current_row.get("rain_rate_mmh") is None:
+                  current_row["rain_rate_mmh"] = 0.0
 
               write_json(CURRENT_PATH, current_row)
 
@@ -463,7 +486,7 @@ jobs:
 
               merged = hist + new_rows
 
-              # també persistim el punt realtime a history
+              # també persistim el punt realtime
               if isinstance(current_row, dict) and isinstance(current_row.get("ts"), (int, float)):
                   merged.append(current_row)
 
@@ -499,25 +522,4 @@ jobs:
             exit 0
           fi
 
-          git config user.name "github-actions"
-          git config user.email "github-actions@users.noreply.github.com"
-
-          git add data/history.json data/current.json heartbeat/heartbeat.json
-          git commit -m "Update meteo data" || true
-
-          git pull --rebase origin main
-
-          git add data/history.json data/current.json heartbeat/heartbeat.json
-          git commit -m "Update meteo data" || true
-
-          for i in 1 2 3; do
-            if git push origin HEAD:main; then
-              echo "Push OK"
-              exit 0
-            fi
-            echo "Push fallit (intent $i). Reintentant..."
-            git pull --rebase origin main
-          done
-
-          echo "ERROR: No s'ha pogut fer push després de reintents."
-          exit 1
+          git config user.name "gith
