@@ -130,7 +130,7 @@
     <span>© <span id="year"></span> MeteoCandela</span>
   </footer>
 
-        <script>
+          <script>
   document.getElementById("year").textContent = new Date().getFullYear();
 
   const BASE = (location.pathname.includes("/MeteoCandela/")) ? "/MeteoCandela" : "";
@@ -151,6 +151,14 @@
     } catch {
       return ymd;
     }
+  }
+
+  function monthNameCA(mm){
+    const map = {
+      "01":"Gener","02":"Febrer","03":"Març","04":"Abril","05":"Maig","06":"Juny",
+      "07":"Juliol","08":"Agost","09":"Setembre","10":"Octubre","11":"Novembre","12":"Desembre"
+    };
+    return map[mm] || mm;
   }
 
   function yearsFromRows(rows) {
@@ -265,7 +273,7 @@
 
       if (info) {
         const count = filtered.length;
-        const labelM = m ? ` · mes ${m}` : "";
+        const labelM = m ? ` · ${monthNameCA(m)}` : "";
         info.textContent = `Mostrant ${count} dia/dies · any ${y}${labelM}.`;
       }
     }
@@ -273,17 +281,20 @@
     yearSel.addEventListener("change", refresh);
     monthSel.addEventListener("change", refresh);
 
-    $("clearBtn").addEventListener("click", () => {
-      yearSel.value = yrs[yrs.length - 1];
-      monthSel.value = "";
-      refresh();
-    });
+    const clearBtn = $("clearBtn");
+    if (clearBtn) {
+      clearBtn.addEventListener("click", () => {
+        yearSel.value = yrs[yrs.length - 1];
+        monthSel.value = "";
+        refresh();
+      });
+    }
 
     refresh();
   }
 
   main();
-</script>
+          </script>
 
 </body>
 </html>
