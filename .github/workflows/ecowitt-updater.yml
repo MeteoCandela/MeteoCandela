@@ -194,6 +194,9 @@ def norm_rain(v, unit):
               payload = fetch_url_json(url)
 
               data = payload.get("data", {}) if isinstance(payload, dict) else {}
+print("[DEBUG] keys rainfall:", [k for k in data.keys() if "rain" in k.lower()])
+print("[DEBUG] rainfall:", data.get("rainfall"))
+print("[DEBUG] rainfall_piezo:", data.get("rainfall_piezo"))
 
               def pick(*keys):
                   cur = data
