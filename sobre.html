@@ -20,27 +20,6 @@
   <meta property="og:url" content="https://meteocandela.cat/sobre.html">
   <meta property="og:image" content="https://meteocandela.cat/og-image.png">
 
-  <!-- ✅ Breadcrumb SEO (JSON-LD) -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      {
-        "@type": "ListItem",
-        "position": 1,
-        "name": "Inici",
-        "item": "https://meteocandela.cat/"
-      },
-      {
-        "@type": "ListItem",
-        "position": 2,
-        "name": "Sobre l’estació",
-        "item": "https://meteocandela.cat/sobre.html"
-      }
-    ]
-  }
-  </script>
 
   <link rel="stylesheet" href="style.css?v=2026-02-02-01">
 </head>
@@ -55,16 +34,15 @@
       <p>MeteoCandela · Barri de la Candela (Valls)</p>
     </div>
   </header>
-
-  <main class="grid">
-
-    <!-- ✅ BREADCRUMB VISIBLE (lleuger) -->
-    <section class="card span2">
-  <nav class="crumbs" aria-label="Ruta de navegació">
-    <a href="/">Inici</a>
+<!-- ✅ NAVEGACIÓ SIMPLE -->
+<section class="card span2">
+  <nav class="quick-nav" aria-label="Navegació principal">
+    <a href="/index.html" class="quick-nav__btn">🏠 Inici</a>
+    <a href="/historic.html" class="quick-nav__btn">📅 Històric</a>
   </nav>
 </section>
-
+  
+  <main class="grid">
     <!-- CONTEXT LOCAL -->
     <section class="card span2">
       <h2>Context i ubicació</h2>
