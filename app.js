@@ -79,6 +79,12 @@
     return "—";
   }
 
+  function toNumOrNull(v) {
+    if (v === null || v === undefined || v === "") return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+
   function normalizeRow(r) {
     // TEMPERATURA
     let tempC = (r.temp_c ?? null);
@@ -110,21 +116,22 @@
       else if (r.wind_gust != null) gustKmh = Number(r.wind_gust);
     }
 
-    // PLUJA
+    // PLUJA (IMPORTANT: mantenim NULL si no hi ha dada)
     const rainDay  = (r.rain_day_mm ?? r.rain_day ?? null);
     const rainRate = (r.rain_rate_mmh ?? r.rain_rate ?? null);
 
     return {
       ts: Number(r.ts),
-      temp_c: tempC != null ? Number(tempC) : null,
-      hum_pct: r.hum_pct != null ? Number(r.hum_pct) : null,
-      dew_c: dewC != null ? Number(dewC) : null,
-      wind_kmh: windKmh != null ? Number(windKmh) : null,
-      gust_kmh: gustKmh != null ? Number(gustKmh) : null,
+      temp_c: toNumOrNull(tempC),
+      hum_pct: toNumOrNull(r.hum_pct),
+      dew_c: toNumOrNull(dewC),
+      wind_kmh: toNumOrNull(windKmh),
+      gust_kmh: toNumOrNull(gustKmh),
       wind_dir: (r.wind_dir ?? r.wind_direction ?? null),
-      // IMPORTANT: si falta pluja, millor null (no 0) per detectar "sense sensor"
-      rain_day_mm: (rainDay != null && Number.isFinite(Number(rainDay))) ? Number(rainDay) : null,
-      rain_rate_mmh: (rainRate != null && Number.isFinite(Number(rainRate))) ? Number(rainRate) : null,
+
+      // ✅ NULL si no hi ha dada (no 0)
+      rain_day_mm: toNumOrNull(rainDay),
+      rain_rate_mmh: toNumOrNull(rainRate),
     };
   }
 
@@ -143,6 +150,8 @@
     $("temp").textContent = current.temp_c == null ? "—" : fmt1(current.temp_c);
     $("hum").textContent  = current.hum_pct == null ? "—" : String(Math.round(current.hum_pct));
     $("wind").textContent = current.wind_kmh == null ? "—" : fmt1(current.wind_kmh);
+
+    // ✅ si no hi ha sensor / dada → "—"
     $("rainDay").textContent = current.rain_day_mm == null ? "—" : fmt1(current.rain_day_mm);
 
     if ($("tempSub")) {
@@ -307,11 +316,21 @@
     const wind = rDay.map(r => r.wind_kmh);
     const gust = rDay.map(r => r.gust_kmh);
 
-    // ✅ Pluja acumulada del dia (a cada punt)
-    const rainAcc = rDay.map(r => {
-      const v = r.rain_day_mm;
-      return (v == null || !Number.isFinite(Number(v))) ? null : Number(v);
-    });
+    // ✅ pluja acumulada del dia (rain_day_mm)
+    // Fem servir una sèrie "monòtona" per si el sensor fa reset raro
+    const rainRaw = rDay.map(r => (r.rain_day_mm == null ? null : Number(r.rain_day_mm)));
+    const rainAcc = [];
+    let acc = 0;
+    let hasAny = false;
+    for (const v of rainRaw) {
+      if (v == null || !Number.isFinite(v)) {
+        rainAcc.push(null);
+      } else {
+        hasAny = true;
+        acc = Math.max(acc, v);
+        rainAcc.push(acc);
+      }
+    }
 
     const { min: vMin, max: vMax } = minMax(temp);
 
@@ -324,30 +343,6 @@
 
     const dayLabel = $("dayLabel");
     if (dayLabel) dayLabel.textContent = rDay.length ? dayTxt : `${dayTxt} · sense dades`;
-
-    // ✅ Missatge "sense precipitació"
-    const rainMsgEl = $("rainMsg");
-    const lastRain = (() => {
-      for (let i = rainAcc.length - 1; i >= 0; i--) {
-        if (rainAcc[i] != null && Number.isFinite(rainAcc[i])) return rainAcc[i];
-      }
-      return null;
-    })();
-
-    const hasRainSensorData = rainAcc.some(v => v != null && Number.isFinite(v));
-    const isZeroRain = hasRainSensorData && (lastRain != null) && (Number(lastRain) <= 0);
-
-    if (rainMsgEl) {
-      if (!rDay.length) rainMsgEl.textContent = "";
-      else if (!hasRainSensorData) rainMsgEl.textContent = "Sense dades de precipitació per al dia seleccionat.";
-      else if (isZeroRain) rainMsgEl.textContent = "Sense precipitació en el dia actual.";
-      else rainMsgEl.textContent = "";
-    } else {
-      // si no tens #rainMsg, fem fallback discret al títol
-      if ($("chartRainTitle") && rDay.length && hasRainSensorData && isZeroRain) {
-        $("chartRainTitle").textContent = `Pluja acumulada (mm) · ${dayTxt} · Sense precipitació en el dia actual`;
-      }
-    }
 
     if (window.__chartTemp) window.__chartTemp.destroy();
     if (window.__chartHum) window.__chartHum.destroy();
@@ -394,7 +389,7 @@
               ? nameFormatter(ctx)
               : (ctx.dataset?.label || "");
             const prefix = label ? `${label}: ` : "";
-            return `${prefix}${Number(v).toFixed(1)} ${unit}`;
+            return `${prefix}${Number(v).toFixed(2)} ${unit}`;
           }
         }
       };
@@ -407,7 +402,7 @@
       scales: { x: { type: "category", ticks: { maxTicksLimit: 10 } } }
     };
 
-    // TEMP (amb min/max)
+    // ===== TEMP amb línies MIN/MAX i etiqueta a la dreta =====
     window.__chartTemp = new Chart($("chartTemp"), {
       type: "line",
       data: {
@@ -454,7 +449,6 @@
         id: "minMaxLabels",
         afterDatasetsDraw(chart) {
           if (vMin == null && vMax == null) return;
-
           const { ctx, chartArea } = chart;
           const yScale = chart.scales?.y;
           if (!yScale) return;
@@ -463,7 +457,6 @@
           ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
           ctx.textAlign = "right";
           ctx.textBaseline = "middle";
-
           ctx.fillStyle = "rgba(255,255,255,0.88)";
           ctx.strokeStyle = "rgba(0,0,0,0.55)";
           ctx.lineWidth = 3;
@@ -476,14 +469,12 @@
             ctx.strokeText(tMax, xRight, yMax);
             ctx.fillText(tMax, xRight, yMax);
           }
-
           if (vMin != null) {
             const yMin = yScale.getPixelForValue(vMin);
             const tMin = `Mín ${Number(vMin).toFixed(1)} °C`;
             ctx.strokeText(tMin, xRight, yMin);
             ctx.fillText(tMin, xRight, yMin);
           }
-
           ctx.restore();
         }
       }]
@@ -549,7 +540,7 @@
       }
     });
 
-    // ✅ RAIN (pluja acumulada del dia)
+    // ===== RAIN (acumulada del dia) =====
     const rainCanvas = $("chartRain");
     if (rainCanvas) {
       window.__chartRain = new Chart(rainCanvas, {
@@ -557,14 +548,15 @@
         data: {
           labels,
           datasets: [{
-            label: "",
+            label: "Pluja acumulada",
             data: rainAcc,
-            tension: 0.2,
+            tension: 0,
             pointRadius: 2,
-            pointHoverRadius: 7,
+            pointHoverRadius: 6,
             pointHitRadius: 12,
             borderWidth: 2,
-            fill: true
+            fill: true,
+            stepped: true
           }]
         },
         options: {
@@ -575,6 +567,40 @@
           }
         }
       });
+    }
+
+    // ✅ Missatge pluja (amb display none/block)
+    const rainMsgEl = $("rainMsg");
+    const todayKey = dayKeyFromTs(Date.now());
+    const isTodaySelected = (dayKey === todayKey);
+
+    const lastRain = (() => {
+      for (let i = rainAcc.length - 1; i >= 0; i--) {
+        if (rainAcc[i] != null && Number.isFinite(rainAcc[i])) return rainAcc[i];
+      }
+      return null;
+    })();
+
+    const hasRainSensorData = rainAcc.some(v => v != null && Number.isFinite(v));
+    const isZeroRain = hasRainSensorData && (lastRain != null) && (Number(lastRain) <= 0);
+
+    if (rainMsgEl) {
+      let msg = "";
+
+      if (!rDay.length) {
+        msg = "";
+      } else if (!hasRainSensorData) {
+        msg = "Sense dades de precipitació per al dia seleccionat.";
+      } else if (isZeroRain) {
+        msg = isTodaySelected
+          ? "Sense precipitació en el dia actual."
+          : "Sense precipitació en el dia seleccionat.";
+      } else {
+        msg = "";
+      }
+
+      rainMsgEl.textContent = msg;
+      rainMsgEl.style.display = msg ? "block" : "none";
     }
   }
 
@@ -621,18 +647,4 @@
       sourceTag = "dades en temps real";
     } else if (historyRows.length) {
       actualRow = historyRows[historyRows.length - 1];
-      sourceTag = "últim registre disponible";
-    }
-
-    if (actualRow) {
-      renderCurrent(actualRow, historyRows);
-      renderStatus(actualRow.ts, hb);
-      setSourceLine(`Origen: ${sourceTag}`);
-    } else {
-      if ($("lastUpdated")) $("lastUpdated").textContent = "Sense dades.";
-      setSourceLine("Origen: —");
-      renderStatus(null, hb);
-    }
-
-    // 5) Merge per charts
-    const ro
+      sourceTag = "últim regis
