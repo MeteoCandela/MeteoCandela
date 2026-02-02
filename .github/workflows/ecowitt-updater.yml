@@ -514,10 +514,12 @@ jobs:
           PY
 
       - name: Commit & push (only if changed)
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Update meteo data"
-          file_pattern: |
-            data/history.json
-            data/current.json
-            heartbeat/heartbeat.json
+        run: |
+          set -e
+
+          if git diff --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git config user.name "gith
