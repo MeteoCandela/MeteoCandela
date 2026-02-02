@@ -37,6 +37,8 @@ jobs:
           ECOWITT_APPLICATION_KEY: ${{ secrets.ECOWITT_APPLICATION_KEY }}
           ECOWITT_API_KEY: ${{ secrets.ECOWITT_API_KEY }}
           ECOWITT_MAC: ${{ secrets.ECOWITT_MAC }}
+          # Posa-ho a "1" si vols veure els [DEBUG] als logs
+          ECOWITT_DEBUG: "0"
         run: |
           python - <<'PY'
           import json, os, time, socket
@@ -58,6 +60,8 @@ jobs:
           RETRIES = 3
           BACKOFF_BASE = 2
 
+          DEBUG = (os.getenv("ECOWITT_DEBUG", "0").strip() == "1")
+
           socket.setdefaulttimeout(URL_TIMEOUT)
 
           app_key = os.getenv("ECOWITT_APPLICATION_KEY")
@@ -66,6 +70,7 @@ jobs:
           if not (app_key and api_key and mac):
               raise SystemExit("Falten secrets: ECOWITT_APPLICATION_KEY / ECOWITT_API_KEY / ECOWITT_MAC")
 
+          # ====== IO helpers ======
           def ensure_dirs():
               DATA_DIR.mkdir(parents=True, exist_ok=True)
               HEARTBEAT_DIR.mkdir(parents=True, exist_ok=True)
@@ -95,6 +100,7 @@ jobs:
               write_json(HEARTBEAT_PATH, hb)
               return hb
 
+          # ====== numeric helpers ======
           def fnum(x):
               try:
                   return float(x)
@@ -132,16 +138,16 @@ jobs:
                   return None
 
           def norm_rain(v, unit):
-              """Retorna pluja en mm (o mm/h)."""
+              """Retorna pluja en mm o mm/h segons unitat."""
               if v is None:
                   return None
               u = (str(unit).strip().lower() if unit else "")
+              # Exemples: "in", "in/hr", "mm", "mm/h", "cm"
               if "in" in u:
                   return inch_to_mm(v)
               if "cm" in u:
                   return cm_to_mm(v)
-              # per defecte assumim mm / mmh
-              return float(v)
+              return float(v)  # assumim mm
 
           def to_ms_epoch(s):
               if s is None:
@@ -156,16 +162,17 @@ jobs:
                   pass
               return None
 
-          def is_fahrenheit(unit, value):
+          def is_fahrenheit(unit):
               if unit:
                   u = str(unit).strip().lower()
                   if u.startswith("f"):
                       return True
                   if u.startswith("c"):
                       return False
-              return True  # Ecowitt sovint ve en ºF sense unitat
+              # Ecowitt sovint ve en ºF sense unitat
+              return True
 
-          # ====== HTTP robust amb retries ======
+          # ====== HTTP robust ======
           def fetch_url_json(url):
               last_err = None
               for i in range(RETRIES):
@@ -175,9 +182,34 @@ jobs:
                   except Exception as e:
                       last_err = e
                       sleep_s = (BACKOFF_BASE ** i)
-                      print(f"[WARN] fetch fail ({i+1}/{RETRIES}) {url} -> {type(e).__name__}: {e}. retry in {sleep_s}s")
+                      print(f"[WARN] fetch fail ({i+1}/{RETRIES}) {type(e).__name__}: {e}. retry in {sleep_s}s")
                       time.sleep(sleep_s)
               raise last_err
+
+          # ====== parsing helpers ======
+          def pick(d, *keys):
+              cur = d
+              for k in keys:
+                  if not isinstance(cur, dict) or k not in cur:
+                      return None
+                  cur = cur[k]
+              return cur
+
+          def val(x):
+              # Admet dict amb {value, unit} o valor pla
+              if isinstance(x, dict):
+                  return x.get("value"), (x.get("unit") or x.get("units"))
+              return x, None
+
+          def norm_wind(v, unit):
+              if v is None:
+                  return None
+              u = (str(unit).lower() if unit else "")
+              if "mph" in u:
+                  return mph_to_kmh(v)
+              if u in ("m/s", "ms", "mps"):
+                  return ms_to_kmh(v)
+              return float(v)  # assumim km/h si no diu res (o ja ve en km/h)
 
           # =========================
           #  A) CURRENT (real_time)
@@ -192,102 +224,67 @@ jobs:
               }
               url = base_url + "?" + urllib.parse.urlencode(params)
               payload = fetch_url_json(url)
-
               data = payload.get("data", {}) if isinstance(payload, dict) else {}
 
-              # DEBUG temporal (treu-ho quan ja funcioni)
-              print("[DEBUG] keys rainfall:", [k for k in data.keys() if "rain" in k.lower()])
-              print("[DEBUG] rainfall:", data.get("rainfall"))
-              print("[DEBUG] rainfall_piezo:", data.get("rainfall_piezo"))
-
-              def pick(*keys):
-                  cur = data
-                  for k in keys:
-                      if not isinstance(cur, dict) or k not in cur:
-                          return None
-                      cur = cur[k]
-                  return cur
-
-              def val(x):
-                  if isinstance(x, dict):
-                      return x.get("value"), (x.get("unit") or x.get("units"))
-                  return x, None
+              if DEBUG:
+                  rain_keys = [k for k in data.keys() if "rain" in k.lower()]
+                  print("[DEBUG] keys rain:", rain_keys)
+                  print("[DEBUG] rainfall:", data.get("rainfall"))
+                  print("[DEBUG] rainfall_piezo:", data.get("rainfall_piezo"))
 
               # Temperatura
-              t_v, t_u = val(pick("outdoor", "temperature") or pick("temperature") or pick("temp"))
-              if isinstance(t_v, dict):
-                  t_v, t_u = val(t_v)
+              t_v, t_u = val(
+                  pick(data, "outdoor", "temperature")
+                  or pick(data, "temperature")
+                  or pick(data, "temp")
+              )
               t_raw = fnum(t_v)
+              temp_c = f_to_c(t_raw) if (t_raw is not None and is_fahrenheit(t_u)) else t_raw
 
               # Humitat
-              h_v, h_u = val(pick("outdoor", "humidity") or pick("humidity"))
-              if isinstance(h_v, dict):
-                  h_v, h_u = val(h_v)
+              h_v, _ = val(pick(data, "outdoor", "humidity") or pick(data, "humidity"))
               hum = fnum(h_v)
 
               # Rosada
-              d_v, d_u = val(pick("outdoor", "dew_point") or pick("dew_point"))
-              if isinstance(d_v, dict):
-                  d_v, d_u = val(d_v)
+              d_v, d_u = val(pick(data, "outdoor", "dew_point") or pick(data, "dew_point"))
               dew_raw = fnum(d_v)
+              dew_c = f_to_c(dew_raw) if (dew_raw is not None and is_fahrenheit(d_u)) else dew_raw
 
-              temp_c = t_raw
-              if t_raw is not None and is_fahrenheit(t_u, t_raw):
-                  temp_c = f_to_c(t_raw)
+              # Vent
+              ws_v, ws_u = val(pick(data, "wind_speed") or pick(data, "wind", "wind_speed"))
+              gs_v, gs_u = val(pick(data, "wind_gust") or pick(data, "wind", "wind_gust"))
 
-              dew_c = dew_raw
-              if dew_raw is not None and is_fahrenheit(d_u, dew_raw):
-                  dew_c = f_to_c(dew_raw)
-
-              # Vent / ratxa
-              ws_v, ws_u = val(pick("wind_speed") or pick("wind", "wind_speed"))
-              if isinstance(ws_v, dict):
-                  ws_v, ws_u = val(ws_v)
-
-              gs_v, gs_u = val(pick("wind_gust") or pick("wind", "wind_gust"))
-              if isinstance(gs_v, dict):
-                  gs_v, gs_u = val(gs_v)
-
-              w_raw = fnum(ws_v)
-              g_raw = fnum(gs_v)
-
-              def norm_w(v, unit):
-                  if v is None:
-                      return None
-                  u = (str(unit).lower() if unit else "")
-                  if "mph" in u:
-                      return mph_to_kmh(v)
-                  if u in ("m/s", "ms", "mps"):
-                      return ms_to_kmh(v)
-                  return float(v)
-
-              wind_kmh = norm_w(w_raw, ws_u)
-              gust_kmh = norm_w(g_raw, gs_u)
+              wind_kmh = norm_wind(fnum(ws_v), ws_u)
+              gust_kmh = norm_wind(fnum(gs_v), gs_u)
 
               wind_dir = (
-                  pick("wind_direction", "value") or pick("wind_direction") or
-                  pick("wind", "wind_direction", "value") or pick("wind", "wind_direction")
+                  pick(data, "wind_direction", "value") or pick(data, "wind_direction")
+                  or pick(data, "wind", "wind_direction", "value") or pick(data, "wind", "wind_direction")
               )
 
-              # --- PLUJA (rainfall o rainfall_piezo) ---
+              # Pluja:
+              #   WS85 (piezo) retorna:
+              #     rainfall_piezo.daily (in)
+              #     rainfall_piezo.rain_rate (in/hr)
               rd_v, rd_u = val(
-                  pick("rainfall", "daily")
-                  or pick("rainfall_piezo", "daily")
-                  or pick("rainfall_daily")
-                  or pick("rain_day")
-                  or pick("daily_rain")
+                  pick(data, "rainfall", "daily")
+                  or pick(data, "rainfall_piezo", "daily")
+                  or pick(data, "rainfall_piezo", "event")   # opcional: pluja per episodi
+                  or pick(data, "rainfall_daily")
+                  or pick(data, "rain_day")
+                  or pick(data, "daily_rain")
               )
 
               rr_v, rr_u = val(
-                  pick("rainfall", "rate")
-                  or pick("rainfall_piezo", "rate")
-                  or pick("rain_rate")
-                  or pick("rainfall", "rain_rate")
-                  or pick("rainfall_piezo", "rain_rate")
+                  pick(data, "rainfall", "rate")
+                  or pick(data, "rainfall_piezo", "rain_rate")  # ✅ clau correcta WS85
+                  or pick(data, "rainfall_piezo", "rate")
+                  or pick(data, "rain_rate")
+                  or pick(data, "rainfall", "rain_rate")
               )
 
-              rain_day  = norm_rain(fnum(rd_v), rd_u)
-              rain_rate = norm_rain(fnum(rr_v), rr_u)
+              rain_day_mm  = norm_rain(fnum(rd_v), rd_u)
+              rain_rate_mmh = norm_rain(fnum(rr_v), rr_u)
 
               return {
                   "ts": now_ms,
@@ -297,8 +294,8 @@ jobs:
                   "wind_kmh": None if wind_kmh is None else float(wind_kmh),
                   "gust_kmh": None if gust_kmh is None else float(gust_kmh),
                   "wind_dir": (str(wind_dir) if wind_dir is not None else None),
-                  "rain_day_mm": rain_day,
-                  "rain_rate_mmh": rain_rate,
+                  "rain_day_mm": rain_day_mm,
+                  "rain_rate_mmh": rain_rate_mmh,
               }
 
           # =========================
@@ -330,33 +327,23 @@ jobs:
               else:
                   data_list = data
 
-              if data_list is None:
-                  return []
               if not isinstance(data_list, list):
-                  raise RuntimeError(f"Format history inesperat: {type(data_list)}")
+                  return []
 
               def val_unit(x):
                   if isinstance(x, dict):
                       return fnum(x.get("value")), (x.get("unit") or x.get("units"))
                   return fnum(x), None
 
-              def pick(d, *keys):
-                  cur = d
-                  for k in keys:
-                      if not isinstance(cur, dict) or k not in cur:
-                          return None
-                      cur = cur[k]
-                  return cur
-
               def parse_row(r):
                   ts_ms = (
-                      to_ms_epoch(r.get("ts")) or
-                      to_ms_epoch(r.get("time")) or
-                      to_ms_epoch(r.get("timestamp")) or
-                      to_ms_epoch(r.get("dateutc")) or
-                      None
+                      to_ms_epoch(r.get("ts"))
+                      or to_ms_epoch(r.get("time"))
+                      or to_ms_epoch(r.get("timestamp"))
+                      or to_ms_epoch(r.get("dateutc"))
                   )
                   if ts_ms is None and isinstance(r.get("time"), str):
+                      # fallback
                       try:
                           dt = datetime.strptime(r["time"], "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
                           ts_ms = int(dt.timestamp() * 1000)
@@ -369,34 +356,22 @@ jobs:
                   h_raw, _      = val_unit(pick(r, "outdoor", "humidity") or r.get("humidity"))
                   d_raw, d_unit = val_unit(pick(r, "outdoor", "dew_point") or r.get("dew_point"))
 
-                  temp_c = t_raw
-                  if t_raw is not None and is_fahrenheit(t_unit, t_raw):
-                      temp_c = f_to_c(t_raw)
-
-                  dew_c = d_raw
-                  if d_raw is not None and is_fahrenheit(d_unit, d_raw):
-                      dew_c = f_to_c(d_raw)
+                  temp_c = f_to_c(t_raw) if (t_raw is not None and is_fahrenheit(t_unit)) else t_raw
+                  dew_c  = f_to_c(d_raw) if (d_raw is not None and is_fahrenheit(d_unit)) else d_raw
 
                   w_raw, w_unit = val_unit(r.get("wind_speed") or pick(r, "wind", "wind_speed"))
-                  g_raw, g_unit = val_unit(r.get("wind_gust") or pick(r, "wind", "wind_gust"))
+                  g_raw, g_unit = val_unit(r.get("wind_gust")  or pick(r, "wind", "wind_gust"))
+
+                  wind_kmh = norm_wind(w_raw, w_unit)
+                  gust_kmh = norm_wind(g_raw, g_unit)
+
                   wind_dir = (r.get("wind_direction") or pick(r, "wind", "wind_direction"))
 
-                  def norm_w(v, unit):
-                      if v is None:
-                          return None
-                      u = (str(unit).lower() if unit else "")
-                      if "mph" in u:
-                          return mph_to_kmh(v)
-                      if u in ("m/s", "ms", "mps"):
-                          return ms_to_kmh(v)
-                      return float(v)
-
-                  wind_kmh = norm_w(w_raw, w_unit)
-                  gust_kmh = norm_w(g_raw, g_unit)
-
+                  # Pluja history (provar múltiples variants)
                   rd_raw, rd_u = val_unit(
                       pick(r, "rainfall", "daily")
                       or pick(r, "rainfall_piezo", "daily")
+                      or pick(r, "rainfall_piezo", "event")
                       or r.get("rainfall_daily")
                       or r.get("rain_day")
                       or r.get("daily_rain")
@@ -404,10 +379,10 @@ jobs:
 
                   rr_raw, rr_u = val_unit(
                       pick(r, "rainfall", "rate")
+                      or pick(r, "rainfall_piezo", "rain_rate")
                       or pick(r, "rainfall_piezo", "rate")
                       or r.get("rain_rate")
                       or pick(r, "rainfall", "rain_rate")
-                      or pick(r, "rainfall_piezo", "rain_rate")
                   )
 
                   rd_mm = norm_rain(rd_raw, rd_u)
@@ -450,7 +425,7 @@ jobs:
           try:
               current_row = fetch_realtime_row(now_ms)
 
-              # Reutilitza pluja anterior si ara ve null (només pluja)
+              # Reutilitza valors de pluja previs només si ara venen None
               prev = read_json(CURRENT_PATH, default=None)
               if isinstance(prev, dict) and isinstance(current_row, dict):
                   if current_row.get("rain_day_mm") is None and prev.get("rain_day_mm") is not None:
@@ -459,14 +434,10 @@ jobs:
                       current_row["rain_rate_mmh"] = prev["rain_rate_mmh"]
 
               write_json(CURRENT_PATH, current_row)
-
           except Exception as e:
               notes.append(f"realtime fail: {type(e).__name__}")
               prev = read_json(CURRENT_PATH, default=None)
-              if isinstance(prev, dict) and isinstance(prev.get("ts"), (int, float)):
-                  current_row = prev
-              else:
-                  current_row = None
+              current_row = prev if isinstance(prev, dict) else None
 
           # B) HISTORY
           try:
@@ -491,7 +462,7 @@ jobs:
               if isinstance(current_row, dict) and isinstance(current_row.get("ts"), (int, float)):
                   merged.append(current_row)
 
-              # dedupe per ts
+              # dedupe per ts (últim guanya)
               by_ts = {}
               for r in merged:
                   ts = r.get("ts")
@@ -505,7 +476,6 @@ jobs:
 
               if not new_rows:
                   notes.append("history: no new 5min row yet (normal delay)")
-
           except Exception as e:
               notes.append(f"history fail: {type(e).__name__}")
 
