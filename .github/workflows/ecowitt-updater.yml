@@ -438,6 +438,13 @@ return {
           current_row = None
           try:
               current_row = fetch_realtime_row(now_ms)
+              # Si la pluja ve null però tenim un últim valor al current anterior, reutilitza'l (només per pluja)
+prev = read_json(CURRENT_PATH, default=None)
+if isinstance(prev, dict):
+    if current_row.get("rain_day_mm") is None and prev.get("rain_day_mm") is not None:
+        current_row["rain_day_mm"] = prev["rain_day_mm"]
+    if current_row.get("rain_rate_mmh") is None and prev.get("rain_rate_mmh") is not None:
+        current_row["rain_rate_mmh"] = prev["rain_rate_mmh"]
               write_json(CURRENT_PATH, current_row)
           except Exception as e:
               notes.append(f"realtime fail: {type(e).__name__}")
