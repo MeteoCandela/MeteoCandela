@@ -13,6 +13,19 @@ const OUT_PATH = path.join(DATA_DIR, "daily-summary.json");
 
 const TZ = "Europe/Madrid";
 
+/**
+ * Límits de plausibilitat (AMPLIS) per filtrar errors de lectura.
+ * Ajustables si vols ser més estricte.
+ */
+const LIMITS = {
+  temp_c:      { min: -20, max: 55 },   // Catalunya: ample, però evita 63°C, -99, etc.
+  hum_pct:     { min: 0,   max: 100 },
+  dew_c:       { min: -40, max: 35 },   // punt de rosada rarament passa de 30-35
+  wind_kmh:    { min: 0,   max: 150 },
+  gust_kmh:    { min: 0,   max: 200 },
+  rain_day_mm: { min: 0,   max: 500 }   // molt ample
+};
+
 function readJsonSafe(p, fallback) {
   try {
     if (!fs.existsSync(p)) return fallback;
@@ -29,6 +42,11 @@ function mphToKmh(mph) { return mph * 1.609344; }
 function toNum(x) {
   const n = Number(x);
   return Number.isFinite(n) ? n : null;
+}
+
+function keepIfPlausible(x, lim) {
+  if (x == null) return null;
+  return (x >= lim.min && x <= lim.max) ? x : null;
 }
 
 function normalizeRow(r) {
@@ -71,12 +89,24 @@ function normalizeRow(r) {
   gustKmh = toNum(gustKmh);
 
   // Rain day acumulada
-  const rainDay = toNum(r.rain_day_mm ?? r.rain_day) ?? 0;
+  let rainDay = toNum(r.rain_day_mm ?? r.rain_day);
+  if (rainDay == null) rainDay = 0;
+
+  // ✅ Filtre de plausibilitat (descarta valors extrems / errors de lectura)
+  tempC   = keepIfPlausible(tempC,   LIMITS.temp_c);
+  const humP  = keepIfPlausible(hum,    LIMITS.hum_pct);
+  dewC    = keepIfPlausible(dewC,    LIMITS.dew_c);
+  windKmh = keepIfPlausible(windKmh, LIMITS.wind_kmh);
+  gustKmh = keepIfPlausible(gustKmh, LIMITS.gust_kmh);
+
+  // Pluja: si és absurda, la retornem a 0 per no “trencar” el dia
+  rainDay = keepIfPlausible(rainDay, LIMITS.rain_day_mm);
+  if (rainDay == null) rainDay = 0;
 
   return {
     ts,
     temp_c: tempC,
-    hum_pct: hum,
+    hum_pct: humP,
     dew_c: dewC,
     wind_kmh: windKmh,
     gust_kmh: gustKmh,
@@ -157,6 +187,10 @@ function buildDailySummaries(rows) {
       gust_max_kmh: round1(max(gusts)),
       wind_avg_kmh: round1(avg(winds))
     };
+
+    // ✅ Nota: NO descartem el dia sencer.
+    // Si un camp queda null (perquè totes les mostres eren “boges”), sortirà "null" al JSON,
+    // i a la web ho pots pintar com "—".
 
     result.set(day, summary);
   }
