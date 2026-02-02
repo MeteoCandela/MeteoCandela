@@ -214,17 +214,15 @@ h2{
 /* CHARTS (FIX: Chart.js no es quedi en blanc) */
 .chart-box{
   height: 260px;
-  display: flex;              /* clau */
-  flex-direction: column;     /* clau */
+  display: flex;
+  flex-direction: column;
 }
 
-/* ✅ RETOC: títol consistent i canvas que omple la resta */
 .card.chart-box h2{
-  margin: 0 0 10px;           /* consistent */
+  margin: 0 0 10px;
   line-height: 1.2;
 }
 
-/* ✅ FIX: res de calc(); el canvas omple l’espai restant */
 .chart-box canvas{
   width: 100% !important;
   flex: 1 1 auto !important;
@@ -233,11 +231,10 @@ h2{
 }
 
 @media (min-width: 900px){
-  /* el vent a tota amplada ja és span2, li donem una mica més d’alçada */
   .card.chart-box.span2{ height: 300px; }
 }
 
-/* ✅ NOU: FAQ bonica (details/summary) */
+/* ✅ FAQ (details/summary) */
 #faq details{
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -284,14 +281,12 @@ h2{
   border-top: 1px solid var(--border);
 }
 
-/* ===== Pàgina "Sobre l’estació" (retocs mínims) ===== */
-
-/* Hero més baix per pàgines internes */
+/* ===== Pàgines internes ===== */
 .hero.hero--small{
   min-height: 28vh;
 }
 
-/* Llistes dins cards (netes i consistents) */
+/* Llistes dins cards */
 .list{
   margin: 10px 0 0;
   padding-left: 18px;
@@ -312,7 +307,7 @@ h2{
   opacity: 1;
 }
 
-/* Botó de tornada a la pàgina principal */
+/* Botó gran de tornada (abaix de pàgina) */
 .back-link{
   display: inline-block;
   padding: 10px 16px;
@@ -324,64 +319,65 @@ h2{
   text-decoration: none;
   transition: background .2s ease, transform .1s ease;
 }
+.back-link:hover{ background: var(--chip); }
+.back-link:active{ transform: translateY(1px); }
 
-.back-link:hover{
-  background: var(--chip);
-}
-
-.back-link:active{
-  transform: translateY(1px);
-}
-
-/* Breadcrumb (discret, no “botó”) */
-.breadcrumb{
-  font-size: 12px;
-  color: var(--muted);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.breadcrumb__sep{
-  opacity: .6;
-}
-
-/* IMPORTANT: dins el breadcrumb, la .back-link NO ha de semblar un botó */
-.breadcrumb a.back-link{
-  display: inline;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  border-radius: 0;
-  font-weight: 650;
-  color: var(--text);
-  text-decoration: none;
-  transition: opacity .15s ease;
-}
-
-.breadcrumb a.back-link:hover{
-  opacity: .85;
-}
-
-.breadcrumb a.back-link:active{
-  transform: none;
-}
-
-/* ===== Històric ===== */
+/* ===== Breadcrumb / Nav compacte (usable a sobre.html i historic.html) ===== */
 .crumbs{
   display:flex;
-  gap: 10px;
   align-items:center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.crumbs__left{
+  display:flex;
+  align-items:center;
+  gap: 10px;
   font-size: 13px;
   color: var(--muted);
 }
-.crumbs a{
+
+.crumbs__left a{
   color: var(--text);
   text-decoration: none;
   border-bottom: 1px dotted rgba(255,255,255,.35);
 }
-.crumbs a:hover{ opacity: .9; }
+.crumbs__left a:hover{ opacity: .9; }
 
+.crumbs__right{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Botonet petit (per enllaçar a Històric / Sobre des del breadcrumb) */
+.crumbs__btn{
+  display:inline-block;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--chip);
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 650;
+  font-size: 13px;
+  line-height: 1;
+}
+.crumbs__btn:hover{ background: var(--chip2); }
+
+@media (max-width: 520px){
+  .crumbs{
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .crumbs__right{
+    justify-content: flex-start;
+  }
+}
+
+/* ===== Històric ===== */
 .muted-line{
   margin-top: 10px;
   color: var(--muted);
