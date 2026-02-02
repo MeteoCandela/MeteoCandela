@@ -1,0 +1,36 @@
+name: Update daily summary
+
+on:
+  schedule:
+    - cron: "7 * * * *"   # cada hora al minut 07 (pots canviar-ho)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Update daily summary
+        run: node scripts/update_daily_summary.js
+
+      - name: Commit changes (if any)
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add data/daily-summary.json
+            git commit -m "Update daily summary"
+            git push
+          else
+            echo "No changes."
+          fi
