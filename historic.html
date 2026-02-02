@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <title>Històric · MeteoCandela (Barri de la Candela, Valls)</title>
+  <meta name="description" content="Històric diari resumit de MeteoCandela (Barri de la Candela, Valls): mínimes i màximes, pluja i ratxa de vent.">
+  <link rel="canonical" href="https://meteocandela.cat/historic.html">
+
+  <meta name="robots" content="index,follow">
+  <meta name="theme-color" content="#0b1220">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="MeteoCandela">
+  <meta property="og:locale" content="ca_ES">
+  <meta property="og:title" content="Històric · MeteoCandela (Barri de la Candela)">
+  <meta property="og:description" content="Històric diari resumit: mínimes i màximes, pluja i ratxa de vent a Valls (Barri de la Candela).">
+  <meta property="og:url" content="https://meteocandela.cat/historic.html">
+  <meta property="og:image" content="https://meteocandela.cat/og-image.png">
+
+  <link rel="stylesheet" href="style.css?v=2026-02-02-01">
+</head>
+
+<body>
+
+  <!-- HERO -->
+  <header class="hero hero--small">
+    <div class="hero__overlay"></div>
+    <div class="hero__content">
+      <h1>Històric</h1>
+      <p>MeteoCandela · Barri de la Candela (Valls)</p>
+    </div>
+  </header>
+
+  <main class="grid">
+
+    <!-- Breadcrumb -->
+    <section class="card span2">
+      <nav class="crumbs" aria-label="Ruta de navegació">
+        <a href="/">Inici</a>
+        <span aria-hidden="true">→</span>
+        <span>Històric</span>
+      </nav>
+    </section>
+
+    <!-- Intro -->
+    <section class="card span2">
+      <h2>Resum diari</h2>
+      <p>
+        Aquí trobaràs un <strong>resum per dies</strong> amb els valors principals registrats per l’estació
+        <strong>MeteoCandela</strong> al <strong>Barri de la Candela</strong> (Valls).
+        És una manera lleugera de conservar l’històric durant mesos o anys.
+      </p>
+      <p class="muted-line" id="histInfo" aria-live="polite">Carregant dades…</p>
+    </section>
+
+    <!-- Filtres -->
+    <section class="card span2">
+      <div class="hist-controls">
+        <div class="hist-controls__left">
+          <div class="daybar__title">Filtra</div>
+          <div class="daybar__subtitle">Any i mes (opcional)</div>
+        </div>
+
+        <div class="hist-controls__right">
+          <label class="sr-only" for="yearSelect">Any</label>
+          <select id="yearSelect" class="select" aria-label="Any"></select>
+
+          <label class="sr-only" for="monthSelect">Mes</label>
+          <select id="monthSelect" class="select" aria-label="Mes">
+            <option value="">Tots els mesos</option>
+            <option value="01">Gener</option>
+            <option value="02">Febrer</option>
+            <option value="03">Març</option>
+            <option value="04">Abril</option>
+            <option value="05">Maig</option>
+            <option value="06">Juny</option>
+            <option value="07">Juliol</option>
+            <option value="08">Agost</option>
+            <option value="09">Setembre</option>
+            <option value="10">Octubre</option>
+            <option value="11">Novembre</option>
+            <option value="12">Desembre</option>
+          </select>
+
+          <button id="clearBtn" class="btn" type="button">Neteja</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Taula -->
+    <section class="card span2">
+      <h2>Dades</h2>
+
+      <div class="table-wrap">
+        <table class="hist-table" aria-label="Taula d'històric diari">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>T mín (°C)</th>
+              <th>T màx (°C)</th>
+              <th>Pluja (mm)</th>
+              <th>Ratxa (km/h)</th>
+            </tr>
+          </thead>
+          <tbody id="histBody">
+            <tr><td colspan="5" class="muted-cell">Carregant…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="muted-line" id="histNote">
+        Nota: dades <strong>no oficials</strong>. Poden diferir de xarxes professionals.
+      </p>
+    </section>
+
+    <!-- Tornar -->
+    <section class="card span2" style="text-align:center">
+      <p>
+        <a href="/" class="back-link" aria-label="Tornar a la pàgina principal">← Tornar a MeteoCandela</a>
+      </p>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <span>© <span id="year"></span> MeteoCandela</span>
+  </footer>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    const BASE = (location.pathname.includes("/MeteoCandela/")) ? "/MeteoCandela" : "";
+    const SUMMARY_URL = `${BASE}/data/daily-summary.json`;
+
+    const $ = (id) => document.getElementById(id);
+
+    function fmt1(x) {
+      if (x === null || x === undefined || Number.isNaN(Number(x))) return "—";
+      return Number(x).toFixed(1);
+    }
+
+    function fmtDateCA(ymd) {
+      // ymd: "YYYY-MM-DD"
+      try {
+        const [y, m, d] = ymd.split("-").map(Number);
+        const dt = new Date(y, m - 1, d);
+        return new Intl.DateTimeFormat("ca-ES", {
+          year: "numeric", month: "2-digit", day: "2-digit"
+        }).format(dt);
+      } catch {
+        return ymd;
+      }
+    }
+
+    function yearsFromRows(rows) {
+      const set = new Set(rows.map(r => String(r.date || "").slice(0,4)).filter(Boolean));
+      return Array.from(set).sort();
+    }
+
+    function getUrlFilters() {
+      try {
+        const u = new URL(location.href);
+        const y = u.searchParams.get("y") || "";
+        const m = u.searchParams.get("m") || "";
+        return { y, m };
+      } catch {
+        return { y: "", m: "" };
+      }
+    }
+
+    function setUrlFilters(y, m) {
+      try {
+        const u = new URL(location.href);
+        if (y) u.searchParams.set("y", y); else u.searchParams.delete("y");
+        if (m) u.searchParams.set("m", m); else u.searchParams.delete("m");
+        history.replaceState(null, "", u.toString());
+      } catch {}
+    }
+
+    function applyFilters(rows, y, m) {
+      return rows.filter(r => {
+        const date = String(r.date || "");
+        if (date.length < 10) return false;
+        if (y && date.slice(0,4) !== y) return false;
+        if (m && date.slice(5,7) !== m) return false;
+        return true;
+      });
+    }
+
+    function render(rows) {
+      const tbody = $("histBody");
+      if (!tbody) return;
+
+      if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="5" class="muted-cell">Sense dades per al filtre seleccionat.</td></tr>`;
+        return;
+      }
+
+      // ordre descendent (últim dia primer)
+      const sorted = rows.slice().sort((a,b) => String(b.date).localeCompare(String(a.date)));
+
+      tbody.innerHTML = sorted.map(r => {
+        const date = String(r.date || "");
+        const tmin = fmt1(r.t_min);
+        const tmax = fmt1(r.t_max);
+        const rain = (r.rain_mm == null || Number.isNaN(Number(r.rain_mm))) ? "—" : Number(r.rain_mm).toFixed(1);
+        const gust = (r.gust_max == null || Number.isNaN(Number(r.gust_max))) ? "—" : Number(r.gust_max).toFixed(1);
+
+        return `
+          <tr>
+            <td data-label="Data">${fmtDateCA(date)}</td>
+            <td data-label="T mín (°C)">${tmin}</td>
+            <td data-label="T màx (°C)">${tmax}</td>
+            <td data-label="Pluja (mm)">${rain}</td>
+            <td data-label="Ratxa (km/h)">${gust}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    async function fetchSummary() {
+      const info = $("histInfo");
+      try {
+        const res = await fetch(`${SUMMARY_URL}?t=${Date.now()}`, { cache: "no-store" });
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
+      } catch (e) {
+        if (info) {
+          info.textContent = "Encara no hi ha fitxer d’històric (daily-summary.json) o no es pot carregar.";
+        }
+        return [];
+      }
+    }
+
+    async function main() {
+      const all = await fetchSummary();
+      const info = $("histInfo");
+
+      if (!all.length) {
+        render([]);
+        return;
+      }
+
+      const yrs = yearsFromRows(all);
+      const yearSel = $("yearSelect");
+      const monthSel = $("monthSelect");
+
+      yearSel.innerHTML = yrs.map(y => `<option value="${y}">${y}</option>`).join("");
+
+      const { y: y0, m: m0 } = getUrlFilters();
+      const defaultY = y0 && yrs.includes(y0) ? y0 : yrs[yrs.length - 1];
+
+      yearSel.value = defaultY;
+      monthSel.value = m0 || "";
+
+      function refresh() {
+        const y = yearSel.value || "";
+        const m = monthSel.value || "";
+        setUrlFilters(y, m);
+
+        const filtered = applyFilters(all, y, m);
+        render(filtered);
+
+        if (info) {
+          const count = filtered.length;
+          const labelM = m ? ` · mes ${m}` : "";
+          info.textContent = `Mostrant ${count} dia/dies · any ${y}${labelM}.`;
+        }
+      }
+
+      yearSel.addEventListener("change", refresh);
+      monthSel.addEventListener("change", refresh);
+
+      $("clearBtn").addEventListener("click", () => {
+        yearSel.value = yrs[yrs.length - 1];
+        monthSel.value = "";
+        refresh();
+      });
+
+      refresh();
+    }
+
+    main();
+  </script>
+
+</body>
+  </html>
