@@ -527,7 +527,7 @@
     } else if (!hasAnyRain) {
       if (rainCanvas) rainCanvas.style.display = "none";
       if (rainMsgEl) {
-        rainMsgEl.textContent = "Sense precipitació registrada.";
+        rainMsgEl.textContent = "Sense precipitació registrada";
         rainMsgEl.style.display = "block";
       }
 
