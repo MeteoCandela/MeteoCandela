@@ -510,38 +510,81 @@
       });
     }
 
-    // Missatge pluja
-    const rainMsgEl = $("rainMsg");
-    const todayKey = dayKeyFromTs(Date.now());
-    const isTodaySelected = (dayKey === todayKey);
+    // ===== RAIN (amagar si 0 o sense dades) =====
+const rainCanvas = $("chartRain");
+const rainMsgEl = $("rainMsg");
 
-    const lastRain = (() => {
-      for (let i = rainAcc.length - 1; i >= 0; i--) {
-        if (rainAcc[i] != null && Number.isFinite(rainAcc[i])) return rainAcc[i];
-      }
-      return null;
-    })();
+const hasRainSensorData = rainAcc.some(v => v != null && Number.isFinite(v));
 
-    const hasRainSensorData = rainAcc.some(v => v != null && Number.isFinite(v));
-    const isZeroRain = hasRainSensorData && (lastRain != null) && (Number(lastRain) <= 0);
-
-    if (rainMsgEl) {
-      let msg = "";
-
-      if (!rDay.length) {
-        msg = "";
-      } else if (!hasRainSensorData) {
-        msg = "Sense dades de precipitació per al dia seleccionat.";
-      } else if (isZeroRain) {
-        msg = isTodaySelected ? "Sense precipitació en el dia actual." : "Sense precipitació en el dia seleccionat.";
-      } else {
-        msg = "";
-      }
-
-      rainMsgEl.textContent = msg;
-      rainMsgEl.style.display = msg ? "block" : "none";
-    }
+// últim valor acumulat (mm)
+const lastRain = (() => {
+  for (let i = rainAcc.length - 1; i >= 0; i--) {
+    if (rainAcc[i] != null && Number.isFinite(rainAcc[i])) return Number(rainAcc[i]);
   }
+  return null;
+})();
+
+// “ha plogut” si l’acumulada final és > 0
+const hasAnyRain = (hasRainSensorData && lastRain != null && lastRain > 0);
+
+if (window.__chartRain) {
+  window.__chartRain.destroy();
+  window.__chartRain = null;
+}
+
+if (!rDay.length) {
+  if (rainCanvas) rainCanvas.style.display = "none";
+  if (rainMsgEl) { rainMsgEl.textContent = ""; rainMsgEl.style.display = "none"; }
+
+} else if (!hasRainSensorData) {
+  if (rainCanvas) rainCanvas.style.display = "none";
+  if (rainMsgEl) {
+    rainMsgEl.textContent = "Sense dades de precipitació per al dia seleccionat.";
+    rainMsgEl.style.display = "block";
+  }
+
+} else if (!hasAnyRain) {
+  if (rainCanvas) rainCanvas.style.display = "none";
+  if (rainMsgEl) {
+    rainMsgEl.textContent = "Sense precipitació registrada.";
+    rainMsgEl.style.display = "block";
+  }
+
+} else {
+  if (rainCanvas) rainCanvas.style.display = "block";
+  if (rainMsgEl) { rainMsgEl.textContent = ""; rainMsgEl.style.display = "none"; }
+
+  // escala Y: mínim 0, màxim mínim d’1 mm (per plujes petites)
+  const yMax = Math.max(1, lastRain * 1.2);
+
+  if (rainCanvas && typeof window.Chart !== "undefined") {
+    window.__chartRain = new Chart(rainCanvas, {
+      type: "line",
+      data: {
+        labels,
+        datasets: [{
+          label: "Pluja acumulada",
+          data: rainAcc,
+          tension: 0,
+          pointRadius: 2,
+          pointHoverRadius: 6,
+          pointHitRadius: 12,
+          borderWidth: 2,
+          fill: true,
+          stepped: true
+        }]
+      },
+      options: {
+        ...commonBase,
+        scales: {
+          ...commonBase.scales,
+          y: { min: 0, suggestedMax: yMax }
+        },
+        plugins: { legend: { display: false }, tooltip: commonTooltip("mm") }
+      }
+    });
+  }
+}
 
   // ===== Main =====
   async function main() {
