@@ -15,6 +15,7 @@ permissions:
 jobs:
   update:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
       - name: Checkout
@@ -144,7 +145,6 @@ jobs:
                   return inch_to_mm(v)
               if "cm" in u:
                   return cm_to_mm(v)
-              # per defecte: mm o mm/h
               return float(v)
 
           def to_ms_epoch(s):
@@ -167,7 +167,6 @@ jobs:
                       return True
                   if u.startswith("c"):
                       return False
-              # en molts payloads Ecowitt, si no hi ha unit, outdoor temp ve en F
               return True
 
           def fetch_url_json(url):
@@ -183,7 +182,6 @@ jobs:
                       time.sleep(sleep_s)
               raise last_err
 
-          # ========= helpers per extreure valors =========
           def deep_get(d, *keys):
               cur = d
               for k in keys:
@@ -193,7 +191,6 @@ jobs:
               return cur
 
           def val_unit(x):
-              """Accepta dicts tipus {value, unit} o valors simples."""
               if isinstance(x, dict):
                   return x.get("value"), (x.get("unit") or x.get("units"))
               return x, None
@@ -213,7 +210,6 @@ jobs:
               payload = fetch_url_json(url)
               data = payload.get("data", {}) if isinstance(payload, dict) else {}
 
-              # --- temperatura / humitat / rosada ---
               t_v, t_u = val_unit(deep_get(data, "outdoor", "temperature") or data.get("temperature") or data.get("temp"))
               h_v, _   = val_unit(deep_get(data, "outdoor", "humidity") or data.get("humidity"))
               d_v, d_u = val_unit(deep_get(data, "outdoor", "dew_point") or data.get("dew_point"))
@@ -225,7 +221,6 @@ jobs:
               temp_c = f_to_c(t_raw) if (t_raw is not None and is_fahrenheit(t_u)) else t_raw
               dew_c  = f_to_c(d_raw) if (d_raw is not None and is_fahrenheit(d_u)) else d_raw
 
-              # --- vent / ratxa ---
               ws_v, ws_u = val_unit(data.get("wind_speed") or deep_get(data, "wind", "wind_speed"))
               gs_v, gs_u = val_unit(data.get("wind_gust")  or deep_get(data, "wind", "wind_gust"))
 
@@ -251,8 +246,6 @@ jobs:
               )
               wind_dir = str(wind_dir) if wind_dir is not None else None
 
-              # --- PLUJA ---
-              # WS85 (piezo) -> data["rainfall_piezo"]["rain_rate"] i ["daily"] (unitats sovint in/hr i in)
               rd_v, rd_u = val_unit(
                   deep_get(data, "rainfall", "daily")
                   or deep_get(data, "rainfall_piezo", "daily")
@@ -263,10 +256,10 @@ jobs:
 
               rr_v, rr_u = val_unit(
                   deep_get(data, "rainfall", "rate")
-                  or deep_get(data, "rainfall_piezo", "rain_rate")  # ✅ clau correcta pel teu log
+                  or deep_get(data, "rainfall_piezo", "rain_rate")
                   or data.get("rain_rate")
                   or deep_get(data, "rainfall", "rain_rate")
-                  or deep_get(data, "rainfall_piezo", "rate")       # fallback antic si algun model l'usa
+                  or deep_get(data, "rainfall_piezo", "rate")
               )
 
               rain_day  = norm_rain(fnum(rd_v), rd_u)
@@ -327,7 +320,6 @@ jobs:
                       or to_ms_epoch(r.get("dateutc"))
                   )
                   if ts_ms is None and isinstance(r.get("time"), str):
-                      # alguns history venen "YYYY-MM-DD HH:MM" en UTC
                       try:
                           dt = datetime.strptime(r["time"], "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
                           ts_ms = int(dt.timestamp() * 1000)
@@ -367,14 +359,13 @@ jobs:
                   wind_dir = (r.get("wind_direction") or deep_get(r, "wind", "wind_direction"))
                   wind_dir = str(wind_dir) if wind_dir is not None else None
 
-                  # pluja (inclou piezo variants)
                   rd_v, rd_u = val_unit(
                       deep_get(r, "rainfall", "daily")
                       or deep_get(r, "rainfall_piezo", "daily")
                       or r.get("rainfall_daily")
                       or r.get("rain_day")
                       or r.get("daily_rain")
-                      or deep_get(r, "rainfall_piezo", "event")   # fallback
+                      or deep_get(r, "rainfall_piezo", "event")
                   )
                   rr_v, rr_u = val_unit(
                       deep_get(r, "rainfall", "rate")
@@ -422,8 +413,6 @@ jobs:
           current_row = None
           try:
               current_row = fetch_realtime_row(now_ms)
-
-              # Fallback pluja: només si el prev és del mateix "dia UTC" que current
               prev = read_json(CURRENT_PATH, default=None)
               if isinstance(prev, dict) and isinstance(current_row, dict):
                   try:
@@ -467,11 +456,9 @@ jobs:
 
               merged = hist + new_rows
 
-              # també persistim el punt realtime a history
               if isinstance(current_row, dict) and isinstance(current_row.get("ts"), (int, float)):
                   merged.append(current_row)
 
-              # dedupe per ts (últim guanya)
               by_ts = {}
               for r in merged:
                   ts = r.get("ts")
@@ -501,7 +488,8 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
 
-          git add data/history.json data/current.json heartbeat/heartbeat.json
+          # IMPORTANT: només history (evitem deploys constants de Pages)
+          git add data/history.json
 
           if git diff --cached --quiet; then
             echo "No changes to commit."
