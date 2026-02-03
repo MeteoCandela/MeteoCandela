@@ -489,7 +489,7 @@ jobs:
           git config user.email "github-actions@users.noreply.github.com"
 
           # Afegim també current i heartbeat, si no la portada queda “clavada”
-git add data/history.json data/current.json heartbeat/heartbeat.json
+          git add data/history.json data/current.json heartbeat/heartbeat.json
 
           if git diff --cached --quiet; then
             echo "No changes to commit."
