@@ -116,7 +116,7 @@
       else if (r.wind_gust != null) gustKmh = Number(r.wind_gust);
     }
 
-    // PLUJA (IMPORTANT: mantenim NULL si no hi ha dada)
+    // PLUJA (mantenim NULL si no hi ha dada)
     const rainDay  = (r.rain_day_mm ?? r.rain_day ?? null);
     const rainRate = (r.rain_rate_mmh ?? r.rain_rate ?? null);
 
@@ -128,8 +128,6 @@
       wind_kmh: toNumOrNull(windKmh),
       gust_kmh: toNumOrNull(gustKmh),
       wind_dir: (r.wind_dir ?? r.wind_direction ?? null),
-
-      // ✅ NULL si no hi ha dada (no 0)
       rain_day_mm: toNumOrNull(rainDay),
       rain_rate_mmh: toNumOrNull(rainRate),
     };
@@ -147,12 +145,11 @@
   }
 
   function renderCurrent(current, historyRows) {
-    $("temp").textContent = current.temp_c == null ? "—" : fmt1(current.temp_c);
-    $("hum").textContent  = current.hum_pct == null ? "—" : String(Math.round(current.hum_pct));
-    $("wind").textContent = current.wind_kmh == null ? "—" : fmt1(current.wind_kmh);
+    if ($("temp")) $("temp").textContent = current.temp_c == null ? "—" : fmt1(current.temp_c);
+    if ($("hum"))  $("hum").textContent  = current.hum_pct == null ? "—" : String(Math.round(current.hum_pct));
+    if ($("wind")) $("wind").textContent = current.wind_kmh == null ? "—" : fmt1(current.wind_kmh);
 
-    // ✅ si no hi ha sensor / dada → "—"
-    $("rainDay").textContent = current.rain_day_mm == null ? "—" : fmt1(current.rain_day_mm);
+    if ($("rainDay")) $("rainDay").textContent = current.rain_day_mm == null ? "—" : fmt1(current.rain_day_mm);
 
     if ($("tempSub")) {
       $("tempSub").textContent =
@@ -200,7 +197,7 @@
           : `Intensitat de pluja: ${fmt1(current.rain_rate_mmh)} mm/h`;
     }
 
-    $("lastUpdated").textContent = `Actualitzat: ${fmtDate(current.ts)}`;
+    if ($("lastUpdated")) $("lastUpdated").textContent = `Actualitzat: ${fmtDate(current.ts)}`;
   }
 
   function renderStatus(lastTsMs, hb) {
@@ -312,28 +309,20 @@
     const labels = rDay.map(r => fmtTime(r.ts));
 
     const temp = rDay.map(r => (Number.isFinite(Number(r.temp_c)) ? Number(r.temp_c) : null));
-    const hum  = rDay.map(r => r.hum_pct);
-    const wind = rDay.map(r => r.wind_kmh);
-    const gust = rDay.map(r => r.gust_kmh);
+    const hum  = rDay.map(r => (Number.isFinite(Number(r.hum_pct)) ? Number(r.hum_pct) : null));
+    const wind = rDay.map(r => (Number.isFinite(Number(r.wind_kmh)) ? Number(r.wind_kmh) : null));
+    const gust = rDay.map(r => (Number.isFinite(Number(r.gust_kmh)) ? Number(r.gust_kmh) : null));
 
-    // ✅ pluja acumulada del dia (rain_day_mm)
-    // Fem servir una sèrie "monòtona" per si el sensor fa reset raro
+    // pluja acumulada del dia
     const rainRaw = rDay.map(r => (r.rain_day_mm == null ? null : Number(r.rain_day_mm)));
     const rainAcc = [];
     let acc = 0;
-    let hasAny = false;
     for (const v of rainRaw) {
-      if (v == null || !Number.isFinite(v)) {
-        rainAcc.push(null);
-      } else {
-        hasAny = true;
-        acc = Math.max(acc, v);
-        rainAcc.push(acc);
-      }
+      if (v == null || !Number.isFinite(v)) rainAcc.push(null);
+      else { acc = Math.max(acc, v); rainAcc.push(acc); }
     }
 
     const { min: vMin, max: vMax } = minMax(temp);
-
     const dayTxt = fmtDayLong(dayKey);
 
     if ($("chartTempTitle")) $("chartTempTitle").textContent = `Temperatura (°C) · ${dayTxt}`;
@@ -351,7 +340,7 @@
 
     if (typeof window.Chart === "undefined") return;
 
-    // Tooltip: hora + valor (NET). Sense quadret de color.
+    // Tooltips
     function tooltipMainTempOnly(unit) {
       return {
         displayColors: false,
@@ -359,8 +348,7 @@
         callbacks: {
           title: (items) => {
             const idx = items?.[0]?.dataIndex;
-            if (idx == null) return "";
-            const ts = rDay[idx]?.ts;
+            const ts = (idx == null) ? null : rDay[idx]?.ts;
             return ts ? fmtTimeWithH(ts) : "";
           },
           label: (ctx) => {
@@ -378,8 +366,7 @@
         callbacks: {
           title: (items) => {
             const idx = items?.[0]?.dataIndex;
-            if (idx == null) return "";
-            const ts = rDay[idx]?.ts;
+            const ts = (idx == null) ? null : rDay[idx]?.ts;
             return ts ? fmtTimeWithH(ts) : "";
           },
           label: (ctx) => {
@@ -402,174 +389,128 @@
       scales: { x: { type: "category", ticks: { maxTicksLimit: 10 } } }
     };
 
-    // ===== TEMP amb línies MIN/MAX i etiqueta a la dreta =====
-    window.__chartTemp = new Chart($("chartTemp"), {
-      type: "line",
-      data: {
-        labels,
-        datasets: [
-          {
-            label: "",
-            data: temp,
-            tension: 0.25,
-            pointRadius: 2,
-            pointHoverRadius: 7,
-            pointHitRadius: 12,
-            borderWidth: 2,
-            fill: false
-          },
-          ...(vMin == null ? [] : [{
-            label: "Mín",
-            data: labels.map(() => vMin),
-            tension: 0,
-            pointRadius: 0,
-            borderWidth: 1.5,
-            borderDash: [4, 4],
-            fill: false
-          }]),
-          ...(vMax == null ? [] : [{
-            label: "Màx",
-            data: labels.map(() => vMax),
-            tension: 0,
-            pointRadius: 0,
-            borderWidth: 1.5,
-            borderDash: [4, 4],
-            fill: false
-          }]),
-        ]
-      },
-      options: {
-        ...commonBase,
-        plugins: {
-          legend: { display: false },
-          tooltip: tooltipMainTempOnly("°C")
-        }
-      },
-      plugins: [{
-        id: "minMaxLabels",
-        afterDatasetsDraw(chart) {
-          if (vMin == null && vMax == null) return;
-          const { ctx, chartArea } = chart;
-          const yScale = chart.scales?.y;
-          if (!yScale) return;
-
-          ctx.save();
-          ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
-          ctx.textAlign = "right";
-          ctx.textBaseline = "middle";
-          ctx.fillStyle = "rgba(255,255,255,0.88)";
-          ctx.strokeStyle = "rgba(0,0,0,0.55)";
-          ctx.lineWidth = 3;
-
-          const xRight = chartArea.right - 6;
-
-          if (vMax != null) {
-            const yMax = yScale.getPixelForValue(vMax);
-            const tMax = `Màx ${Number(vMax).toFixed(1)} °C`;
-            ctx.strokeText(tMax, xRight, yMax);
-            ctx.fillText(tMax, xRight, yMax);
-          }
-          if (vMin != null) {
-            const yMin = yScale.getPixelForValue(vMin);
-            const tMin = `Mín ${Number(vMin).toFixed(1)} °C`;
-            ctx.strokeText(tMin, xRight, yMin);
-            ctx.fillText(tMin, xRight, yMin);
-          }
-          ctx.restore();
-        }
-      }]
-    });
-
-    // HUM
-    window.__chartHum = new Chart($("chartHum"), {
-      type: "line",
-      data: {
-        labels,
-        datasets: [{
-          data: hum,
-          tension: 0.25,
-          pointRadius: 2,
-          pointHoverRadius: 7,
-          pointHitRadius: 12,
-          borderWidth: 2,
-          fill: false
-        }]
-      },
-      options: {
-        ...commonBase,
-        scales: { ...commonBase.scales, y: { min: 0, max: 100 } },
-        plugins: { legend: { display: false }, tooltip: commonTooltip("%") }
-      }
-    });
-
-    // WIND + GUST
-    window.__chartWind = new Chart($("chartWind"), {
-      type: "line",
-      data: {
-        labels,
-        datasets: [
-          {
-            label: "Ratxa màxima",
-            data: gust,
-            tension: 0.25,
-            pointRadius: 2,
-            pointHoverRadius: 6,
-            pointHitRadius: 12,
-            borderWidth: 2,
-            borderDash: [6, 4],
-            fill: false
-          },
-          {
-            label: "Vent mitjà",
-            data: wind,
-            tension: 0.25,
-            pointRadius: 2,
-            pointHoverRadius: 6,
-            pointHitRadius: 12,
-            borderWidth: 2.5,
-            fill: true
-          }
-        ]
-      },
-      options: {
-        ...commonBase,
-        plugins: {
-          legend: { display: true },
-          tooltip: commonTooltip("km/h", (ctx) => ctx.dataset?.label || "")
-        }
-      }
-    });
-
-    // ===== RAIN (acumulada del dia) =====
-    const rainCanvas = $("chartRain");
-    if (rainCanvas) {
-      window.__chartRain = new Chart(rainCanvas, {
+    // TEMP (amb min/max)
+    const tempCanvas = $("chartTemp");
+    if (tempCanvas) {
+      window.__chartTemp = new Chart(tempCanvas, {
         type: "line",
         data: {
           labels,
-          datasets: [{
-            label: "Pluja acumulada",
-            data: rainAcc,
-            tension: 0,
-            pointRadius: 2,
-            pointHoverRadius: 6,
-            pointHitRadius: 12,
-            borderWidth: 2,
-            fill: true,
-            stepped: true
-          }]
+          datasets: [
+            {
+              label: "",
+              data: temp,
+              tension: 0.25,
+              pointRadius: 2,
+              pointHoverRadius: 7,
+              pointHitRadius: 12,
+              borderWidth: 2,
+              fill: false
+            },
+            ...(vMin == null ? [] : [{
+              label: "Mín",
+              data: labels.map(() => vMin),
+              tension: 0,
+              pointRadius: 0,
+              borderWidth: 1.5,
+              borderDash: [4, 4],
+              fill: false
+            }]),
+            ...(vMax == null ? [] : [{
+              label: "Màx",
+              data: labels.map(() => vMax),
+              tension: 0,
+              pointRadius: 0,
+              borderWidth: 1.5,
+              borderDash: [4, 4],
+              fill: false
+            }]),
+          ]
         },
         options: {
           ...commonBase,
-          plugins: {
-            legend: { display: false },
-            tooltip: commonTooltip("mm")
+          plugins: { legend: { display: false }, tooltip: tooltipMainTempOnly("°C") }
+        },
+        plugins: [{
+          id: "minMaxLabels",
+          afterDatasetsDraw(chart) {
+            if (vMin == null && vMax == null) return;
+            const { ctx, chartArea } = chart;
+            const yScale = chart.scales?.y;
+            if (!yScale) return;
+
+            ctx.save();
+            ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+            ctx.textAlign = "right";
+            ctx.textBaseline = "middle";
+            ctx.fillStyle = "rgba(255,255,255,0.88)";
+            ctx.strokeStyle = "rgba(0,0,0,0.55)";
+            ctx.lineWidth = 3;
+
+            const xRight = chartArea.right - 6;
+
+            if (vMax != null) {
+              const yMax = yScale.getPixelForValue(vMax);
+              const tMax = `Màx ${Number(vMax).toFixed(1)} °C`;
+              ctx.strokeText(tMax, xRight, yMax);
+              ctx.fillText(tMax, xRight, yMax);
+            }
+            if (vMin != null) {
+              const yMin = yScale.getPixelForValue(vMin);
+              const tMin = `Mín ${Number(vMin).toFixed(1)} °C`;
+              ctx.strokeText(tMin, xRight, yMin);
+              ctx.fillText(tMin, xRight, yMin);
+            }
+            ctx.restore();
           }
+        }]
+      });
+    }
+
+    // HUM
+    const humCanvas = $("chartHum");
+    if (humCanvas) {
+      window.__chartHum = new Chart(humCanvas, {
+        type: "line",
+        data: { labels, datasets: [{ data: hum, tension: 0.25, pointRadius: 2, pointHoverRadius: 7, pointHitRadius: 12, borderWidth: 2, fill: false }] },
+        options: {
+          ...commonBase,
+          scales: { ...commonBase.scales, y: { min: 0, max: 100 } },
+          plugins: { legend: { display: false }, tooltip: commonTooltip("%") }
         }
       });
     }
 
-    // ✅ Missatge pluja (amb display none/block)
+    // WIND + GUST
+    const windCanvas = $("chartWind");
+    if (windCanvas) {
+      window.__chartWind = new Chart(windCanvas, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            { label: "Ratxa màxima", data: gust, tension: 0.25, pointRadius: 2, pointHoverRadius: 6, pointHitRadius: 12, borderWidth: 2, borderDash: [6, 4], fill: false },
+            { label: "Vent mitjà",  data: wind, tension: 0.25, pointRadius: 2, pointHoverRadius: 6, pointHitRadius: 12, borderWidth: 2.5, fill: true }
+          ]
+        },
+        options: {
+          ...commonBase,
+          plugins: { legend: { display: true }, tooltip: commonTooltip("km/h", (ctx) => ctx.dataset?.label || "") }
+        }
+      });
+    }
+
+    // RAIN
+    const rainCanvas = $("chartRain");
+    if (rainCanvas) {
+      window.__chartRain = new Chart(rainCanvas, {
+        type: "line",
+        data: { labels, datasets: [{ label: "Pluja acumulada", data: rainAcc, tension: 0, pointRadius: 2, pointHoverRadius: 6, pointHitRadius: 12, borderWidth: 2, fill: true, stepped: true }] },
+        options: { ...commonBase, plugins: { legend: { display: false }, tooltip: commonTooltip("mm") } }
+      });
+    }
+
+    // Missatge pluja
     const rainMsgEl = $("rainMsg");
     const todayKey = dayKeyFromTs(Date.now());
     const isTodaySelected = (dayKey === todayKey);
@@ -592,9 +533,7 @@
       } else if (!hasRainSensorData) {
         msg = "Sense dades de precipitació per al dia seleccionat.";
       } else if (isZeroRain) {
-        msg = isTodaySelected
-          ? "Sense precipitació en el dia actual."
-          : "Sense precipitació en el dia seleccionat.";
+        msg = isTodaySelected ? "Sense precipitació en el dia actual." : "Sense precipitació en el dia seleccionat.";
       } else {
         msg = "";
       }
@@ -606,45 +545,57 @@
 
   // ===== Main =====
   async function main() {
-    if ($("year")) $("year").textContent = String(new Date().getFullYear());
-
-    // 1) HISTORY
-    let rawHist = [];
     try {
-      const h = await fetchJson(`${HISTORY_URL}?t=${Date.now()}`);
-      rawHist = Array.isArray(h) ? h : [];
-    } catch {
-      rawHist = [];
-    }
+      if ($("year")) $("year").textContent = String(new Date().getFullYear());
 
-    const historyRows = rawHist
-      .map(normalizeRow)
-      .filter(r => Number.isFinite(r.ts))
-      .sort((a, b) => a.ts - b.ts);
-
-    // 2) CURRENT
-    let current = null;
-    try {
-      const c = await fetchJson(`${CURRENT_URL}?t=${Date.now()}`);
-      if (c && typeof c === "object") {
-        const cc = normalizeRow(c);
-        if (Number.isFinite(cc.ts)) current = cc;
+      // 1) HISTORY
+      let rawHist = [];
+      try {
+        const h = await fetchJson(`${HISTORY_URL}?t=${Date.now()}`);
+        rawHist = Array.isArray(h) ? h : [];
+      } catch {
+        rawHist = [];
       }
-    } catch {
-      current = null;
-    }
 
-    // 3) HEARTBEAT
-    let hb = null;
-    try { hb = await fetchJson(`${HEARTBEAT_URL}?t=${Date.now()}`); } catch {}
+      const historyRows = rawHist
+        .map(normalizeRow)
+        .filter(r => Number.isFinite(r.ts))
+        .sort((a, b) => a.ts - b.ts);
 
-    // 4) Actual
-    let actualRow = null;
-    let sourceTag = "històric";
+      // 2) CURRENT
+      let current = null;
+      try {
+        const c = await fetchJson(`${CURRENT_URL}?t=${Date.now()}`);
+        if (c && typeof c === "object") {
+          const cc = normalizeRow(c);
+          if (Number.isFinite(cc.ts)) current = cc;
+        }
+      } catch {
+        current = null;
+      }
 
-    if (current) {
-      actualRow = current;
-      sourceTag = "dades en temps real";
-    } else if (historyRows.length) {
-      actualRow = historyRows[historyRows.length - 1];
-      sourceTag = "últim regis
+      // 3) HEARTBEAT
+      let hb = null;
+      try { hb = await fetchJson(`${HEARTBEAT_URL}?t=${Date.now()}`); } catch {}
+
+      // 4) Decideix “actual”
+      let actualRow = null;
+      let sourceTag = "històric";
+
+      if (current) {
+        actualRow = current;
+        sourceTag = "dades en temps real";
+      } else if (historyRows.length) {
+        actualRow = historyRows[historyRows.length - 1];
+        sourceTag = "últim registre històric";
+      }
+
+      if (!actualRow) {
+        setSourceLine("Sense dades carregades.");
+        if ($("statusLine")) $("statusLine").textContent = "No es pot mostrar informació: falta history/current.";
+        return;
+      }
+
+      setSourceLine(`Font: ${sourceTag}`);
+      renderCurrent(actualRow, historyRows);
+    
