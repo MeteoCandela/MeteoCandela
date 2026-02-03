@@ -621,4 +621,24 @@
       renderCurrent(actualRow, historyRows);
       renderStatus(actualRow.ts, hb);
 
-                                
+      // 5) Selector de dia + charts
+      const dayKeys = buildDayListFromRows(historyRows, current);
+      const initial = getUrlDayParam() || dayKeyFromTs(actualRow.ts);
+
+      const selected = setupDaySelector(
+        dayKeys,
+        initial,
+        (k) => buildChartsForDay(historyRows, k)
+      );
+
+      buildChartsForDay(historyRows, selected || initial);
+
+    } catch (e) {
+      if ($("statusLine")) $("statusLine").textContent = "⚠️ Error JS: revisa app.js (consola).";
+      setSourceLine("Error carregant la pàgina.");
+      console.error(e);
+    }
+  }
+
+  main();
+})();                          
