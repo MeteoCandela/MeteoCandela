@@ -129,8 +129,8 @@
           <script>
   document.getElementById("year").textContent = new Date().getFullYear();
 
-  const BASE = (location.pathname.includes("/MeteoCandela/")) ? "/MeteoCandela" : "";
-  const SUMMARY_URL = `${BASE}/data/daily-summary.json`;
+  const API_BASE = "/api";
+  const SUMMARY_URL = `${API_BASE}/daily-summary`;
 
   const $ = (id) => document.getElementById(id);
 
