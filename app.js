@@ -1,9 +1,9 @@
 (() => {
   const BASE = (location.pathname.includes("/MeteoCandela/")) ? "/MeteoCandela" : "";
-
-  const HISTORY_URL   = `${BASE}/data/history.json`;
-  const CURRENT_URL   = `${BASE}/data/current.json`;
-  const HEARTBEAT_URL = `${BASE}/heartbeat/heartbeat.json`;
+  const API_BASE = "/api";
+  const HISTORY_URL   = `${API_BASE}/history`;
+  const CURRENT_URL   = `${API_BASE}/current`;
+  const HEARTBEAT_URL = `${API_BASE}/heartbeat`;
 
   const $ = (id) => document.getElementById(id);
 
