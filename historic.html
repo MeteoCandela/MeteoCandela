@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
 
   <title>Històric · MeteoCandela (Barri de la Candela, Valls)</title>
-  <meta name="description" content="Històric diari de MeteoCandela (Barri de la Candela, Valls): temperatura mínima/màxima i mitjana, pluja, ratxa màxima i vent mitjà.">
+  <meta name="description" content="Històric diari de MeteoCandela (Barri de la Candela, Valls): temperatura mínima/màxima i mitjana, pluja, ratxa màxima, vent mitjà i humitat mitjana.">
   <link rel="canonical" href="https://meteocandela.cat/historic.html">
 
   <meta name="robots" content="index,follow">
@@ -16,11 +16,11 @@
   <meta property="og:site_name" content="MeteoCandela">
   <meta property="og:locale" content="ca_ES">
   <meta property="og:title" content="Històric · MeteoCandela (Barri de la Candela)">
-  <meta property="og:description" content="Històric diari: mín/màx i mitjana, pluja, ratxa màxima i vent mitjà.">
+  <meta property="og:description" content="Històric diari: mín/màx i mitjana, pluja, ratxa màxima, vent mitjà i humitat mitjana.">
   <meta property="og:url" content="https://meteocandela.cat/historic.html">
   <meta property="og:image" content="https://meteocandela.cat/og-image.png">
 
-  <link rel="stylesheet" href="style.css?v=2026-02-02-01">
+  <link rel="stylesheet" href="style.css?v=2026-02-02-02">
 </head>
 
 <body>
@@ -35,19 +35,20 @@
   </header>
 
   <main class="grid">
-<section class="card span2">
-  <nav class="quick-nav" aria-label="Navegació principal">
-    <a href="/index.html" class="quick-nav__btn">🏠 Inici</a>
-    <a href="/sobre.html" class="quick-nav__btn">ℹ️ Sobre l’estació</a>
-  </nav>
-</section>
+    <section class="card span2">
+      <nav class="quick-nav" aria-label="Navegació principal">
+        <a href="/index.html" class="quick-nav__btn">🏠 Inici</a>
+        <a href="/sobre.html" class="quick-nav__btn">ℹ️ Sobre l’estació</a>
+      </nav>
+    </section>
+
     <!-- Intro -->
     <section class="card span2">
       <h2>Resum diari</h2>
       <p>
         Taula amb el <strong>resum per dies</strong> de l’estació <strong>MeteoCandela</strong>
         al <strong>Barri de la Candela</strong> (Valls): temperatura mínima/màxima i mitjana,
-        pluja, ratxa màxima i vent mitjà.
+        pluja, ratxa màxima, vent mitjà i humitat mitjana.
       </p>
       <p class="muted-line" id="histInfo" aria-live="polite">Carregant dades…</p>
     </section>
@@ -55,6 +56,274 @@
     <!-- Filtres -->
     <section class="card span2">
       <div class="hist-controls">
+        <div class="hist-controls__left">
+          <div class="daybar__title">Filtra</div>
+          <div class="daybar__subtitle">Any i mes (opcional)</div>
+        </div>
+
+        <div class="hist-controls__right">
+          <label class="sr-only" for="yearSelect">Any</label>
+          <select id="yearSelect" class="select" aria-label="Any"></select>
+
+          <label class="sr-only" for="monthSelect">Mes</label>
+          <select id="monthSelect" class="select" aria-label="Mes">
+            <option value="">Tots els mesos</option>
+            <option value="01">Gener</option>
+            <option value="02">Febrer</option>
+            <option value="03">Març</option>
+            <option value="04">Abril</option>
+            <option value="05">Maig</option>
+            <option value="06">Juny</option>
+            <option value="07">Juliol</option>
+            <option value="08">Agost</option>
+            <option value="09">Setembre</option>
+            <option value="10">Octubre</option>
+            <option value="11">Novembre</option>
+            <option value="12">Desembre</option>
+          </select>
+
+          <button id="clearBtn" class="btn" type="button">Neteja</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Taula -->
+    <section class="card span2">
+      <h2>Dades</h2>
+
+      <div class="table-wrap">
+        <table class="hist-table" aria-label="Taula d'històric diari">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>T mín / màx (°C)</th>
+              <th>T mitjana (°C)</th>
+              <th>Pluja (mm)</th>
+              <th>Ratxa màxima (km/h)</th>
+              <th>Vent mitjà (km/h)</th>
+              <th>Humitat mitjana (%)</th>
+            </tr>
+          </thead>
+          <tbody id="histBody">
+            <tr><td colspan="7" class="muted-cell">Carregant…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="muted-line" id="histNote">
+        Nota: dades <strong>no oficials</strong>. Poden diferir de xarxes professionals.
+      </p>
+    </section>
+
+    <!-- Tornar -->
+    <section class="card span2" style="text-align:center">
+      <p>
+        <a href="/" class="back-link" aria-label="Tornar a la pàgina principal">← Tornar a MeteoCandela</a>
+      </p>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <span>© <span id="year"></span> MeteoCandela</span>
+  </footer>
+
+<script>
+  document.getElementById("year").textContent = new Date().getFullYear();
+
+  // ✅ Cloudflare Worker API (resum ja precalculat al KV)
+  const API_BASE = "/api";
+  const DAILY_URL = `${API_BASE}/daily-summary`;
+
+  const $ = (id) => document.getElementById(id);
+
+  function fmt1(x) {
+    if (x === null || x === undefined || Number.isNaN(Number(x))) return "—";
+    return Number(x).toFixed(1);
+  }
+
+  function fmtHum(x) {
+    if (x === null || x === undefined || Number.isNaN(Number(x))) return "—";
+    return String(Math.round(Number(x)));
+  }
+
+  function fmtDateCA(ymd) {
+    try {
+      const [y, m, d] = ymd.split("-").map(Number);
+      const dt = new Date(y, m - 1, d);
+      return new Intl.DateTimeFormat("ca-ES", { year:"numeric", month:"2-digit", day:"2-digit" }).format(dt);
+    } catch {
+      return ymd;
+    }
+  }
+
+  function monthNameCA(mm){
+    const map = {
+      "01":"Gener","02":"Febrer","03":"Març","04":"Abril","05":"Maig","06":"Juny",
+      "07":"Juliol","08":"Agost","09":"Setembre","10":"Octubre","11":"Novembre","12":"Desembre"
+    };
+    return map[mm] || mm;
+  }
+
+  function getUrlFilters() {
+    try {
+      const u = new URL(location.href);
+      const y = u.searchParams.get("y") || "";
+      const m = u.searchParams.get("m") || "";
+      return { y, m };
+    } catch {
+      return { y: "", m: "" };
+    }
+  }
+
+  function setUrlFilters(y, m) {
+    try {
+      const u = new URL(location.href);
+      if (y) u.searchParams.set("y", y); else u.searchParams.delete("y");
+      if (m) u.searchParams.set("m", m); else u.searchParams.delete("m");
+      history.replaceState(null, "", u.toString());
+    } catch {}
+  }
+
+  function applyFilters(rows, y, m) {
+    return rows.filter(r => {
+      const day = String(r.day || "");
+      if (day.length < 10) return false;
+      if (y && day.slice(0,4) !== y) return false;
+      if (m && day.slice(5,7) !== m) return false;
+      return true;
+    });
+  }
+
+  function yearsFromRows(rows) {
+    const set = new Set(rows.map(r => String(r.day || "").slice(0,4)).filter(Boolean));
+    return Array.from(set).sort();
+  }
+
+  function render(rows) {
+    const tbody = $("histBody");
+    if (!tbody) return;
+
+    if (!rows.length) {
+      tbody.innerHTML = `<tr><td colspan="7" class="muted-cell">Sense dades per al filtre seleccionat.</td></tr>`;
+      return;
+    }
+
+    const sorted = rows.slice().sort((a,b) => String(b.day).localeCompare(String(a.day)));
+
+    tbody.innerHTML = sorted.map(r => {
+      const day  = String(r.day || "");
+      const tmin = fmt1(r.temp_min_c);
+      const tmax = fmt1(r.temp_max_c);
+      const tavg = fmt1(r.temp_avg_c);
+      const rain = fmt1(r.rain_mm);
+      const gust = fmt1(r.gust_max_kmh);
+      const wind = fmt1(r.wind_avg_kmh);
+      const hum  = fmtHum(r.hum_avg_pct);
+
+      return `
+        <tr>
+          <td data-label="Data">${fmtDateCA(day)}</td>
+          <td data-label="T mín / màx (°C)">${tmin} / ${tmax}</td>
+          <td data-label="T mitjana (°C)">${tavg}</td>
+          <td data-label="Pluja (mm)">${rain}</td>
+          <td data-label="Ratxa màxima (km/h)">${gust}</td>
+          <td data-label="Vent mitjà (km/h)">${wind}</td>
+          <td data-label="Humitat mitjana (%)">${hum}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  // Converteix el format del Worker (date/tmin/...) al format intern (day/temp_min_c/...)
+  function mapDailyFromWorker(daily) {
+    return daily.map(d => ({
+      day: d.date,
+      temp_min_c: d.tmin,
+      temp_max_c: d.tmax,
+      temp_avg_c: d.tavg,
+      rain_mm: d.rain_mm,
+      gust_max_kmh: d.gust_max,
+      wind_avg_kmh: d.wind_avg,
+      hum_avg_pct: d.hum_avg
+    }));
+  }
+
+  async function fetchDaily() {
+    const info = $("histInfo");
+    try {
+      const res = await fetch(`${DAILY_URL}?t=${Date.now()}`, { cache: "no-store" });
+      const txt = await res.text();
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText}: ${txt.slice(0,150)}`);
+      const data = JSON.parse(txt);
+      return Array.isArray(data) ? data : [];
+    } catch (e) {
+      if (info) info.textContent = "No es pot carregar /api/daily-summary (Worker/KV). Revisa route i cron.";
+      return [];
+    }
+  }
+
+  async function main() {
+    const info = $("histInfo");
+
+    // 1) carrega daily-summary (petit) del Worker
+    const dailyRaw = await fetchDaily();
+    const daily = mapDailyFromWorker(dailyRaw);
+
+    if (!daily.length) {
+      render([]);
+      if (info) info.textContent = "Sense dades encara (daily-summary buit).";
+      return;
+    }
+
+    // 2) prepara selectors
+    const yrs = yearsFromRows(daily);
+    const yearSel = $("yearSelect");
+    const monthSel = $("monthSelect");
+
+    yearSel.innerHTML = yrs.map(y => `<option value="${y}">${y}</option>`).join("");
+
+    const { y: y0, m: m0 } = getUrlFilters();
+    const defaultY = y0 && yrs.includes(y0) ? y0 : yrs[yrs.length - 1];
+
+    yearSel.value = defaultY;
+    monthSel.value = m0 || "";
+
+    function refresh() {
+      const y = yearSel.value || "";
+      const m = monthSel.value || "";
+      setUrlFilters(y, m);
+
+      const filtered = applyFilters(daily, y, m);
+      render(filtered);
+
+      if (info) {
+        const count = filtered.length;
+        const labelM = m ? ` · ${monthNameCA(m)}` : "";
+        info.textContent = `Mostrant ${count} dia/dies · any ${y}${labelM}.`;
+      }
+    }
+
+    yearSel.addEventListener("change", refresh);
+    monthSel.addEventListener("change", refresh);
+
+    const clearBtn = $("clearBtn");
+    if (clearBtn) {
+      clearBtn.addEventListener("click", () => {
+        yearSel.value = yrs[yrs.length - 1];
+        monthSel.value = "";
+        refresh();
+      });
+    }
+
+    refresh();
+  }
+
+  main();
+</script>
+
+</body>
+</html>
         <div class="hist-controls__left">
           <div class="daybar__title">Filtra</div>
           <div class="daybar__subtitle">Any i mes (opcional)</div>
@@ -131,7 +400,7 @@
 
   // ✅ Cloudflare Worker API
   const API_BASE = "/api";
-  const HISTORY_URL = `${API_BASE}/history`;
+  const DAILY_URL = `${API_BASE}/daily-summary`;
 
   const $ = (id) => document.getElementById(id);
 
