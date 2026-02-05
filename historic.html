@@ -131,7 +131,6 @@
 <script>
   document.getElementById("year").textContent = new Date().getFullYear();
 
-  // ✅ Cloudflare Worker API (resum ja precalculat al KV)
   const API_BASE = "/api";
   const DAILY_URL = `${API_BASE}/daily-summary`;
 
@@ -142,7 +141,7 @@
     return Number(x).toFixed(1);
   }
 
-  function fmtHum(x) {
+  function fmtInt(x) {
     if (x === null || x === undefined || Number.isNaN(Number(x))) return "—";
     return String(Math.round(Number(x)));
   }
@@ -168,9 +167,7 @@
   function getUrlFilters() {
     try {
       const u = new URL(location.href);
-      const y = u.searchParams.get("y") || "";
-      const m = u.searchParams.get("m") || "";
-      return { y, m };
+      return { y: u.searchParams.get("y") || "", m: u.searchParams.get("m") || "" };
     } catch {
       return { y: "", m: "" };
     }
@@ -185,19 +182,19 @@
     } catch {}
   }
 
+  function yearsFromRows(rows) {
+    const set = new Set(rows.map(r => String(r.date || "").slice(0,4)).filter(Boolean));
+    return Array.from(set).sort();
+  }
+
   function applyFilters(rows, y, m) {
     return rows.filter(r => {
-      const day = String(r.day || "");
+      const day = String(r.date || "");
       if (day.length < 10) return false;
       if (y && day.slice(0,4) !== y) return false;
       if (m && day.slice(5,7) !== m) return false;
       return true;
     });
-  }
-
-  function yearsFromRows(rows) {
-    const set = new Set(rows.map(r => String(r.day || "").slice(0,4)).filter(Boolean));
-    return Array.from(set).sort();
   }
 
   function render(rows) {
@@ -209,17 +206,17 @@
       return;
     }
 
-    const sorted = rows.slice().sort((a,b) => String(b.day).localeCompare(String(a.day)));
+    const sorted = rows.slice().sort((a,b) => String(b.date).localeCompare(String(a.date)));
 
     tbody.innerHTML = sorted.map(r => {
-      const day  = String(r.day || "");
-      const tmin = fmt1(r.temp_min_c);
-      const tmax = fmt1(r.temp_max_c);
-      const tavg = fmt1(r.temp_avg_c);
+      const day  = String(r.date || "");
+      const tmin = fmt1(r.tmin ?? r.temp_min_c);
+      const tmax = fmt1(r.tmax ?? r.temp_max_c);
+      const tavg = fmt1(r.tavg);
       const rain = fmt1(r.rain_mm);
-      const gust = fmt1(r.gust_max_kmh);
+      const gust = fmt1(r.gust_max ?? r.gust_max_kmh);
       const wind = fmt1(r.wind_avg_kmh);
-      const hum  = fmtHum(r.hum_avg_pct);
+      const hum  = fmtInt(r.hum_avg);
 
       return `
         <tr>
@@ -233,20 +230,6 @@
         </tr>
       `;
     }).join("");
-  }
-
-  // Converteix el format del Worker (date/tmin/...) al format intern (day/temp_min_c/...)
-  function mapDailyFromWorker(daily) {
-    return daily.map(d => ({
-      day: d.date,
-      temp_min_c: d.tmin,
-      temp_max_c: d.tmax,
-      temp_avg_c: d.tavg,
-      rain_mm: d.rain_mm,
-      gust_max_kmh: d.gust_max,
-      wind_avg_kmh: d.wind_avg,
-      hum_avg_pct: d.hum_avg
-    }));
   }
 
   async function fetchDaily() {
@@ -266,9 +249,7 @@
   async function main() {
     const info = $("histInfo");
 
-    // 1) carrega daily-summary (petit) del Worker
-    const dailyRaw = await fetchDaily();
-    const daily = mapDailyFromWorker(dailyRaw);
+    const daily = await fetchDaily();
 
     if (!daily.length) {
       render([]);
@@ -276,7 +257,6 @@
       return;
     }
 
-    // 2) prepara selectors
     const yrs = yearsFromRows(daily);
     const yearSel = $("yearSelect");
     const monthSel = $("monthSelect");
