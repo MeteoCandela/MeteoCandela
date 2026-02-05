@@ -606,4 +606,8 @@
   }
 
   main();
+
+// refresca current + status cada 60s
+setInterval(main, 60 * 1000);
+
 })();
