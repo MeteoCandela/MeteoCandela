@@ -231,8 +231,7 @@
 
       // IMPORTANT: al Worker actual el camp és wind_avg_pct però en realitat és km/h
       const wind = fmt1(r.wind_avg_kmh ?? r.wind_avg_pct);
-
-      const hum  = fmtInt(r.hum_avg);
+      const hum = fmtInt(r.hum_avg ?? r.hum_avg_pct);
 
       return `
         <tr>
