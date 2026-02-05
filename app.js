@@ -122,13 +122,13 @@
     }
 
     // PLUJA
-    const rainDay  = (r.rain_day_mm ?? r.rain_day ?? null);
-    const rainRate = (r.rain_rate_mmh ?? r.rain_rate ?? null);
+    const rainDay  = r.rain_day_mm ?? r.rain_day ?? r.daily_rain ?? r.rainfall_daily ?? null;
+    const rainRate = r.rain_rate_mmh ?? r.rain_rate ?? r.rainrate ?? null;
 
     return {
       ts: Number(r.ts),
       temp_c: toNumOrNull(tempC),
-      hum_pct: toNumOrNull(r.hum_pct),
+      hum_pct: toNumOrNull(hum),
       dew_c: toNumOrNull(dewC),
       wind_kmh: toNumOrNull(windKmh),
       gust_kmh: toNumOrNull(gustKmh),
@@ -606,8 +606,5 @@
   }
 
   main();
-
-// refresca current + status cada 60s
-setInterval(main, 60 * 1000);
 
 })();
