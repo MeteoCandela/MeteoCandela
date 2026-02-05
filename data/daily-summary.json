@@ -2,11 +2,11 @@
   {
     "day": "2026-02-05",
     "temp_min_c": 7.5,
-    "temp_max_c": 7.5,
-    "temp_avg_c": 7.5,
-    "rain_mm": 0,
-    "gust_max_kmh": 5.8,
-    "wind_avg_kmh": 2.1
+    "temp_max_c": 9.2,
+    "temp_avg_c": 8.1,
+    "rain_mm": 0.3,
+    "gust_max_kmh": 7.2,
+    "wind_avg_kmh": 3.5
   },
   {
     "day": "2026-02-04",
