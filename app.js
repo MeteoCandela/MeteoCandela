@@ -122,6 +122,7 @@
     }
 
     // PLUJA
+    const hum = r.hum_pct ?? r.humidity ?? r.hum ?? null;
     const rainDay  = r.rain_day_mm ?? r.rain_day ?? r.daily_rain ?? r.rainfall_daily ?? null;
     const rainRate = r.rain_rate_mmh ?? r.rain_rate ?? r.rainrate ?? null;
 
