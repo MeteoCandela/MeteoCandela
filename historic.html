@@ -214,65 +214,47 @@
     const list = rows.slice().sort((a,b)=> String(a.date ?? a.day).localeCompare(String(b.date ?? b.day))).reverse();
 
     if (isMobile) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="7" style="padding:0;border:0">
-            <div class="daycards">
-              ${list.map(r => {
-                const day  = r.date ?? r.day;
+  const row = (k, v) => `
+    <div class="dayrow">
+      <div class="dayrow__k">${k}</div>
+      <div class="dayrow__v">${v}</div>
+    </div>
+  `;
 
-                const tmin = r.temp_min_c ?? r.tmin;
-                const tmax = r.temp_max_c ?? r.tmax;
-                const tavg = r.temp_avg_c ?? r.tavg;
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="7" style="padding:0;border:0">
+        <div class="daycards">
+          ${list.map(r => {
+            const day  = r.date ?? r.day;
 
-                const rain = r.rain_mm ?? r.rain;
-                const gust = r.gust_max_kmh ?? r.gust_max ?? r.gust;
-                const wind = r.wind_avg_kmh ?? r.wind_avg;
-                const hum  = r.hum_avg_pct ?? r.hum_avg;
+            const tmin = r.temp_min_c ?? r.tmin;
+            const tmax = r.temp_max_c ?? r.tmax;
+            const tavg = r.temp_avg_c ?? r.tavg;
 
-                return `
-                  <div class="daycard">
-                    <div class="daycard__head">${fmtDateCA(day)}</div>
-                    <div class="daygrid">
-                      <div class="dayitem">
-                        <div class="dayitem__k">T mín / màx</div>
-                        <div class="dayitem__v">${fmt1(tmin)} / ${fmt1(tmax)} °C</div>
-                      </div>
+            const rain = r.rain_mm ?? r.rain;
+            const gust = r.gust_max_kmh ?? r.gust_max ?? r.gust;
+            const wind = r.wind_avg_kmh ?? r.wind_avg;
+            const hum  = r.hum_avg_pct ?? r.hum_avg;
 
-                      <div class="dayitem">
-                        <div class="dayitem__k">T mitjana</div>
-                        <div class="dayitem__v">${fmt1(tavg)} °C</div>
-                      </div>
-
-                      <div class="dayitem">
-                        <div class="dayitem__k">Pluja</div>
-                        <div class="dayitem__v">${fmt1(rain)} mm</div>
-                      </div>
-
-                      <div class="dayitem">
-                        <div class="dayitem__k">Ratxa màx</div>
-                        <div class="dayitem__v">${fmt1(gust)} km/h</div>
-                      </div>
-
-                      <div class="dayitem">
-                        <div class="dayitem__k">Vent mitjà</div>
-                        <div class="dayitem__v">${fmt1(wind)} km/h</div>
-                      </div>
-
-                      <div class="dayitem">
-                        <div class="dayitem__k">Humitat mitjana</div>
-                        <div class="dayitem__v">${fmtInt(hum)} %</div>
-                      </div>
-                    </div>
-                  </div>
-                `;
-              }).join("")}
-            </div>
-          </td>
-        </tr>
-      `;
-      return;
-    }
+            return `
+              <div class="daycard daycard--kv">
+                ${row("Data", fmtDateCA(day))}
+                ${row("T mín / màx (°C)", `${fmt1(tmin)} / ${fmt1(tmax)}`)}
+                ${row("T mitjana (°C)", fmt1(tavg))}
+                ${row("Pluja (mm)", fmt1(rain))}
+                ${row("Ratxa màxima (km/h)", fmt1(gust))}
+                ${row("Vent mitjà (km/h)", fmt1(wind))}
+                ${row("Humitat mitjana (%)", fmtInt(hum))}
+              </div>
+            `;
+          }).join("")}
+        </div>
+      </td>
+    </tr>
+  `;
+  return;
+}
 
     // Desktop: taula
     tbody.innerHTML = list.map(r => {
