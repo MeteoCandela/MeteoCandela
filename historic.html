@@ -203,14 +203,15 @@ function render(rows) {
 
   // Mobile cards (més llegible)
   const isMobile = window.matchMedia("(max-width: 720px)").matches;
-
+        
   if (isMobile) {
     tbody.innerHTML = `
       <tr>
         <td colspan="7" style="padding:0;border:0">
           <div class="daycards">
-            ${rows.slice().reverse().map(r => {
-              const day = r.date ?? r.day;
+            ${list.map(r => {
+              const day  = r.date ?? r.day;
+
               const tmin = r.temp_min_c ?? r.tmin;
               const tmax = r.temp_max_c ?? r.tmax;
               const tavg = r.temp_avg_c ?? r.tavg;
@@ -220,41 +221,22 @@ function render(rows) {
               const wind = r.wind_avg_kmh ?? r.wind_avg;
               const hum  = r.hum_avg_pct ?? r.hum_avg;
 
+              const row = (k, v) => `
+                <div class="dayrow">
+                  <div class="dayrow__k">${k}</div>
+                  <div class="dayrow__v">${v}</div>
+                </div>
+              `;
+
               return `
-                <div class="daycard">
-                  <div class="daycard__head">${fmtDateCA(day)}</div>
-
-                  <div class="daygrid">
-                    <div class="dayitem">
-                      <div class="dayitem__k">T mín / màx</div>
-                      <div class="dayitem__v">${fmt1(tmin)} / ${fmt1(tmax)} °C</div>
-                    </div>
-
-                    <div class="dayitem">
-                      <div class="dayitem__k">T mitjana</div>
-                      <div class="dayitem__v">${fmt1(tavg)} °C</div>
-                    </div>
-
-                    <div class="dayitem">
-                      <div class="dayitem__k">Pluja</div>
-                      <div class="dayitem__v">${fmt1(rain)} mm</div>
-                    </div>
-
-                    <div class="dayitem">
-                      <div class="dayitem__k">Ratxa màx</div>
-                      <div class="dayitem__v">${fmt1(gust)} km/h</div>
-                    </div>
-
-                    <div class="dayitem">
-                      <div class="dayitem__k">Vent mitjà</div>
-                      <div class="dayitem__v">${fmt1(wind)} km/h</div>
-                    </div>
-
-                    <div class="dayitem">
-                      <div class="dayitem__k">Humitat mitjana</div>
-                      <div class="dayitem__v">${fmtInt(hum)} %</div>
-                    </div>
-                  </div>
+                <div class="daycard daycard--kv">
+                  ${row("Data", fmtDateCA(day))}
+                  ${row("T mín / màx (°C)", `${fmt1(tmin)} / ${fmt1(tmax)}`)}
+                  ${row("T mitjana (°C)", fmt1(tavg))}
+                  ${row("Pluja (mm)", fmt1(rain))}
+                  ${row("Ratxa màxima (km/h)", fmt1(gust))}
+                  ${row("Vent mitjà (km/h)", fmt1(wind))}
+                  ${row("Humitat mitjana (%)", fmtInt(hum))}
                 </div>
               `;
             }).join("")}
