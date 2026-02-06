@@ -230,36 +230,100 @@ function maxVal(nums){
   return Math.max(...v);
 }
 function render(rows) {
-  const tbody = $("histBody");
+function render(rows) {
+  const tbody = document.getElementById("histBody");
   if (!tbody) return;
 
   if (!rows || !rows.length) {
-    tbody.innerHTML = `<tr><td colspan="7" class="muted-cell">Sense dades per al filtre.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="muted-cell">Sense dades per al filtre seleccionat.</td></tr>`;
     return;
   }
 
-  // Per defecte: últim dia a dalt (DESC)
-  const sorted = [...rows].sort((a,b) => String(b.date).localeCompare(String(a.date)));
+  // Mobile cards (més llegible)
+  const isMobile = window.matchMedia("(max-width: 720px)").matches;
 
-  tbody.innerHTML = sorted.map(r => {
-    const day = String(r.date || r.day || "");
-    const tmin = fmt1(r.temp_min_c ?? r.tmin);
-    const tmax = fmt1(r.temp_max_c ?? r.tmax);
-    const tavg = fmt1(r.temp_avg_c ?? r.tavg);
-    const rain = fmt1(r.rain_mm ?? r.rain);
-    const gust = fmt1(r.gust_max_kmh ?? r.gust_max ?? r.gust);
-    const wind = fmt1(r.wind_avg_kmh ?? r.wind_avg);
-    const hum  = fmtInt(r.hum_avg_pct ?? r.hum_avg);
+  if (isMobile) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="padding:0;border:0">
+          <div class="daycards">
+            ${rows.slice().reverse().map(r => {
+              const day = r.date ?? r.day;
+              const tmin = r.temp_min_c ?? r.tmin;
+              const tmax = r.temp_max_c ?? r.tmax;
+              const tavg = r.temp_avg_c ?? r.tavg;
+
+              const rain = r.rain_mm ?? r.rain;
+              const gust = r.gust_max_kmh ?? r.gust_max ?? r.gust;
+              const wind = r.wind_avg_kmh ?? r.wind_avg;
+              const hum  = r.hum_avg_pct ?? r.hum_avg;
+
+              return `
+                <div class="daycard">
+                  <div class="daycard__head">${fmtDateCA(day)}</div>
+
+                  <div class="daygrid">
+                    <div class="dayitem">
+                      <div class="dayitem__k">T mín / màx</div>
+                      <div class="dayitem__v">${fmt1(tmin)} / ${fmt1(tmax)} °C</div>
+                    </div>
+
+                    <div class="dayitem">
+                      <div class="dayitem__k">T mitjana</div>
+                      <div class="dayitem__v">${fmt1(tavg)} °C</div>
+                    </div>
+
+                    <div class="dayitem">
+                      <div class="dayitem__k">Pluja</div>
+                      <div class="dayitem__v">${fmt1(rain)} mm</div>
+                    </div>
+
+                    <div class="dayitem">
+                      <div class="dayitem__k">Ratxa màx</div>
+                      <div class="dayitem__v">${fmt1(gust)} km/h</div>
+                    </div>
+
+                    <div class="dayitem">
+                      <div class="dayitem__k">Vent mitjà</div>
+                      <div class="dayitem__v">${fmt1(wind)} km/h</div>
+                    </div>
+
+                    <div class="dayitem">
+                      <div class="dayitem__k">Humitat mitjana</div>
+                      <div class="dayitem__v">${fmtInt(hum)} %</div>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join("")}
+          </div>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  // Desktop/table view
+  tbody.innerHTML = rows.slice().reverse().map(r => {
+    const day = r.date ?? r.day;
+    const tmin = r.temp_min_c ?? r.tmin;
+    const tmax = r.temp_max_c ?? r.tmax;
+    const tavg = r.temp_avg_c ?? r.tavg;
+
+    const rain = r.rain_mm ?? r.rain;
+    const gust = r.gust_max_kmh ?? r.gust_max ?? r.gust;
+    const wind = r.wind_avg_kmh ?? r.wind_avg;
+    const hum  = r.hum_avg_pct ?? r.hum_avg;
 
     return `
       <tr>
         <td>${fmtDateCA(day)}</td>
-        <td>${tmin} / ${tmax}</td>
-        <td>${tavg}</td>
-        <td>${rain}</td>
-        <td>${gust}</td>
-        <td>${wind}</td>
-        <td>${hum}</td>
+        <td>${fmt1(tmin)} / ${fmt1(tmax)}</td>
+        <td>${fmt1(tavg)}</td>
+        <td>${fmt1(rain)}</td>
+        <td>${fmt1(gust)}</td>
+        <td>${fmt1(wind)}</td>
+        <td>${fmtInt(hum)}</td>
       </tr>
     `;
   }).join("");
