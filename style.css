@@ -872,3 +872,47 @@ h2{
 }
 
 /* (la resta d'estils que ja tens per fx-time, fx-icon, fx-temp, fx-row...) */
+html, body{
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden; /* evita que res trenqui la pàgina */
+}
+
+img, svg, video, canvas{
+  max-width: 100%;
+  height: auto;
+}
+
+.hero, .grid, .card{
+  max-width: 100%;
+}
+/* wrapper que NO deixa sortir res */
+.fx-shelf{
+  width: 100%;
+  overflow: hidden;   /* clau */
+}
+
+/* l'únic que scrolleja */
+.fx-rail{
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 10px 4px 14px;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.fx-rail::-webkit-scrollbar{ display:none; }
+
+/* targetes */
+.fx-item{
+  flex: 0 0 auto;
+  width: 140px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.035);
+  border-radius: 18px;
+  padding: 12px;
+  scroll-snap-align: start;
+}
