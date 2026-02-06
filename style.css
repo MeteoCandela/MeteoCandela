@@ -556,3 +556,43 @@ h2{
 }
 .kpis--summary .kpi__v{ font-size: 18px; }
 .kpis--summary .kpi{ padding: 12px; }
+.daycards{
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+
+.daycard{
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 16px;
+  background: rgba(255,255,255,.03);
+  padding: 14px;
+}
+
+.daycard__head{
+  font-weight: 700;
+  letter-spacing: .2px;
+  margin-bottom: 10px;
+  opacity: .95;
+}
+
+.daygrid{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 14px;
+}
+
+.dayitem__k{
+  font-size: .82rem;
+  opacity: .75;
+  margin-bottom: 2px;
+}
+
+.dayitem__v{
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+
+@media (max-width: 420px){
+  .daygrid{ grid-template-columns: 1fr; }
+}
