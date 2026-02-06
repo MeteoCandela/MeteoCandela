@@ -52,7 +52,7 @@
         pluja, ratxa màxima, vent mitjà i humitat mitjana.
       </p>
       <p class="muted-line" id="histInfo" aria-live="polite">Carregant dades…</p>
-      <div id="histSummary" class="hist-summary" aria-live="polite"></div>
+      <div id="histSummary" class="hist-summary" aria-label="Resum del període"></div>
     </section>
 
     <!-- Filtres -->
@@ -236,8 +236,11 @@ function renderSummary(rows){
 
   if (!rows || !rows.length){
     box.innerHTML = "";
+    box.style.display = "none";
     return;
   }
+
+  box.style.display = "grid";
 
   const tmin = minVal(rows.map(r => safeNum(r.temp_min_c ?? r.tmin)));
   const tmax = maxVal(rows.map(r => safeNum(r.temp_max_c ?? r.tmax)));
@@ -248,21 +251,23 @@ function renderSummary(rows){
   const windAvg   = mean(rows.map(r => safeNum(r.wind_avg_kmh ?? r.wind_avg)));
   const humAvg    = mean(rows.map(r => safeNum(r.hum_avg_pct ?? r.hum_avg)));
 
-  const htmlItem = (k, v) => `
-    <div class="hist-summary__item">
+  const tile = (k, v, sub="") => `
+    <div class="hist-summary__tile">
       <div class="hist-summary__k">${k}</div>
       <div class="hist-summary__v">${v}</div>
+      ${sub ? `<div class="hist-summary__s">${sub}</div>` : ""}
     </div>
   `;
 
-  box.innerHTML =
-    htmlItem("T mín (període)", tmin==null?"—":`${tmin.toFixed(1)} °C`) +
-    htmlItem("T màx (període)", tmax==null?"—":`${tmax.toFixed(1)} °C`) +
-    htmlItem("T mitjana (període)", tavg==null?"—":`${tavg.toFixed(1)} °C`) +
-    htmlItem("Pluja total", `${rainTotal.toFixed(1)} mm`) +
-    htmlItem("Ratxa màxima", gustMax==null?"—":`${gustMax.toFixed(1)} km/h`) +
-    htmlItem("Vent mitjà", windAvg==null?"—":`${windAvg.toFixed(1)} km/h`) +
-    htmlItem("Humitat mitjana", humAvg==null?"—":`${Math.round(humAvg)} %`);
+  box.innerHTML = [
+    tile("T mín", tmin==null ? "—" : `${tmin.toFixed(1)} °C`, "període"),
+    tile("T màx", tmax==null ? "—" : `${tmax.toFixed(1)} °C`, "període"),
+    tile("T mitjana", tavg==null ? "—" : `${tavg.toFixed(1)} °C`, "període"),
+    tile("Humitat mitjana", humAvg==null ? "—" : `${Math.round(humAvg)} %`, "període"),
+    tile("Pluja total", `${rainTotal.toFixed(1)} mm`, "suma període"),
+    tile("Ratxa màxima", gustMax==null ? "—" : `${gustMax.toFixed(1)} km/h`, "màxim període"),
+    tile("Vent mitjà", windAvg==null ? "—" : `${windAvg.toFixed(1)} km/h`, "mitjana període"),
+  ].join("");
 }
 
   // ========== Render ==========
