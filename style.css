@@ -596,3 +596,45 @@ h2{
 @media (max-width: 420px){
   .daygrid{ grid-template-columns: 1fr; }
 }
+/* === Historic mobile cards (format "abans": etiqueta esquerra, valor dreta) === */
+.daycard--kv{
+  padding: 12px 14px;
+}
+
+.dayrow{
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+
+.dayrow:last-child{
+  border-bottom: 0;
+}
+
+.dayrow__k{
+  color: rgba(255,255,255,.72);
+  font-size: 14px;
+}
+
+.dayrow__v{
+  color: rgba(255,255,255,.92);
+  font-weight: 650;
+  font-size: 14px;
+  text-align: right;
+  white-space: nowrap;
+}
+@media (max-width: 720px){
+  /* quan renderitzem daycards dins la taula, NO volem el mode "stacked table" */
+  .hist-table td[colspan="7"]{
+    display: block !important;
+    padding: 0 !important;
+  }
+
+  .hist-table td[colspan="7"]::before{
+    content: "" !important;
+    display: none !important;
+  }
+}
