@@ -125,30 +125,84 @@
       return JSON.parse(txt);
     }
 
-    function renderHourly(hourly){
-      const wrap = $("hourlyWrap");
-      if (!wrap) return;
+    function skyToIcon(sky){
+  const s = String(sky || "").toLowerCase();
 
-      if (!Array.isArray(hourly) || !hourly.length){
-        wrap.innerHTML = `<p class="muted-line">Sense dades horàries disponibles.</p>`;
-        return;
-      }
+  // pluja / ruixats
+  if (s.includes("lluv") || s.includes("pluj") || s.includes("chub") || s.includes("precip")) return "🌧️";
+  // tempesta
+  if (s.includes("torment") || s.includes("tempest")) return "⛈️";
+  // neu
+  if (s.includes("nieve") || s.includes("neu")) return "🌨️";
+  // boira
+  if (s.includes("niebla") || s.includes("boira") || s.includes("bruma")) return "🌫️";
+  // núvols
+  if (s.includes("cubierto") || s.includes("muy nub") || s.includes("nuboso")) return "☁️";
+  if (s.includes("intervalos") || s.includes("poco nub")) return "⛅";
+  // cel serè
+  if (s.includes("despejado") || s.includes("seren")) return "☀️";
 
-      // cards horizontals scroll (molt usable a mòbil)
-      wrap.innerHTML = `
-        <div class="fx-hourly">
-          ${hourly.map(h => `
-            <div class="fx-hour">
-              <div class="fx-hour__t">${h.hour || "—"}</div>
-              <div class="fx-hour__v">${fmt1(h.temp_c)} °C</div>
-              <div class="fx-hour__s">Pluja: ${fmtInt(h.pop_pct)}%</div>
-              <div class="fx-hour__s">Vent: ${fmt1(h.wind_kmh)} km/h</div>
-              <div class="fx-hour__s">${h.wind_dir ? `Dir: ${h.wind_dir}` : ""}</div>
+  return "⛅";
+}
+
+function renderHourly(hourly){
+  const wrap = $("hourlyWrap");
+  if (!wrap) return;
+
+  if (!Array.isArray(hourly) || !hourly.length){
+    wrap.innerHTML = `<p class="muted-line">Sense dades horàries disponibles.</p>`;
+    return;
+  }
+
+  // Filtra hores buides i ordena per hora
+  const list = hourly
+    .filter(h => h && h.hour)
+    .slice()
+    .sort((a,b)=> String(a.hour).localeCompare(String(b.hour)));
+
+  wrap.innerHTML = `
+    <div class="fx-hourly fx-hourly--aemet">
+      ${list.map(h => {
+        const icon = skyToIcon(h.sky);
+        const sky  = h.sky ? String(h.sky) : "—";
+
+        const pop  = Number.isFinite(Number(h.pop_pct)) ? Math.round(Number(h.pop_pct)) : null;
+        const rain = Number.isFinite(Number(h.rain_mm)) ? Number(h.rain_mm) : null;
+
+        const wind = Number.isFinite(Number(h.wind_kmh)) ? Number(h.wind_kmh) : null;
+        const gust = Number.isFinite(Number(h.gust_kmh)) ? Number(h.gust_kmh) : null;
+
+        const dir  = h.wind_dir ? String(h.wind_dir) : null;
+
+        // línia “precip” compacta: POP + mm/h
+        const precipLine = (pop != null || rain != null)
+          ? `${pop != null ? `💧 ${pop}%` : `💧 —`} ${rain != null ? `· ${rain.toFixed(1)} mm` : ""}`
+          : "💧 —";
+
+        const windLine = (wind != null || gust != null || dir)
+          ? `🌬️ ${wind != null ? wind.toFixed(0) : "—"} km/h${dir ? ` ${dir}` : ""}${gust != null ? ` · ratxa ${gust.toFixed(0)}` : ""}`
+          : "🌬️ —";
+
+        return `
+          <div class="fx-hourcard">
+            <div class="fx-hourcard__top">
+              <div class="fx-hourcard__time">${h.hour}</div>
+              <div class="fx-hourcard__icon" aria-hidden="true">${icon}</div>
             </div>
-          `).join("")}
-        </div>
-      `;
-    }
+
+            <div class="fx-hourcard__temp">${fmt1(h.temp_c)}°</div>
+            <div class="fx-hourcard__sky">${sky}</div>
+
+            <div class="fx-hourcard__meta">
+              <div class="fx-hourcard__line">${precipLine}</div>
+              <div class="fx-hourcard__line">${windLine}</div>
+            </div>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
 
     function renderDaily(daily){
       const wrap = $("dailyWrap");
