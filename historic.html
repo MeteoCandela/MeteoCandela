@@ -52,7 +52,7 @@
         pluja, ratxa màxima, vent mitjà i humitat mitjana.
       </p>
       <p class="muted-line" id="histInfo" aria-live="polite">Carregant dades…</p>
-      <div id="histSummary" class="hist-summary" aria-label="Resum del període"></div>
+       <div class="kpis kpis--summary" id="summaryKpis"></div>
     </section>
 
     <!-- Filtres -->
@@ -271,50 +271,48 @@ function renderSummary(rows){
 }
 
   // ========== Render ==========
-  function render(rows) {
-    const tbody = $("histBody");
-    if (!tbody) return;
+  function renderSummary(rows){
+  const box = document.getElementById("summaryKpis");
+  if (!box) return;
 
-    if (!rows.length) {
-      tbody.innerHTML = `<tr><td colspan="7" class="muted-cell">Sense dades per al filtre seleccionat.</td></tr>`;
-      return;
-    }
-
-    const sorted = rows.slice().sort((a,b) => {
-      const da = String((a.date ?? a.day) || "");
-      const db = String((b.date ?? b.day) || "");
-      return db.localeCompare(da);
-    });
-
-    tbody.innerHTML = sorted.map(r => {
-      const dateKey = String((r.date ?? r.day) || "");
-
-      // compatibles amb l'output actual del Worker + futurs canvis
-      const tmin = fmt1(r.tmin ?? r.temp_min_c);
-      const tmax = fmt1(r.tmax ?? r.temp_max_c);
-      const tavg = fmt1(r.tavg ?? r.temp_avg_c);
-
-      const rain = fmt1(r.rain_mm);
-
-      const gust = fmt1(r.gust_max ?? r.gust_max_kmh);
-
-      // IMPORTANT: al Worker actual el camp és wind_avg_pct però en realitat és km/h
-      const wind = fmt1(r.wind_avg_kmh ?? r.wind_avg_pct ?? r.wind_avg);
-      const hum  = fmtInt(r.hum_avg_pct ?? r.hum_avg);
-
-      return `
-        <tr>
-          <td data-label="Data">${fmtDateCA(dateKey)}</td>
-          <td data-label="T mín / màx (°C)">${tmin} / ${tmax}</td>
-          <td data-label="T mitjana (°C)">${tavg}</td>
-          <td data-label="Pluja (mm)">${rain}</td>
-          <td data-label="Ratxa màxima (km/h)">${gust}</td>
-          <td data-label="Vent mitjà (km/h)">${wind}</td>
-          <td data-label="Humitat mitjana (%)">${hum}</td>
-        </tr>
-      `;
-    }).join("");
+  if (!rows.length){
+    box.innerHTML = `<div class="muted-line">Sense dades per al període seleccionat.</div>`;
+    return;
   }
+
+  const tmins = rows.map(r => Number(r.temp_min_c ?? r.tmin)).filter(Number.isFinite);
+  const tmaxs = rows.map(r => Number(r.temp_max_c ?? r.tmax)).filter(Number.isFinite);
+  const tavgs = rows.map(r => Number(r.temp_avg_c ?? r.tavg)).filter(Number.isFinite);
+
+  const hums  = rows.map(r => Number(r.hum_avg_pct ?? r.hum_avg_pct)).filter(Number.isFinite);
+  const rains = rows.map(r => Number(r.rain_mm)).filter(Number.isFinite);
+  const gusts = rows.map(r => Number(r.gust_max_kmh ?? r.gust_max)).filter(Number.isFinite);
+  const winds = rows.map(r => Number(r.wind_avg_kmh ?? r.wind_avg_kmh)).filter(Number.isFinite);
+
+  const fmt1 = (x) => Number.isFinite(x) ? x.toFixed(1) : "—";
+  const fmt0 = (x) => Number.isFinite(x) ? String(Math.round(x)) : "—";
+
+  const sum = (a)=> a.reduce((x,y)=>x+y,0);
+  const avg = (a)=> a.length ? sum(a)/a.length : NaN;
+
+  const cards = [
+    { v: fmt1(Math.min(...tmins)), l:"T mín (període) °C" },
+    { v: fmt1(Math.max(...tmaxs)), l:"T màx (període) °C" },
+    { v: fmt1(avg(tavgs)),         l:"T mitjana (període) °C" },
+
+    { v: fmt0(avg(hums)),          l:"Humitat mitjana %" },
+    { v: fmt1(sum(rains)),         l:"Pluja total (mm)" },
+    { v: fmt1(Math.max(...gusts)), l:"Ratxa màxima (km/h)" },
+    { v: fmt1(avg(winds)),         l:"Vent mitjà (km/h)" },
+  ];
+
+  box.innerHTML = cards.map(c => `
+    <div class="kpi">
+      <div class="kpi__v">${c.v}</div>
+      <div class="kpi__l">${c.l}</div>
+    </div>
+  `).join("");
+}
 
   // ========== Fetch ==========
   async function fetchDaily() {
