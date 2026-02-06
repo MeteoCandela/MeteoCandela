@@ -230,46 +230,6 @@ function maxVal(nums){
   return Math.max(...v);
 }
 
-function renderSummary(rows){
-  const box = $("histSummary");
-  if (!box) return;
-
-  if (!rows || !rows.length){
-    box.innerHTML = "";
-    box.style.display = "none";
-    return;
-  }
-
-  box.style.display = "grid";
-
-  const tmin = minVal(rows.map(r => safeNum(r.temp_min_c ?? r.tmin)));
-  const tmax = maxVal(rows.map(r => safeNum(r.temp_max_c ?? r.tmax)));
-  const tavg = mean(rows.map(r => safeNum(r.temp_avg_c ?? r.tavg)));
-
-  const rainTotal = sum(rows.map(r => safeNum(r.rain_mm ?? r.rain)));
-  const gustMax   = maxVal(rows.map(r => safeNum(r.gust_max_kmh ?? r.gust_max ?? r.gust)));
-  const windAvg   = mean(rows.map(r => safeNum(r.wind_avg_kmh ?? r.wind_avg)));
-  const humAvg    = mean(rows.map(r => safeNum(r.hum_avg_pct ?? r.hum_avg)));
-
-  const tile = (k, v, sub="") => `
-    <div class="hist-summary__tile">
-      <div class="hist-summary__k">${k}</div>
-      <div class="hist-summary__v">${v}</div>
-      ${sub ? `<div class="hist-summary__s">${sub}</div>` : ""}
-    </div>
-  `;
-
-  box.innerHTML = [
-    tile("T mín", tmin==null ? "—" : `${tmin.toFixed(1)} °C`, "període"),
-    tile("T màx", tmax==null ? "—" : `${tmax.toFixed(1)} °C`, "període"),
-    tile("T mitjana", tavg==null ? "—" : `${tavg.toFixed(1)} °C`, "període"),
-    tile("Humitat mitjana", humAvg==null ? "—" : `${Math.round(humAvg)} %`, "període"),
-    tile("Pluja total", `${rainTotal.toFixed(1)} mm`, "suma període"),
-    tile("Ratxa màxima", gustMax==null ? "—" : `${gustMax.toFixed(1)} km/h`, "màxim període"),
-    tile("Vent mitjà", windAvg==null ? "—" : `${windAvg.toFixed(1)} km/h`, "mitjana període"),
-  ].join("");
-}
-
   // ========== Render ==========
   function renderSummary(rows){
   const box = document.getElementById("summaryKpis");
