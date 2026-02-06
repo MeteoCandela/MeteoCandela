@@ -11,11 +11,22 @@
 
 *{ box-sizing: border-box; }
 
+html, body{
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden; /* evita “desastres” si algun element s’escapa */
+}
+
 body{
   margin:0;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   color: var(--text);
   background: radial-gradient(1200px 700px at 20% 10%, #1b2a4a, var(--bg));
+}
+
+img, svg, video, canvas{
+  max-width: 100%;
+  height: auto;
 }
 
 /* HERO */
@@ -43,6 +54,10 @@ body{
   color: #fff;
 }
 
+.hero.hero--small{
+  min-height: 28vh;
+}
+
 h1{ margin: 0 0 6px; font-size: 28px; }
 p{ margin: 0; color: var(--muted); }
 
@@ -62,6 +77,7 @@ p{ margin: 0; color: var(--muted); }
   margin: 0 auto;
 }
 
+/* IMPORTANT: el layout de 2 columnes només s’aplica en pantalles grans */
 @media (min-width: 900px){
   .grid{ grid-template-columns: 1.2fr .8fr; }
 }
@@ -75,6 +91,8 @@ p{ margin: 0; color: var(--muted); }
   border-radius: 16px;
   padding: 14px;
   backdrop-filter: blur(10px);
+  max-width: 100%;
+  min-width: 0; /* clau en grid/flex perquè no “empenyi” */
 }
 
 h2{
@@ -111,6 +129,7 @@ h2{
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 10px;
+  min-width: 0;
 }
 
 .kpi__v{ font-size: 22px; font-weight: 700; }
@@ -216,6 +235,7 @@ h2{
   height: 260px;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .card.chart-box h2{
@@ -281,11 +301,6 @@ h2{
   border-top: 1px solid var(--border);
 }
 
-/* ===== Pàgines internes ===== */
-.hero.hero--small{
-  min-height: 28vh;
-}
-
 /* Llistes dins cards */
 .list{
   margin: 10px 0 0;
@@ -322,11 +337,7 @@ h2{
 .back-link:hover{ background: var(--chip); }
 .back-link:active{ transform: translateY(1px); }
 
-/* ===== Breadcrumb / Ruta (funciona per a sobre.html i historic.html) ===== */
-/* IMPORTANT: suportem 2 formats:
-   A) <nav class="crumbs"><a>..</a> → <span>..</span></nav>  (historic.html)
-   B) <nav class="crumbs"><div class="crumbs__left">..</div><div class="crumbs__right">..</div></nav> (sobre.html)
-*/
+/* ===== Breadcrumb / Ruta ===== */
 .crumbs{
   display:flex;
   align-items:center;
@@ -344,7 +355,6 @@ h2{
 }
 .crumbs a:hover{ opacity: .9; }
 
-/* si existeixen wrappers left/right */
 .crumbs__left{
   display:flex;
   align-items:center;
@@ -358,7 +368,6 @@ h2{
   flex-wrap: wrap;
 }
 
-/* a mòbil: apila i respira */
 @media (max-width: 520px){
   .crumbs{
     flex-direction: column;
@@ -369,7 +378,7 @@ h2{
   }
 }
 
-/* ===== Navegació ràpida (botons “Històric / Sobre”) ===== */
+/* ===== Navegació ràpida ===== */
 .quick-nav{
   display: flex;
   gap: 12px;
@@ -399,7 +408,6 @@ h2{
   transform: translateY(1px);
 }
 
-/* a mòbil: si vols que s’estirin i quedin alineats */
 @media (max-width: 520px){
   .quick-nav__btn{
     flex: 1 1 auto;
@@ -407,8 +415,7 @@ h2{
   }
 }
 
-/* ✅ Alias: si a sobre.html tens <a class="crumbs__btn">... */
-/* el convertim al mateix estil que quick-nav__btn perquè tot “parli igual” */
+/* alias */
 .crumbs__btn{
   display: inline-flex;
   align-items: center;
@@ -506,7 +513,18 @@ h2{
     color: var(--muted);
     padding-right: 10px;
   }
+
+  /* quan renderitzem daycards dins la taula, NO volem el mode "stacked table" */
+  .hist-table td[colspan="7"]{
+    display: block !important;
+    padding: 0 !important;
+  }
+  .hist-table td[colspan="7"]::before{
+    content: "" !important;
+    display: none !important;
+  }
 }
+
 #rainMsg{
   text-align: center;
   font-size: 16px;
@@ -515,6 +533,7 @@ h2{
   margin: auto;
   padding: 60px 0;
 }
+
 /* ===== Resum període (historic) ===== */
 .hist-summary{
   margin-top: 12px;
@@ -532,6 +551,7 @@ h2{
   border-radius: 14px;
   padding: 10px 12px;
   background: rgba(255,255,255,.04);
+  min-width: 0;
 }
 
 .hist-summary__k{
@@ -554,91 +574,11 @@ h2{
   font-size: 11px;
   color: rgba(255,255,255,.65);
 }
+
 .kpis--summary .kpi__v{ font-size: 18px; }
 .kpis--summary .kpi{ padding: 12px; }
-.daycards{
-  display: grid;
-  gap: 12px;
-  padding: 12px;
-}
 
-.daycard{
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 16px;
-  background: rgba(255,255,255,.03);
-  padding: 14px;
-}
-
-.daycard__head{
-  font-weight: 700;
-  letter-spacing: .2px;
-  margin-bottom: 10px;
-  opacity: .95;
-}
-
-.daygrid{
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px 14px;
-}
-
-.dayitem__k{
-  font-size: .82rem;
-  opacity: .75;
-  margin-bottom: 2px;
-}
-
-.dayitem__v{
-  font-size: 1.05rem;
-  font-weight: 650;
-}
-
-@media (max-width: 420px){
-  .daygrid{ grid-template-columns: 1fr; }
-}
-/* === Historic mobile cards (format "abans": etiqueta esquerra, valor dreta) === */
-.daycard--kv{
-  padding: 12px 14px;
-}
-
-.dayrow{
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 9px 0;
-  border-bottom: 1px solid rgba(255,255,255,.06);
-}
-
-.dayrow:last-child{
-  border-bottom: 0;
-}
-
-.dayrow__k{
-  color: rgba(255,255,255,.72);
-  font-size: 14px;
-}
-
-.dayrow__v{
-  color: rgba(255,255,255,.92);
-  font-weight: 650;
-  font-size: 14px;
-  text-align: right;
-  white-space: nowrap;
-}
-@media (max-width: 720px){
-  /* quan renderitzem daycards dins la taula, NO volem el mode "stacked table" */
-  .hist-table td[colspan="7"]{
-    display: block !important;
-    padding: 0 !important;
-  }
-
-  .hist-table td[colspan="7"]::before{
-    content: "" !important;
-    display: none !important;
-  }
-}
-/* ===== Cards mòbil (històric) ===== */
+/* Cards mòbil (històric) */
 .daycards{
   display: grid;
   gap: 12px;
@@ -650,6 +590,7 @@ h2{
   border-radius: 16px;
   background: rgba(255,255,255,.03);
   padding: 12px;
+  min-width: 0;
 }
 
 /* format tipus “taula” dins de la card */
@@ -662,85 +603,19 @@ h2{
 }
 .daycard--kv .dayrow:last-child{ border-bottom: 0; }
 
-.daycard--kv .dayrow__k{
+.dayrow__k{
   color: rgba(255,255,255,.72);
   font-size: 14px;
 }
-.daycard--kv .dayrow__v{
+.dayrow__v{
   color: rgba(255,255,255,.92);
   font-weight: 650;
   font-size: 14px;
   text-align: right;
   white-space: nowrap;
 }
-/* ===== Forecast (AEMET-like) ===== */
-.fx-hourly--aemet{
-  display:flex;
-  gap:12px;
-  overflow-x:auto;
-  padding: 6px 2px 10px;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-}
 
-.fx-hourcard{
-  min-width: 170px;
-  flex: 0 0 auto;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.10);
-  border-radius: 16px;
-  padding: 12px 12px 10px;
-  scroll-snap-align: start;
-}
-
-.fx-hourcard__top{
-  display:flex;
-  align-items:center;
-  justify-content: space-between;
-  gap:10px;
-  margin-bottom: 6px;
-}
-
-.fx-hourcard__time{
-  font-weight: 700;
-  letter-spacing: .2px;
-  opacity: .95;
-}
-
-.fx-hourcard__icon{
-  font-size: 28px;
-  line-height: 1;
-  filter: saturate(1.05);
-}
-
-.fx-hourcard__temp{
-  font-size: 30px;
-  font-weight: 800;
-  line-height: 1.05;
-  margin: 2px 0 4px;
-}
-
-.fx-hourcard__sky{
-  font-size: 13px;
-  opacity: .9;
-  min-height: 34px; /* perquè totes les cards mantinguin alçada similar */
-}
-
-.fx-hourcard__meta{
-  margin-top: 10px;
-  border-top: 1px solid rgba(255,255,255,0.08);
-  padding-top: 8px;
-  font-size: 12.5px;
-  opacity: .95;
-}
-
-.fx-hourcard__line{
-  display:block;
-  margin: 2px 0;
-  white-space: nowrap;
-}
-
-/* daily cards: petit toc “AEMET” */
+/* ===== Forecast ===== */
 .fx-day__sky{
   opacity: .9;
   font-size: 13px;
@@ -748,31 +623,46 @@ h2{
 .fx-day__pop{
   opacity: .9;
 }
-/* ===== Forecast hourly rail (app-like) ===== */
-.fx-rail{
-  display:flex;
-  gap: 12px;
-  overflow-x: auto;
-  padding: 10px 4px 14px;
-  -webkit-overflow-scrolling: touch;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: thin;
+
+/* ===== Forecast hourly rail (NO trenca la pàgina) ===== */
+.fx-shelf{
+  width: 100%;
+  overflow: hidden; /* clau: el rail no estira la card */
 }
 
-/* separador suau superior (com la imatge) */
-.fx-rail::before{
-  content:"";
-  position: sticky;
-  left: 0;
-  display:block;
+/* línia tipus “track” (no és sticky, no és pseudo-element) */
+.fx-track{
   height: 2px;
   width: 100%;
   background: rgba(255,255,255,.08);
   border-radius: 999px;
-  margin-bottom: 10px;
+  margin: 6px 0 10px;
 }
 
-/* targeta hora */
+.fx-rail{
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 10px 4px 14px;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none; /* Firefox */
+  min-width: 0;
+}
+.fx-rail::-webkit-scrollbar{ display:none; } /* Chrome/Safari */
+
+/* ombra/fade als extrems (opcional, segur) */
+.fx-rail{
+  mask-image: linear-gradient(to right,
+    transparent 0,
+    black 18px,
+    black calc(100% - 18px),
+    transparent 100%);
+}
+
 .fx-item{
   flex: 0 0 auto;
   width: 140px;
@@ -811,15 +701,9 @@ h2{
   padding: 6px 0;
   border-top: 1px solid rgba(255,255,255,.08);
 }
+.fx-row:first-of-type{ border-top: 0; }
 
-.fx-row:first-of-type{
-  border-top: 0;
-}
-
-.fx-k{
-  width: 18px;
-  opacity: .9;
-}
+.fx-k{ width: 18px; opacity: .9; }
 
 .fx-v{
   font-size: 13px;
@@ -830,89 +714,4 @@ h2{
 .fx-row--wind .fx-v{
   overflow: hidden;
   text-overflow: ellipsis;
-}
-/* ===== Hourly: scroll encapsulat (no afecta la resta) ===== */
-.fx-shelf{
-  overflow: hidden;          /* clau: la card NO s'estira */
-  width: 100%;
-}
-
-/* rail = únic element que fa scroll */
-.fx-rail{
-  display:flex;
-  gap: 12px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 10px 4px 14px;
-  -webkit-overflow-scrolling: touch;
-  scroll-snap-type: x mandatory;
-  overscroll-behavior-x: contain;  /* evita “arrossegar” la pàgina */
-  scrollbar-width: none;           /* Firefox: amaga scrollbar */
-}
-.fx-rail::-webkit-scrollbar{ display:none; } /* Chrome/Safari */
-
-/* track “invisible” (opcional) */
-.fx-rail{
-  mask-image: linear-gradient(to right,
-    transparent 0,
-    black 18px,
-    black calc(100% - 18px),
-    transparent 100%);
-}
-
-/* targetes */
-.fx-item{
-  flex: 0 0 auto;
-  width: 140px;
-  border: 1px solid rgba(255,255,255,.10);
-  background: rgba(255,255,255,.035);
-  border-radius: 18px;
-  padding: 12px 12px 10px;
-  scroll-snap-align: start;
-}
-
-/* (la resta d'estils que ja tens per fx-time, fx-icon, fx-temp, fx-row...) */
-html, body{
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden; /* evita que res trenqui la pàgina */
-}
-
-img, svg, video, canvas{
-  max-width: 100%;
-  height: auto;
-}
-
-.hero, .grid, .card{
-  max-width: 100%;
-}
-/* wrapper que NO deixa sortir res */
-.fx-shelf{
-  width: 100%;
-  overflow: hidden;   /* clau */
-}
-
-/* l'únic que scrolleja */
-.fx-rail{
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 10px 4px 14px;
-  -webkit-overflow-scrolling: touch;
-  scroll-snap-type: x mandatory;
-  overscroll-behavior-x: contain;
-  scrollbar-width: none;
-}
-.fx-rail::-webkit-scrollbar{ display:none; }
-
-/* targetes */
-.fx-item{
-  flex: 0 0 auto;
-  width: 140px;
-  border: 1px solid rgba(255,255,255,.10);
-  background: rgba(255,255,255,.035);
-  border-radius: 18px;
-  padding: 12px;
-  scroll-snap-align: start;
-}
+    }
