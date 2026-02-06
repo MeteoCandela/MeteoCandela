@@ -52,6 +52,7 @@
         pluja, ratxa màxima, vent mitjà i humitat mitjana.
       </p>
       <p class="muted-line" id="histInfo" aria-live="polite">Carregant dades…</p>
+      <div id="histSummary" class="hist-summary" aria-live="polite"></div>
     </section>
 
     <!-- Filtres -->
@@ -200,6 +201,69 @@
       return true;
     });
   }
+ function safeNum(x){
+  const n = Number(x);
+  return Number.isFinite(n) ? n : null;
+}
+
+function mean(nums){
+  const v = nums.filter(x => x != null && Number.isFinite(x));
+  if (!v.length) return null;
+  return v.reduce((a,b)=>a+b,0) / v.length;
+}
+
+function sum(nums){
+  const v = nums.filter(x => x != null && Number.isFinite(x));
+  if (!v.length) return 0;
+  return v.reduce((a,b)=>a+b,0);
+}
+
+function minVal(nums){
+  const v = nums.filter(x => x != null && Number.isFinite(x));
+  if (!v.length) return null;
+  return Math.min(...v);
+}
+
+function maxVal(nums){
+  const v = nums.filter(x => x != null && Number.isFinite(x));
+  if (!v.length) return null;
+  return Math.max(...v);
+}
+
+function renderSummary(rows){
+  const box = $("histSummary");
+  if (!box) return;
+
+  if (!rows || !rows.length){
+    box.innerHTML = "";
+    return;
+  }
+
+  const tmin = minVal(rows.map(r => safeNum(r.temp_min_c ?? r.tmin)));
+  const tmax = maxVal(rows.map(r => safeNum(r.temp_max_c ?? r.tmax)));
+  const tavg = mean(rows.map(r => safeNum(r.temp_avg_c ?? r.tavg)));
+
+  const rainTotal = sum(rows.map(r => safeNum(r.rain_mm ?? r.rain)));
+  const gustMax   = maxVal(rows.map(r => safeNum(r.gust_max_kmh ?? r.gust_max ?? r.gust)));
+  const windAvg   = mean(rows.map(r => safeNum(r.wind_avg_kmh ?? r.wind_avg)));
+  const humAvg    = mean(rows.map(r => safeNum(r.hum_avg_pct ?? r.hum_avg)));
+
+  const htmlItem = (k, v) => `
+    <div class="hist-summary__item">
+      <div class="hist-summary__k">${k}</div>
+      <div class="hist-summary__v">${v}</div>
+    </div>
+  `;
+
+  box.innerHTML =
+    htmlItem("T mín (període)", tmin==null?"—":`${tmin.toFixed(1)} °C`) +
+    htmlItem("T màx (període)", tmax==null?"—":`${tmax.toFixed(1)} °C`) +
+    htmlItem("T mitjana (període)", tavg==null?"—":`${tavg.toFixed(1)} °C`) +
+    htmlItem("Pluja total", `${rainTotal.toFixed(1)} mm`) +
+    htmlItem("Ratxa màxima", gustMax==null?"—":`${gustMax.toFixed(1)} km/h`) +
+    htmlItem("Vent mitjà", windAvg==null?"—":`${windAvg.toFixed(1)} km/h`) +
+    htmlItem("Humitat mitjana", humAvg==null?"—":`${Math.round(humAvg)} %`);
+}
 
   // ========== Render ==========
   function render(rows) {
@@ -294,6 +358,7 @@
 
       const filtered = applyFilters(daily, y, m);
       render(filtered);
+      renderSummary(filtered);
 
       if (info) {
         const count = filtered.length;
