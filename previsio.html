@@ -186,26 +186,27 @@ function renderHourly(hourly){
     return;
   }
 
-  // si hi ha nulls al principi (a vegades AEMET), els deixem igual però es veurà "—"
   wrap.innerHTML = `
-    <div class="fx-rail" role="list" aria-label="Previsió per hores">
-      ${hourly.map(h => `
-        <article class="fx-item" role="listitem">
-          <div class="fx-time">${h.hour || "—"}</div>
-          <div class="fx-icon" aria-hidden="true">${iconFromSky(h.sky, h.hour)}</div>
-          <div class="fx-temp">${fmt1(h.temp_c)}°</div>
+    <div class="fx-shelf">
+      <div class="fx-rail" role="list" aria-label="Previsió per hores">
+        ${hourly.map(h => `
+          <article class="fx-item" role="listitem">
+            <div class="fx-time">${h.hour || "—"}</div>
+            <div class="fx-icon" aria-hidden="true">${iconFromSky(h.sky, h.hour)}</div>
+            <div class="fx-temp">${fmt1(h.temp_c)}°</div>
 
-          <div class="fx-row">
-            <span class="fx-k">💧</span>
-            <span class="fx-v">${fmt0orDash(h.pop_pct)}%</span>
-          </div>
+            <div class="fx-row">
+              <span class="fx-k">💧</span>
+              <span class="fx-v">${fmt0orDash(h.pop_pct)}%</span>
+            </div>
 
-          <div class="fx-row fx-row--wind">
-            <span class="fx-k">💨</span>
-            <span class="fx-v">${fmtWind(h)}</span>
-          </div>
-        </article>
-      `).join("")}
+            <div class="fx-row fx-row--wind">
+              <span class="fx-k">💨</span>
+              <span class="fx-v">${fmtWind(h)}</span>
+            </div>
+          </article>
+        `).join("")}
+      </div>
     </div>
   `;
 }
