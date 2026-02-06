@@ -554,3 +554,5 @@ h2{
   font-size: 11px;
   color: rgba(255,255,255,.65);
 }
+.kpis--summary .kpi__v{ font-size: 18px; }
+.kpis--summary .kpi{ padding: 12px; }
