@@ -673,3 +673,58 @@ h2{
   text-align: right;
   white-space: nowrap;
 }
+/* ===== Forecast ===== */
+.fx-hourly{
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(170px, 1fr);
+  gap: 12px;
+  overflow-x: auto;
+  padding: 4px 2px;
+  scroll-snap-type: x mandatory;
+}
+
+.fx-hour{
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px;
+  background: rgba(255,255,255,.03);
+  scroll-snap-align: start;
+}
+
+.fx-hour__t{ font-weight: 750; opacity: .95; }
+.fx-hour__v{ font-size: 22px; font-weight: 800; margin: 6px 0; }
+.fx-hour__s{ font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+.fx-daily{ display: grid; gap: 10px; }
+
+.fx-day{
+  display:flex;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px;
+  background: rgba(255,255,255,.03);
+}
+
+.fx-day__date{ font-weight: 750; }
+.fx-day__sky{ font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+.fx-day__temps{
+  display:flex;
+  gap: 10px;
+  justify-content: flex-end;
+  font-weight: 800;
+  font-size: 18px;
+}
+
+.fx-min{ opacity: .75; }
+.fx-max{ opacity: .98; }
+
+.fx-day__pop{
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--muted);
+  text-align: right;
+}
