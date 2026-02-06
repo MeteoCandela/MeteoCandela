@@ -1,6 +1,6 @@
 {
-  "name": "MeteoCandela",
-  "short_name": "MeteoCandela",
+  "name": "MeteoValls",
+  "short_name": "MeteoValls",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0b1220",
