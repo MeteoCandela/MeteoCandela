@@ -129,237 +129,6 @@
   <footer class="footer">
     <span>© <span id="year"></span> MeteoValls</span>
   </footer>
-
-
-  // ========== Filters ==========
-  function getUrlFilters() {
-    try {
-      const u = new URL(location.href);
-      return { y: u.searchParams.get("y") || "", m: u.searchParams.get("m") || "" };
-    } catch {
-      return { y: "", m: "" };
-    }
-  }
-
-  function setUrlFilters(y, m) {
-    try {
-      const u = new URL(location.href);
-      if (y) u.searchParams.set("y", y); else u.searchParams.delete("y");
-      if (m) u.searchParams.set("m", m); else u.searchParams.delete("m");
-      history.replaceState(null, "", u.toString());
-    } catch {}
-  }
-
-  function yearsFromRows(rows) {
-    const set = new Set(rows.map(r => String((r.date ?? r.day) || "").slice(0,4)).filter(Boolean));
-    return Array.from(set).sort();
-  }
-
-  function applyFilters(rows, y, m) {
-    return rows.filter(r => {
-      const day = String((r.date ?? r.day) || "");
-      if (day.length < 10) return false;
-      if (y && day.slice(0,4) !== y) return false;
-      if (m && day.slice(5,7) !== m) return false;
-      return true;
-    });
-  }
- function safeNum(x){
-  const n = Number(x);
-  return Number.isFinite(n) ? n : null;
-}
-
-function mean(nums){
-  const v = nums.filter(x => x != null && Number.isFinite(x));
-  if (!v.length) return null;
-  return v.reduce((a,b)=>a+b,0) / v.length;
-}
-
-function sum(nums){
-  const v = nums.filter(x => x != null && Number.isFinite(x));
-  if (!v.length) return 0;
-  return v.reduce((a,b)=>a+b,0);
-}
-
-function minVal(nums){
-  const v = nums.filter(x => x != null && Number.isFinite(x));
-  if (!v.length) return null;
-  return Math.min(...v);
-}
-
-function maxVal(nums){
-  const v = nums.filter(x => x != null && Number.isFinite(x));
-  if (!v.length) return null;
-  return Math.max(...v);
-}
-function render(rows) {
-  const tbody = document.getElementById("histBody");
-  if (!tbody) return;
-
-  if (!rows || !rows.length) {
-    tbody.innerHTML = `<tr><td colspan="7" class="muted-cell">Sense dades per al filtre seleccionat.</td></tr>`;
-    return;
-  }
-
-  // Mobile cards (més llegible)
-  const isMobile = window.matchMedia("(max-width: 720px)").matches;
-        
-  if (isMobile) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" style="padding:0;border:0">
-          <div class="daycards">
-            ${list.map(r => {
-              const day  = r.date ?? r.day;
-
-              const tmin = r.temp_min_c ?? r.tmin;
-              const tmax = r.temp_max_c ?? r.tmax;
-              const tavg = r.temp_avg_c ?? r.tavg;
-
-              const rain = r.rain_mm ?? r.rain;
-              const gust = r.gust_max_kmh ?? r.gust_max ?? r.gust;
-              const wind = r.wind_avg_kmh ?? r.wind_avg;
-              const hum  = r.hum_avg_pct ?? r.hum_avg;
-
-              const row = (k, v) => `
-                <div class="dayrow">
-                  <div class="dayrow__k">${k}</div>
-                  <div class="dayrow__v">${v}</div>
-                </div>
-              `;
-
-              return `
-                <div class="daycard daycard--kv">
-                  ${row("Data", fmtDateCA(day))}
-                  ${row("T mín / màx (°C)", `${fmt1(tmin)} / ${fmt1(tmax)}`)}
-                  ${row("T mitjana (°C)", fmt1(tavg))}
-                  ${row("Pluja (mm)", fmt1(rain))}
-                  ${row("Ratxa màxima (km/h)", fmt1(gust))}
-                  ${row("Vent mitjà (km/h)", fmt1(wind))}
-                  ${row("Humitat mitjana (%)", fmtInt(hum))}
-                </div>
-              `;
-            }).join("")}
-          </div>
-        </td>
-      </tr>
-    `;
-    return;
-  }
-
-  // Desktop/table view
-  tbody.innerHTML = rows.slice().reverse().map(r => {
-    const day = r.date ?? r.day;
-    const tmin = r.temp_min_c ?? r.tmin;
-    const tmax = r.temp_max_c ?? r.tmax;
-    const tavg = r.temp_avg_c ?? r.tavg;
-
-    const rain = r.rain_mm ?? r.rain;
-    const gust = r.gust_max_kmh ?? r.gust_max ?? r.gust;
-    const wind = r.wind_avg_kmh ?? r.wind_avg;
-    const hum  = r.hum_avg_pct ?? r.hum_avg;
-
-    return `
-      <tr>
-        <td>${fmtDateCA(day)}</td>
-        <td>${fmt1(tmin)} / ${fmt1(tmax)}</td>
-        <td>${fmt1(tavg)}</td>
-        <td>${fmt1(rain)}</td>
-        <td>${fmt1(gust)}</td>
-        <td>${fmt1(wind)}</td>
-        <td>${fmtInt(hum)}</td>
-      </tr>
-    `;
-  }).join("");
-}
-  // ========== Render ==========
-  function renderSummary(rows){
-  const box = document.getElementById("summaryKpis");
-  if (!box) return;
-
-  if (!rows.length){
-    box.innerHTML = `<div class="muted-line">Sense dades per al període seleccionat.</div>`;
-    return;
-  }
-
-  const tmins = rows.map(r => Number(r.temp_min_c ?? r.tmin)).filter(Number.isFinite);
-  const tmaxs = rows.map(r => Number(r.temp_max_c ?? r.tmax)).filter(Number.isFinite);
-  const tavgs = rows.map(r => Number(r.temp_avg_c ?? r.tavg)).filter(Number.isFinite);
-
-  const hums  = rows.map(r => Number(r.hum_avg_pct ?? r.hum_avg_pct)).filter(Number.isFinite);
-  const rains = rows.map(r => Number(r.rain_mm)).filter(Number.isFinite);
-  const gusts = rows.map(r => Number(r.gust_max_kmh ?? r.gust_max)).filter(Number.isFinite);
-  const winds = rows.map(r => Number(r.wind_avg_kmh ?? r.wind_avg_kmh)).filter(Number.isFinite);
-
-  const fmt1 = (x) => Number.isFinite(x) ? x.toFixed(1) : "—";
-  const fmt0 = (x) => Number.isFinite(x) ? String(Math.round(x)) : "—";
-
-  const sum = (a)=> a.reduce((x,y)=>x+y,0);
-  const avg = (a)=> a.length ? sum(a)/a.length : NaN;
-
-  const cards = [
-    { v: fmt1(Math.min(...tmins)), l:"T mín (període) °C" },
-    { v: fmt1(Math.max(...tmaxs)), l:"T màx (període) °C" },
-    { v: fmt1(avg(tavgs)),         l:"T mitjana (període) °C" },
-
-    { v: fmt0(avg(hums)),          l:"Humitat mitjana %" },
-    { v: fmt1(sum(rains)),         l:"Pluja total (mm)" },
-    { v: fmt1(Math.max(...gusts)), l:"Ratxa màxima (km/h)" },
-    { v: fmt1(avg(winds)),         l:"Vent mitjà (km/h)" },
-  ];
-
-  box.innerHTML = cards.map(c => `
-    <div class="kpi">
-      <div class="kpi__v">${c.v}</div>
-      <div class="kpi__l">${c.l}</div>
-    </div>
-  `).join("");
-}
-
-  // ========== Fetch ==========
-  async function fetchDaily() {
-    const info = $("histInfo");
-    try {
-      const res = await fetch(`${DAILY_URL}?t=${Date.now()}`, { cache: "no-store" });
-      const txt = await res.text();
-      if (!res.ok) throw new Error(`${res.status} ${res.statusText}: ${txt.slice(0,150)}`);
-
-      const data = JSON.parse(txt);
-      return Array.isArray(data) ? data : [];
-    } catch (e) {
-      if (info) info.textContent = "No es pot carregar /api/daily-summary (Worker/KV). Revisa route i cron.";
-      return [];
-    }
-  }
-
-  // ========== Main ==========
-  async function main() {
-    const info = $("histInfo");
-
-    const daily = await fetchDaily();
-
-    if (!daily.length) {
-      render([]);
-      if (info) info.textContent = "Sense dades encara (daily-summary buit).";
-      return;
-    }
-
-    const yrs = yearsFromRows(daily);
-    const yearSel = $("yearSelect");
-    const monthSel = $("monthSelect");
-
-    yearSel.innerHTML = yrs.map(y => `<option value="${y}">${y}</option>`).join("");
-
-    const { y: y0, m: m0 } = getUrlFilters();
-    const defaultY = (y0 && yrs.includes(y0)) ? y0 : yrs[yrs.length - 1];
-
-    yearSel.value = defaultY;
-    monthSel.value = m0 || "";
-
-    function refresh() {
-      const y = yearSel.value || "";
-      const m = monthSel.value || "";
-      setUrlFilters(y, m);
 <script>
   // ========== Config ==========
   document.getElementById("year").textContent = new Date().getFullYear();
@@ -429,7 +198,7 @@ function render(rows) {
     });
   }
 
-  // ========== Render (taula desktop + cards mòbil) ==========
+  // ========== Render ==========
   function render(rows) {
     const tbody = $("histBody");
     if (!tbody) return;
@@ -441,7 +210,7 @@ function render(rows) {
 
     const isMobile = window.matchMedia("(max-width: 720px)").matches;
 
-    // ordre: dia més recent primer
+    // més recent primer
     const list = rows.slice().sort((a,b)=> String(a.date ?? a.day).localeCompare(String(b.date ?? b.day))).reverse();
 
     if (isMobile) {
@@ -469,22 +238,27 @@ function render(rows) {
                         <div class="dayitem__k">T mín / màx</div>
                         <div class="dayitem__v">${fmt1(tmin)} / ${fmt1(tmax)} °C</div>
                       </div>
+
                       <div class="dayitem">
                         <div class="dayitem__k">T mitjana</div>
                         <div class="dayitem__v">${fmt1(tavg)} °C</div>
                       </div>
+
                       <div class="dayitem">
                         <div class="dayitem__k">Pluja</div>
                         <div class="dayitem__v">${fmt1(rain)} mm</div>
                       </div>
+
                       <div class="dayitem">
                         <div class="dayitem__k">Ratxa màx</div>
                         <div class="dayitem__v">${fmt1(gust)} km/h</div>
                       </div>
+
                       <div class="dayitem">
                         <div class="dayitem__k">Vent mitjà</div>
                         <div class="dayitem__v">${fmt1(wind)} km/h</div>
                       </div>
+
                       <div class="dayitem">
                         <div class="dayitem__k">Humitat mitjana</div>
                         <div class="dayitem__v">${fmtInt(hum)} %</div>
@@ -500,7 +274,7 @@ function render(rows) {
       return;
     }
 
-    // Desktop: taula clàssica
+    // Desktop: taula
     tbody.innerHTML = list.map(r => {
       const day  = r.date ?? r.day;
 
@@ -586,12 +360,10 @@ function render(rows) {
   // ========== Main ==========
   async function main() {
     const info = $("histInfo");
-
     const daily = await fetchDaily();
 
     if (!daily.length) {
       render([]);
-      renderSummary([]);
       if (info) info.textContent = "Sense dades encara (daily-summary buit).";
       return;
     }
@@ -636,14 +408,10 @@ function render(rows) {
       });
     }
 
-    // IMPORTANT: rerender quan canvies d’orientació o amplada
-    window.addEventListener("resize", refresh);
-
     refresh();
   }
 
   main();
 </script>
-
 </body>
 </html>
