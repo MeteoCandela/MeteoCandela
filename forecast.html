@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Previsió · MeteoValls (Barri de la Candela, Valls)</title>
+  <meta name="description" content="Previsió meteorològica per Valls (Alt Camp): horària d'avui i previsió diària 7 dies (AEMET).">
+
+  <link rel="canonical" href="https://meteocandela.cat/previsio.html">
+  <meta name="robots" content="index,follow">
+  <meta name="theme-color" content="#0b1220">
+
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="MeteoCandela">
+  <meta property="og:locale" content="ca_ES">
+  <meta property="og:title" content="Previsió · MeteoValls (Valls · Alt Camp)">
+  <meta property="og:description" content="Previsió horària d'avui i previsió diària 7 dies (AEMET).">
+  <meta property="og:url" content="https://meteocandela.cat/previsio.html">
+  <meta property="og:image" content="https://meteocandela.cat/og-image.png">
+
+  <link rel="stylesheet" href="style.css?v=2026-02-06-01">
+</head>
+
+<body>
+
+  <header class="hero hero--small">
+    <div class="hero__overlay"></div>
+    <div class="hero__content">
+      <h1>Previsió</h1>
+      <p>MeteoValls · Valls (Alt Camp)</p>
+      <div class="status" id="fxStatus">Carregant previsió…</div>
+    </div>
+  </header>
+
+  <main class="grid">
+
+    <section class="card span2">
+      <nav class="quick-nav" aria-label="Navegació principal">
+        <a href="/index.html" class="quick-nav__btn">🏠 Inici</a>
+        <a href="/historic.html" class="quick-nav__btn">📊 Històric</a>
+        <a href="/sobre.html" class="quick-nav__btn">ℹ️ Sobre l’estació</a>
+      </nav>
+    </section>
+
+    <!-- RESUM -->
+    <section class="card span2">
+      <h2>Resum</h2>
+      <div class="subs" id="fxMeta">
+        <div>Font: —</div>
+        <div>Actualitzat: —</div>
+      </div>
+    </section>
+
+    <!-- HOURLY -->
+    <section class="card span2">
+      <h2>Previsió horària (avui)</h2>
+      <div id="hourlyWrap">
+        <p class="muted-line">Carregant…</p>
+      </div>
+    </section>
+
+    <!-- DAILY -->
+    <section class="card span2">
+      <h2>Previsió 7 dies</h2>
+      <div id="dailyWrap">
+        <p class="muted-line">Carregant…</p>
+      </div>
+      <p class="muted-line" style="margin-top:12px">
+        Nota: previsió automàtica (pot variar). Dades no oficials per a ús informatiu.
+      </p>
+    </section>
+
+    <section class="card span2" style="text-align:center">
+      <p><a href="/" class="back-link">← Tornar a MeteoValls</a></p>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <span>© <span id="year"></span> MeteoValls</span>
+  </footer>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    const API_BASE = "/api";
+    const FORECAST_URL = `${API_BASE}/forecast`;
+
+    const $ = (id) => document.getElementById(id);
+
+    function fmt1(x){
+      const n = Number(x);
+      return Number.isFinite(n) ? n.toFixed(1) : "—";
+    }
+
+    function fmtInt(x){
+      const n = Number(x);
+      return Number.isFinite(n) ? String(Math.round(n)) : "—";
+    }
+
+    function fmtDateCA(ymd){
+      try{
+        const [y,m,d] = String(ymd).slice(0,10).split("-").map(Number);
+        const dt = new Date(y, m-1, d);
+        return new Intl.DateTimeFormat("ca-ES", { weekday:"short", day:"2-digit", month:"2-digit" }).format(dt);
+      }catch{
+        return String(ymd || "—");
+      }
+    }
+
+    function timeAgo(ts){
+      const n = Number(ts);
+      if (!Number.isFinite(n)) return "—";
+      const mins = Math.round((Date.now() - n) / 60000);
+      if (mins < 1) return "fa <1 min";
+      if (mins < 60) return `fa ${mins} min`;
+      const h = Math.round(mins / 60);
+      return `fa ${h} h`;
+    }
+
+    async function fetchForecast(){
+      const res = await fetch(`${FORECAST_URL}?t=${Date.now()}`, { cache: "no-store" });
+      const txt = await res.text();
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText}: ${txt.slice(0,140)}`);
+      return JSON.parse(txt);
+    }
+
+    function renderHourly(hourly){
+      const wrap = $("hourlyWrap");
+      if (!wrap) return;
+
+      if (!Array.isArray(hourly) || !hourly.length){
+        wrap.innerHTML = `<p class="muted-line">Sense dades horàries disponibles.</p>`;
+        return;
+      }
+
+      // cards horizontals scroll (molt usable a mòbil)
+      wrap.innerHTML = `
+        <div class="fx-hourly">
+          ${hourly.map(h => `
+            <div class="fx-hour">
+              <div class="fx-hour__t">${h.hour || "—"}</div>
+              <div class="fx-hour__v">${fmt1(h.temp_c)} °C</div>
+              <div class="fx-hour__s">Pluja: ${fmtInt(h.pop_pct)}%</div>
+              <div class="fx-hour__s">Vent: ${fmt1(h.wind_kmh)} km/h</div>
+              <div class="fx-hour__s">${h.wind_dir ? `Dir: ${h.wind_dir}` : ""}</div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function renderDaily(daily){
+      const wrap = $("dailyWrap");
+      if (!wrap) return;
+
+      if (!Array.isArray(daily) || !daily.length){
+        wrap.innerHTML = `<p class="muted-line">Sense dades diàries disponibles.</p>`;
+        return;
+      }
+
+      wrap.innerHTML = `
+        <div class="fx-daily">
+          ${daily.map(d => `
+            <div class="fx-day">
+              <div class="fx-day__left">
+                <div class="fx-day__date">${fmtDateCA(d.date)}</div>
+                <div class="fx-day__sky">${d.sky || ""}</div>
+              </div>
+              <div class="fx-day__right">
+                <div class="fx-day__temps">
+                  <span class="fx-min">${fmt1(d.tmin_c)}°</span>
+                  <span class="fx-max">${fmt1(d.tmax_c)}°</span>
+                </div>
+                <div class="fx-day__pop">Pluja: ${fmtInt(d.pop_pct)}%</div>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    async function main(){
+      const status = $("fxStatus");
+      const meta = $("fxMeta");
+
+      try{
+        const fx = await fetchForecast();
+
+        const provider = fx.provider || "—";
+        const place = fx.place || "Valls (Alt Camp)";
+        const updated = fx.updated_ts ? timeAgo(fx.updated_ts) : "—";
+
+        if (status) status.textContent = `Previsió: ${place} · ${provider} · Actualitzat ${updated}.`;
+        if (meta) {
+          meta.innerHTML = `
+            <div>Font: <strong>${provider}</strong></div>
+            <div>Actualitzat: <strong>${fx.updated_iso_utc ? fx.updated_iso_utc.replace("T"," ").slice(0,16) : "—"}</strong> (${updated})</div>
+          `;
+        }
+
+        renderHourly(fx.hourly);
+        renderDaily(fx.daily);
+      } catch(e){
+        if (status) status.textContent = "No es pot carregar la previsió (/api/forecast).";
+        $("hourlyWrap").innerHTML = `<p class="muted-line">Error carregant previsió.</p>`;
+        $("dailyWrap").innerHTML = `<p class="muted-line">Error carregant previsió.</p>`;
+      }
+    }
+
+    main();
+  </script>
+
+</body>
+</html>
