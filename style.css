@@ -728,3 +728,35 @@ h2{
   color: var(--muted);
   text-align: right;
 }
+/* 7 dies: files tipus AEMET */
+.fc7 { display: grid; gap: 10px; }
+.fc7__row{
+  display:grid;
+  grid-template-columns: 90px 48px 1fr;
+  align-items:center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,.06);
+  background: rgba(255,255,255,.03);
+}
+.fc7__day{ font-weight: 700; }
+.fc7__sub{ opacity:.75; font-size:.95rem; margin-top:2px; }
+.fc7__icon{ width: 42px; height: 42px; opacity:.95; }
+.fc7__temps{ font-size: 1.25rem; font-weight: 800; letter-spacing:.2px; }
+.fc7__meta{ opacity:.85; font-size:.95rem; display:flex; gap:14px; flex-wrap:wrap; }
+
+/* horària: banda scroll */
+.fch { display:flex; gap:10px; overflow:auto; padding-bottom: 6px; }
+.fch__item{
+  min-width: 92px;
+  padding: 10px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.06);
+  background: rgba(255,255,255,.03);
+  text-align:center;
+}
+.fch__t{ font-weight:800; font-size:1.05rem; }
+.fch__h{ opacity:.75; font-size:.9rem; margin-bottom:6px; }
+.fch__p{ opacity:.85; font-size:.9rem; margin-top:4px; }
+.fch__ico{ width: 28px; height: 28px; opacity:.95; margin: 0 auto; }
