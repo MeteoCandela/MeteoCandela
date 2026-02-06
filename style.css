@@ -673,90 +673,78 @@ h2{
   text-align: right;
   white-space: nowrap;
 }
-/* ===== Forecast ===== */
-.fx-hourly{
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(170px, 1fr);
-  gap: 12px;
-  overflow-x: auto;
-  padding: 4px 2px;
+/* ===== Forecast (AEMET-like) ===== */
+.fx-hourly--aemet{
+  display:flex;
+  gap:12px;
+  overflow-x:auto;
+  padding: 6px 2px 10px;
   scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
 }
 
-.fx-hour{
-  border: 1px solid var(--border);
+.fx-hourcard{
+  min-width: 170px;
+  flex: 0 0 auto;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.10);
   border-radius: 16px;
-  padding: 12px;
-  background: rgba(255,255,255,.03);
+  padding: 12px 12px 10px;
   scroll-snap-align: start;
 }
 
-.fx-hour__t{ font-weight: 750; opacity: .95; }
-.fx-hour__v{ font-size: 22px; font-weight: 800; margin: 6px 0; }
-.fx-hour__s{ font-size: 12px; color: var(--muted); margin-top: 3px; }
-
-.fx-daily{ display: grid; gap: 10px; }
-
-.fx-day{
+.fx-hourcard__top{
   display:flex;
-  justify-content: space-between;
-  gap: 12px;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 12px;
-  background: rgba(255,255,255,.03);
-}
-
-.fx-day__date{ font-weight: 750; }
-.fx-day__sky{ font-size: 12px; color: var(--muted); margin-top: 3px; }
-
-.fx-day__temps{
-  display:flex;
-  gap: 10px;
-  justify-content: flex-end;
-  font-weight: 800;
-  font-size: 18px;
-}
-
-.fx-min{ opacity: .75; }
-.fx-max{ opacity: .98; }
-
-.fx-day__pop{
-  margin-top: 4px;
-  font-size: 12px;
-  color: var(--muted);
-  text-align: right;
-}
-/* 7 dies: files tipus AEMET */
-.fc7 { display: grid; gap: 10px; }
-.fc7__row{
-  display:grid;
-  grid-template-columns: 90px 48px 1fr;
   align-items:center;
-  gap: 10px;
-  padding: 12px;
-  border-radius: 16px;
-  border: 1px solid rgba(255,255,255,.06);
-  background: rgba(255,255,255,.03);
+  justify-content: space-between;
+  gap:10px;
+  margin-bottom: 6px;
 }
-.fc7__day{ font-weight: 700; }
-.fc7__sub{ opacity:.75; font-size:.95rem; margin-top:2px; }
-.fc7__icon{ width: 42px; height: 42px; opacity:.95; }
-.fc7__temps{ font-size: 1.25rem; font-weight: 800; letter-spacing:.2px; }
-.fc7__meta{ opacity:.85; font-size:.95rem; display:flex; gap:14px; flex-wrap:wrap; }
 
-/* horària: banda scroll */
-.fch { display:flex; gap:10px; overflow:auto; padding-bottom: 6px; }
-.fch__item{
-  min-width: 92px;
-  padding: 10px 10px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.06);
-  background: rgba(255,255,255,.03);
-  text-align:center;
+.fx-hourcard__time{
+  font-weight: 700;
+  letter-spacing: .2px;
+  opacity: .95;
 }
-.fch__t{ font-weight:800; font-size:1.05rem; }
-.fch__h{ opacity:.75; font-size:.9rem; margin-bottom:6px; }
-.fch__p{ opacity:.85; font-size:.9rem; margin-top:4px; }
-.fch__ico{ width: 28px; height: 28px; opacity:.95; margin: 0 auto; }
+
+.fx-hourcard__icon{
+  font-size: 28px;
+  line-height: 1;
+  filter: saturate(1.05);
+}
+
+.fx-hourcard__temp{
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.05;
+  margin: 2px 0 4px;
+}
+
+.fx-hourcard__sky{
+  font-size: 13px;
+  opacity: .9;
+  min-height: 34px; /* perquè totes les cards mantinguin alçada similar */
+}
+
+.fx-hourcard__meta{
+  margin-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 8px;
+  font-size: 12.5px;
+  opacity: .95;
+}
+
+.fx-hourcard__line{
+  display:block;
+  margin: 2px 0;
+  white-space: nowrap;
+}
+
+/* daily cards: petit toc “AEMET” */
+.fx-day__sky{
+  opacity: .9;
+  font-size: 13px;
+}
+.fx-day__pop{
+  opacity: .9;
+}
