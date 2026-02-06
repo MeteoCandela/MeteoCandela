@@ -748,3 +748,86 @@ h2{
 .fx-day__pop{
   opacity: .9;
 }
+/* ===== Forecast hourly rail (app-like) ===== */
+.fx-rail{
+  display:flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 10px 4px 14px;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+}
+
+/* separador suau superior (com la imatge) */
+.fx-rail::before{
+  content:"";
+  position: sticky;
+  left: 0;
+  display:block;
+  height: 2px;
+  width: 100%;
+  background: rgba(255,255,255,.08);
+  border-radius: 999px;
+  margin-bottom: 10px;
+}
+
+/* targeta hora */
+.fx-item{
+  flex: 0 0 auto;
+  width: 140px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.035);
+  border-radius: 18px;
+  padding: 12px 12px 10px;
+  scroll-snap-align: start;
+  backdrop-filter: blur(8px);
+}
+
+.fx-time{
+  font-size: 14px;
+  font-weight: 750;
+  letter-spacing: .2px;
+  opacity: .92;
+}
+
+.fx-icon{
+  font-size: 34px;
+  line-height: 1;
+  margin: 10px 0 8px;
+}
+
+.fx-temp{
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1;
+  margin-bottom: 10px;
+}
+
+.fx-row{
+  display:flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 0;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+
+.fx-row:first-of-type{
+  border-top: 0;
+}
+
+.fx-k{
+  width: 18px;
+  opacity: .9;
+}
+
+.fx-v{
+  font-size: 13px;
+  color: rgba(255,255,255,.88);
+  white-space: nowrap;
+}
+
+.fx-row--wind .fx-v{
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
