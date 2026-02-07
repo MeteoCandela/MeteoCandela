@@ -715,3 +715,77 @@ h2{
   overflow: hidden;
   text-overflow: ellipsis;
     }
+/* ===== Forecast 7 dies (llista app-like) ===== */
+.fx7{
+  display: grid;
+  gap: 10px;
+}
+
+.fx7-row{
+  display: grid;
+  grid-template-columns: 1.3fr 1.2fr .9fr;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.03);
+  border-radius: 16px;
+}
+
+.fx7-date{
+  font-weight: 750;
+  letter-spacing: .2px;
+}
+
+.fx7-sky{
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: rgba(255,255,255,.75);
+  line-height: 1.2;
+}
+
+.fx7-temps{
+  display:flex;
+  justify-content: flex-end;
+  gap: 8px;
+  font-weight: 800;
+}
+
+.fx7-min{ color: rgba(255,255,255,.78); }
+.fx7-max{ color: rgba(255,255,255,.95); }
+
+.fx7-pop{
+  margin-top: 4px;
+  text-align: right;
+  font-size: 12.5px;
+  color: rgba(255,255,255,.85);
+}
+
+/* mini “range bar” */
+.fx7-bar{
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.10);
+  overflow: hidden;
+}
+.fx7-bar span{
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+  background: rgba(255,255,255,.35);
+}
+
+/* mòbil: 2 files (no es trenca mai) */
+@media (max-width: 520px){
+  .fx7-row{
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "left right"
+      "bar  bar";
+  }
+  .fx7-left{ grid-area: left; }
+  .fx7-right{ grid-area: right; }
+  .fx7-mid{ grid-area: bar; }
+}
