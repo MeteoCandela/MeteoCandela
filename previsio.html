@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Previsió · MeteoValls (Barri de la Candela, Valls)</title>
+  <title>Previsió Ciutat de Valls· MeteoValls</title>
   <meta name="description" content="Previsió meteorològica per Valls (Alt Camp): horària d'avui i previsió diària 7 dies (AEMET).">
 
   <link rel="canonical" href="https://meteocandela.cat/previsio.html">
@@ -53,7 +53,7 @@
 
     <!-- HOURLY -->
     <section class="card span2">
-      <h2>Previsió horària (avui)</h2>
+      <h2>Previsió horària (properes 24h)</h2>
       <div id="hourlyWrap">
         <p class="muted-line">Carregant…</p>
       </div>
@@ -129,7 +129,43 @@
       const h = Math.round(mins / 60);
       return `fa ${h} h`;
     }
+function parseHourMin(hourStr){
+  const m = String(hourStr ?? "").match(/^\s*(\d{1,2})(?::(\d{2}))?/);
+  if (!m) return { h: NaN, min: 0 };
+  return { h: Number(m[1]), min: m[2] ? Number(m[2]) : 0 };
+}
 
+function ymdTodayLocal(){
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function parseLocalDateTime(ymd, hourStr){
+  const s = String(ymd || "").slice(0,10);
+  const [Y,M,D] = s.split("-").map(Number);
+  if (!Number.isFinite(Y) || !Number.isFinite(M) || !Number.isFinite(D)) return null;
+
+  const { h, min } = parseHourMin(hourStr);
+  if (!Number.isFinite(h)) return null;
+
+  return new Date(Y, M-1, D, h, Number.isFinite(min) ? min : 0, 0, 0);
+}
+
+function fmtHourLabel(dt){
+  // "dv. 11:00" / "ds. 02:00" (clar quan salta de dia)
+  try{
+    return new Intl.DateTimeFormat("ca-ES", {
+      weekday: "short",
+      hour: "2-digit",
+      minute: "2-digit"
+    }).format(dt);
+  }catch{
+    return `${String(dt.getHours()).padStart(2,"0")}:00`;
+  }
+}
     async function fetchForecast(){
       const res = await fetch(`${FORECAST_URL}?t=${Date.now()}`, { cache: "no-store" });
       const txt = await res.text();
@@ -187,50 +223,79 @@
     }
 
     function renderHourly(hourly){
-      const wrap = $("hourlyWrap");
-      if (!wrap) return;
+  const wrap = $("hourlyWrap");
+  if (!wrap) return;
 
-      if (!Array.isArray(hourly) || !hourly.length){
-        wrap.innerHTML = `<p class="muted-line">Sense dades horàries disponibles.</p>`;
-        return;
+  if (!Array.isArray(hourly) || !hourly.length){
+    wrap.innerHTML = `<p class="muted-line">Sense dades horàries disponibles.</p>`;
+    return;
+  }
+
+  // Mostra les properes 24h a partir de l'hora actual "arrodonida" cap avall (11:10 -> 11:00)
+  const now = new Date();
+  const start = new Date(now);
+  start.setMinutes(0,0,0);
+  const startMs = start.getTime();
+  const endMs = startMs + 24 * 60 * 60 * 1000;
+
+  const todayYMD = ymdTodayLocal();
+
+  const list = hourly
+    .map(h => {
+      // Prioritat: ts (si el worker el dona). Si no, date+hour. Si no, assumeix avui.
+      let dt = null;
+
+      const ts = Number(h.ts);
+      if (Number.isFinite(ts)) {
+        dt = new Date(ts);
+      } else if (h.date) {
+        dt = parseLocalDateTime(h.date, h.hour);
+      } else {
+        dt = parseLocalDateTime(todayYMD, h.hour);
       }
 
-      // Normalitza + ordena per hora (arregla "7:00" vs "07:00" i evita NaN)
-      const list = hourly
-        .map(h => ({ ...h, _hn: hourNum(h.hour) }))
-        .filter(h => Number.isFinite(h._hn))
-        .sort((a,b) => a._hn - b._hn);
+      const ms = dt ? dt.getTime() : NaN;
+      return { ...h, _dt: dt, _ms: ms };
+    })
+    .filter(h => Number.isFinite(h._ms))
+    .filter(h => h._ms >= startMs && h._ms < endMs)
+    .sort((a,b) => a._ms - b._ms);
 
-      if (!list.length){
-        wrap.innerHTML = `<p class="muted-line">Sense dades horàries (format d'hora no reconegut).</p>`;
-        return;
-      }
+  if (!list.length){
+    wrap.innerHTML = `<p class="muted-line">Sense dades per a les properes 24 h.</p>`;
+    return;
+  }
 
-      wrap.innerHTML = `
-        <div class="fx-shelf">
-          <div class="fx-track" aria-hidden="true"></div>
-          <div class="fx-rail" role="list" aria-label="Previsió per hores">
-            ${list.map(h => `
-              <article class="fx-item" role="listitem">
-                <div class="fx-time">${h.hour || "—"}</div>
-                <div class="fx-icon" aria-hidden="true">${iconFromSky(h.sky, h.hour)}</div>
-                <div class="fx-temp">${fmt1(h.temp_c)}°</div>
+  wrap.innerHTML = `
+    <div class="fx-shelf">
+      <div class="fx-track" aria-hidden="true"></div>
+      <div class="fx-rail" role="list" aria-label="Previsió properes 24 hores">
+        ${list.map(h => {
+          const dt = h._dt;
+          const hourStrForIcon = `${String(dt.getHours()).padStart(2,"0")}:00`;
 
-                <div class="fx-row">
-                  <span class="fx-k">💧</span>
-                  <span class="fx-v">${fmt0orDash(h.pop_pct)}%</span>
-                </div>
+          return `
+            <article class="fx-item" role="listitem">
+              <div class="fx-time">${fmtHourLabel(dt)}</div>
+              <div class="fx-icon" aria-hidden="true">${iconFromSky(h.sky, hourStrForIcon)}</div>
+              <div class="fx-temp">${fmt1(h.temp_c)}°</div>
 
-                <div class="fx-row fx-row--wind">
-                  <span class="fx-k">💨</span>
-                  <span class="fx-v">${fmtWind(h)}</span>
-                </div>
-              </article>
-            `).join("")}
-          </div>
-        </div>
-      `;
-    }
+              <div class="fx-row">
+                <span class="fx-k">💧</span>
+                <span class="fx-v">${fmt0orDash(h.pop_pct)}%</span>
+              </div>
+
+              <div class="fx-row fx-row--wind">
+                <span class="fx-k">💨</span>
+                <span class="fx-v">${fmtWind(h)}</span>
+              </div>
+            </article>
+          `;
+        }).join("")}
+      </div>
+    </div>
+  `;
+}
 
     function renderDaily(daily){
       const wrap = $("dailyWrap");
