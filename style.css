@@ -630,15 +630,6 @@ h2{
   overflow: hidden; /* clau: el rail no estira la card */
 }
 
-/* línia tipus “track” (no és sticky, no és pseudo-element) */
-.fx-track{
-  height: 2px;
-  width: 100%;
-  background: rgba(255,255,255,.08);
-  border-radius: 999px;
-  margin: 6px 0 10px;
-}
-
 .fx-rail{
   display: flex;
   flex-wrap: nowrap;
