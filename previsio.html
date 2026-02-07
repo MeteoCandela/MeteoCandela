@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Previsió Ciutat de Valls· MeteoValls</title>
-  <meta name="description" content="Previsió meteorològica per Valls (Alt Camp): horària d'avui i previsió diària 7 dies (AEMET).">
+  <title>Previsió Ciutat de Valls · MeteoValls</title>
+  <meta name="description" content="Previsió meteorològica per Valls (Alt Camp): horària (properes 24 h) i previsió diària 7 dies (AEMET).">
 
   <link rel="canonical" href="https://meteocandela.cat/previsio.html">
   <meta name="robots" content="index,follow">
@@ -14,7 +14,7 @@
   <meta property="og:site_name" content="MeteoCandela">
   <meta property="og:locale" content="ca_ES">
   <meta property="og:title" content="Previsió · MeteoValls (Valls · Alt Camp)">
-  <meta property="og:description" content="Previsió horària d'avui i previsió diària 7 dies (AEMET).">
+  <meta property="og:description" content="Previsió horària (properes 24 h) i previsió diària 7 dies (AEMET).">
   <meta property="og:url" content="https://meteocandela.cat/previsio.html">
   <meta property="og:image" content="https://meteocandela.cat/og-image.png">
 
@@ -53,7 +53,7 @@
 
     <!-- HOURLY -->
     <section class="card span2">
-      <h2>Previsió horària (properes 24h)</h2>
+      <h2>Previsió horària (properes 24 h)</h2>
       <div id="hourlyWrap">
         <p class="muted-line">Carregant…</p>
       </div>
@@ -81,16 +81,16 @@
   </footer>
 
   <script>
+    // ===== Bootstrap =====
     document.getElementById("year").textContent = new Date().getFullYear();
 
     const API_BASE = "/api";
     const FORECAST_URL = `${API_BASE}/forecast`;
-
     const $ = (id) => document.getElementById(id);
 
-    // ===== Helpers robustos =====
+    // ===== Formatters / helpers =====
     function hourNum(hourStr){
-      const m = String(hourStr ?? "").match(/^\s*(\d{1,2})/); // "7:00" -> 7, "07:00" -> 7
+      const m = String(hourStr ?? "").match(/^\s*(\d{1,2})/);
       return m ? Number(m[1]) : NaN;
     }
 
@@ -110,32 +110,28 @@
       return Number.isFinite(n) ? String(Math.round(n)) : "—";
     }
 
+    function fmt0orDash(x){
+      if (x === null || x === undefined) return "—";
+      const s = String(x).trim();
+      if (s === "") return "—";
+      const n = Number(s);
+      return Number.isFinite(n) ? String(Math.round(n)) : "—";
+    }
+
     function fmtDateCA(ymd){
       try{
         const [y,m,d] = String(ymd).slice(0,10).split("-").map(Number);
         const dt = new Date(y, m-1, d);
-        return new Intl.DateTimeFormat("ca-ES", { weekday:"short", day:"2-digit", month:"2-digit" }).format(dt);
+        return new Intl.DateTimeFormat("ca-ES", {
+          weekday:"short",
+          day:"2-digit",
+          month:"2-digit"
+        }).format(dt);
       }catch{
         return String(ymd || "—");
       }
     }
 
-function fmtHourLabel(h){
-  // Si ve del worker nou, tindrà ts_local: "YYYY-MM-DDTHH:00:00"
-  const s = String(h?.ts_local ?? "").trim();
-  if (s) {
-    const dt = new Date(s); // el navegador ho interpreta en hora local
-    if (!isNaN(dt.getTime())) {
-      const wd = new Intl.DateTimeFormat("ca-ES", { weekday:"short" }).format(dt);
-      const hh = String(dt.getHours()).padStart(2,"0");
-      return `${wd}. ${hh}:00`;
-    }
-  }
-
-  // Fallback si no hi ha ts_local
-  return h?.hour || "—";
-}
-    
     function timeAgo(ts){
       const n = Number(ts);
       if (!Number.isFinite(n)) return "—";
@@ -145,62 +141,61 @@ function fmtHourLabel(h){
       const h = Math.round(mins / 60);
       return `fa ${h} h`;
     }
-function parseHourMin(hourStr){
-  const m = String(hourStr ?? "").match(/^\s*(\d{1,2})(?::(\d{2}))?/);
-  if (!m) return { h: NaN, min: 0 };
-  return { h: Number(m[1]), min: m[2] ? Number(m[2]) : 0 };
-}
 
-function ymdTodayLocal(){
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-function parseLocalDateTime(ymd, hourStr){
-  const s = String(ymd || "").slice(0,10);
-  const [Y,M,D] = s.split("-").map(Number);
-  if (!Number.isFinite(Y) || !Number.isFinite(M) || !Number.isFinite(D)) return null;
-
-  const { h, min } = parseHourMin(hourStr);
-  if (!Number.isFinite(h)) return null;
-
-  return new Date(Y, M-1, D, h, Number.isFinite(min) ? min : 0, 0, 0);
-}
-
-function fmtHourLabel(dt){
-  // "dv. 11:00" / "ds. 02:00" (clar quan salta de dia)
-  try{
-    return new Intl.DateTimeFormat("ca-ES", {
-      weekday: "short",
-      hour: "2-digit",
-      minute: "2-digit"
-    }).format(dt);
-  }catch{
-    return `${String(dt.getHours()).padStart(2,"0")}:00`;
-  }
-}
-    async function fetchForecast(){
-      const res = await fetch(`${FORECAST_URL}?t=${Date.now()}`, { cache: "no-store" });
-      const txt = await res.text();
-      if (!res.ok) throw new Error(`${res.status} ${res.statusText}: ${txt.slice(0,140)}`);
-      return JSON.parse(txt);
+    function parseHourMin(hourStr){
+      const m = String(hourStr ?? "").match(/^\s*(\d{1,2})(?::(\d{2}))?/);
+      if (!m) return { h: NaN, min: 0 };
+      return { h: Number(m[1]), min: m[2] ? Number(m[2]) : 0 };
     }
 
-    function skyToIcon(sky){
-      const s = String(sky || "").toLowerCase();
+    function ymdTodayLocal(){
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
 
-      if (s.includes("lluv") || s.includes("pluj") || s.includes("chub") || s.includes("precip")) return "🌧️";
-      if (s.includes("torment") || s.includes("tempest")) return "⛈️";
-      if (s.includes("nieve") || s.includes("neu")) return "🌨️";
-      if (s.includes("niebla") || s.includes("boira") || s.includes("bruma")) return "🌫️";
-      if (s.includes("cubierto") || s.includes("muy nub") || s.includes("nuboso")) return "☁️";
-      if (s.includes("intervalos") || s.includes("poco nub")) return "⛅";
-      if (s.includes("despejado") || s.includes("seren")) return "☀️";
+    function parseLocalDateTime(ymd, hourStr){
+      const s = String(ymd || "").slice(0,10);
+      const [Y,M,D] = s.split("-").map(Number);
+      if (!Number.isFinite(Y) || !Number.isFinite(M) || !Number.isFinite(D)) return null;
 
-      return "⛅";
+      const { h, min } = parseHourMin(hourStr);
+      if (!Number.isFinite(h)) return null;
+
+      return new Date(Y, M-1, D, h, Number.isFinite(min) ? min : 0, 0, 0);
+    }
+
+    // ÚNICA funció per l'etiqueta d'hora: accepta l'objecte horari i, si cal, usa _dt
+    function fmtHourLabelFromRow(row){
+      // 1) Preferim ts_local si ve del worker nou ("YYYY-MM-DDTHH:00:00")
+      const s = String(row?.ts_local ?? "").trim();
+      if (s) {
+        const dt = new Date(s); // interpretat en hora local del navegador
+        if (!isNaN(dt.getTime())) {
+          const wd = new Intl.DateTimeFormat("ca-ES", { weekday:"short" }).format(dt);
+          const hh = String(dt.getHours()).padStart(2,"0");
+          return `${wd}. ${hh}:00`;
+        }
+      }
+
+      // 2) Si hem calculat _dt a renderHourly, fem-lo servir
+      if (row?._dt instanceof Date && !isNaN(row._dt.getTime())) {
+        try{
+          return new Intl.DateTimeFormat("ca-ES", {
+            weekday: "short",
+            hour: "2-digit",
+            minute: "2-digit"
+          }).format(row._dt);
+        }catch{
+          const hh = String(row._dt.getHours()).padStart(2,"0");
+          return `${hh}:00`;
+        }
+      }
+
+      // 3) Fallback final
+      return row?.hour || "—";
     }
 
     function iconFromSky(s, hourStr){
@@ -220,14 +215,6 @@ function fmtHourLabel(dt){
       return isNight ? "🌙" : "🌤️";
     }
 
-    function fmt0orDash(x){
-      if (x === null || x === undefined) return "—";
-      const s = String(x).trim();
-      if (s === "") return "—";
-      const n = Number(s);
-      return Number.isFinite(n) ? String(Math.round(n)) : "—";
-    }
-
     function fmtWind(h){
       const v = Number(h.wind_kmh);
       const g = Number(h.gust_kmh);
@@ -238,80 +225,88 @@ function fmtHourLabel(dt){
       return `${vTxt}${dTxt}${gTxt}`;
     }
 
+    async function fetchForecast(){
+      const res = await fetch(`${FORECAST_URL}?t=${Date.now()}`, { cache: "no-store" });
+      const txt = await res.text();
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText}: ${txt.slice(0,140)}`);
+      return JSON.parse(txt);
+    }
+
+    // ===== Renderers =====
     function renderHourly(hourly){
-  const wrap = $("hourlyWrap");
-  if (!wrap) return;
+      const wrap = $("hourlyWrap");
+      if (!wrap) return;
 
-  if (!Array.isArray(hourly) || !hourly.length){
-    wrap.innerHTML = `<p class="muted-line">Sense dades horàries disponibles.</p>`;
-    return;
-  }
-
-  // Mostra les properes 24h a partir de l'hora actual "arrodonida" cap avall (11:10 -> 11:00)
-  const now = new Date();
-  const start = new Date(now);
-  start.setMinutes(0,0,0);
-  const startMs = start.getTime();
-  const endMs = startMs + 24 * 60 * 60 * 1000;
-
-  const todayYMD = ymdTodayLocal();
-
-  const list = hourly
-    .map(h => {
-      // Prioritat: ts (si el worker el dona). Si no, date+hour. Si no, assumeix avui.
-      let dt = null;
-
-      const ts = Number(h.ts);
-      if (Number.isFinite(ts)) {
-        dt = new Date(ts);
-      } else if (h.date) {
-        dt = parseLocalDateTime(h.date, h.hour);
-      } else {
-        dt = parseLocalDateTime(todayYMD, h.hour);
+      if (!Array.isArray(hourly) || !hourly.length){
+        wrap.innerHTML = `<p class="muted-line">Sense dades horàries disponibles.</p>`;
+        return;
       }
 
-      const ms = dt ? dt.getTime() : NaN;
-      return { ...h, _dt: dt, _ms: ms };
-    })
-    .filter(h => Number.isFinite(h._ms))
-    .filter(h => h._ms >= startMs && h._ms < endMs)
-    .sort((a,b) => a._ms - b._ms);
+      // Properes 24 h des de l'hora actual arrodonida cap avall
+      const now = new Date();
+      const start = new Date(now);
+      start.setMinutes(0,0,0);
+      const startMs = start.getTime();
+      const endMs = startMs + 24 * 60 * 60 * 1000;
 
-  if (!list.length){
-    wrap.innerHTML = `<p class="muted-line">Sense dades per a les properes 24 h.</p>`;
-    return;
-  }
+      const todayYMD = ymdTodayLocal();
 
-  wrap.innerHTML = `
-    <div class="fx-shelf">
-      <div class="fx-track" aria-hidden="true"></div>
-      <div class="fx-rail" role="list" aria-label="Previsió properes 24 hores">
-        ${list.map(h => {
-          const dt = h._dt;
-          const hourStrForIcon = `${String(dt.getHours()).padStart(2,"0")}:00`;
+      const list = hourly
+        .map(h => {
+          // Prioritat: ts (si hi és). Si no, date+hour. Si no, assumeix avui.
+          let dt = null;
 
-          return `
-            <article class="fx-item" role="listitem">
-              <div class="fx-time">${fmtHourLabel(h)}</div>
-              <div class="fx-icon" aria-hidden="true">${iconFromSky(h.sky, hourStrForIcon)}</div>
-              <div class="fx-temp">${fmt1(h.temp_c)}°</div>
+          const ts = Number(h.ts);
+          if (Number.isFinite(ts)) {
+            dt = new Date(ts);
+          } else if (h.date) {
+            dt = parseLocalDateTime(h.date, h.hour);
+          } else {
+            dt = parseLocalDateTime(todayYMD, h.hour);
+          }
 
-              <div class="fx-row">
-                <span class="fx-k">💧</span>
-                <span class="fx-v">${fmt0orDash(h.pop_pct)}%</span>
-              </div>
+          const ms = dt ? dt.getTime() : NaN;
+          return { ...h, _dt: dt, _ms: ms };
+        })
+        .filter(h => Number.isFinite(h._ms))
+        .filter(h => h._ms >= startMs && h._ms < endMs)
+        .sort((a,b) => a._ms - b._ms);
 
-              <div class="fx-row fx-row--wind">
-                <span class="fx-k">💨</span>
-                <span class="fx-v">${fmtWind(h)}</span>
-              </div>
-            </article>
-          `;
-        }).join("")}
-      </div>
-    </div>
-  `;
-}
+      if (!list.length){
+        wrap.innerHTML = `<p class="muted-line">Sense dades per a les properes 24 h.</p>`;
+        return;
+      }
+
+      wrap.innerHTML = `
+        <div class="fx-shelf">
+          <div class="fx-track" aria-hidden="true"></div>
+          <div class="fx-rail" role="list" aria-label="Previsió properes 24 hores">
+            ${list.map(h => {
+              const dt = h._dt;
+              const hourStrForIcon = dt ? `${String(dt.getHours()).padStart(2,"0")}:00` : (h.hour || "12:00");
+
+              return `
+                <article class="fx-item" role="listitem">
+                  <div class="fx-time">${fmtHourLabelFromRow(h)}</div>
+                  <div class="fx-icon" aria-hidden="true">${iconFromSky(h.sky, hourStrForIcon)}</div>
+                  <div class="fx-temp">${fmt1(h.temp_c)}°</div>
+
+                  <div class="fx-row">
+                    <span class="fx-k">💧</span>
+                    <span class="fx-v">${fmt0orDash(h.pop_pct)}%</span>
+                  </div>
+
+                  <div class="fx-row fx-row--wind">
+                    <span class="fx-k">💨</span>
+                    <span class="fx-v">${fmtWind(h)}</span>
+                  </div>
+                </article>
+              `;
+            }).join("")}
+          </div>
+        </div>
+      `;
+    }
 
     function renderDaily(daily){
       const wrap = $("dailyWrap");
@@ -363,6 +358,7 @@ function fmtHourLabel(dt){
       `;
     }
 
+    // ===== Main =====
     async function main(){
       const status = $("fxStatus");
       const meta = $("fxMeta");
@@ -386,8 +382,8 @@ function fmtHourLabel(dt){
         renderDaily(fx.daily);
       } catch(e){
         if (status) status.textContent = "No es pot carregar la previsió (/api/forecast).";
-        $("hourlyWrap").innerHTML = `<p class="muted-line">Error carregant previsió.</p>`;
-        $("dailyWrap").innerHTML = `<p class="muted-line">Error carregant previsió.</p>`;
+        const hw = $("hourlyWrap"); if (hw) hw.innerHTML = `<p class="muted-line">Error carregant previsió.</p>`;
+        const dw = $("dailyWrap");  if (dw) dw.innerHTML = `<p class="muted-line">Error carregant previsió.</p>`;
       }
     }
 
