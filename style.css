@@ -715,7 +715,7 @@ h2{
   overflow: hidden;
   text-overflow: ellipsis;
     }
-/* ===== Forecast 7 dies (llista app-like) ===== */
+/* ===== Forecast 7 dies (app-like) ===== */
 .fx7{
   display: grid;
   gap: 10px;
@@ -723,17 +723,22 @@ h2{
 
 .fx7-row{
   display: grid;
-  grid-template-columns: 1.3fr 1.2fr .9fr;
+  grid-template-columns: 1.2fr 1fr .9fr;
   gap: 12px;
   align-items: center;
   padding: 12px;
   border: 1px solid rgba(255,255,255,.10);
   background: rgba(255,255,255,.03);
   border-radius: 16px;
+  min-width: 0;
+}
+
+.fx7-left, .fx7-mid, .fx7-right{
+  min-width: 0;
 }
 
 .fx7-date{
-  font-weight: 750;
+  font-weight: 800;
   letter-spacing: .2px;
 }
 
@@ -742,13 +747,41 @@ h2{
   font-size: 12.5px;
   color: rgba(255,255,255,.75);
   line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+.fx7-mid{
+  display: grid;
+  gap: 8px;
+  justify-items: stretch;
+}
+
+/* Barra de rang de temperatura */
+.fx7-bar{
+  position: relative;
+  height: 6px;
+  width: 100%;
+  border-radius: 999px;
+  background: rgba(255,255,255,.10);
+  overflow: hidden;
+}
+
+.fx7-bar span{
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+  background: rgba(255,255,255,.35);
+}
+
+/* Columna dreta: min/max + POP */
 .fx7-temps{
-  display:flex;
+  display: flex;
   justify-content: flex-end;
   gap: 8px;
-  font-weight: 800;
+  font-weight: 900;
 }
 
 .fx7-min{ color: rgba(255,255,255,.78); }
@@ -761,31 +794,24 @@ h2{
   color: rgba(255,255,255,.85);
 }
 
-/* mini “range bar” */
-.fx7-bar{
-  position: relative;
-  height: 6px;
-  border-radius: 999px;
-  background: rgba(255,255,255,.10);
-  overflow: hidden;
-}
-.fx7-bar span{
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  border-radius: 999px;
-  background: rgba(255,255,255,.35);
-}
-
-/* mòbil: 2 files (no es trenca mai) */
+/* Mòbil: 2 files (barreta a sota) */
 @media (max-width: 520px){
   .fx7-row{
     grid-template-columns: 1fr 1fr;
     grid-template-areas:
       "left right"
-      "bar  bar";
+      "mid  mid";
   }
   .fx7-left{ grid-area: left; }
   .fx7-right{ grid-area: right; }
-  .fx7-mid{ grid-area: bar; }
+  .fx7-mid{ grid-area: mid; }
+}
+
+/* (Opcional) Track subtil per a l'horària, ja que l'estàs posant */
+.fx-track{
+  height: 2px;
+  width: 100%;
+  background: rgba(255,255,255,.08);
+  border-radius: 999px;
+  margin: 6px 0 10px;
 }
