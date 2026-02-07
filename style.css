@@ -764,7 +764,23 @@ h2{
   top: 0;
   bottom: 0;
   border-radius: 999px;
-  background: rgba(255,255,255,.35);
+
+  background: linear-gradient(
+    90deg,
+    #4fc3f7 0%,
+    #81c784 35%,
+    #ffd54f 65%,
+    #ff7043 100%
+  );
+
+  box-shadow: 0 0 6px rgba(255,255,255,.25);
+
+  animation: fxGrow .5s ease-out both;
+}
+
+@keyframes fxGrow{
+  from{ transform: scaleX(0); transform-origin:left; }
+  to{ transform: scaleX(1); }
 }
 
 /* Columna dreta: min/max + POP */
