@@ -120,6 +120,22 @@
       }
     }
 
+function fmtHourLabel(h){
+  // Si ve del worker nou, tindrà ts_local: "YYYY-MM-DDTHH:00:00"
+  const s = String(h?.ts_local ?? "").trim();
+  if (s) {
+    const dt = new Date(s); // el navegador ho interpreta en hora local
+    if (!isNaN(dt.getTime())) {
+      const wd = new Intl.DateTimeFormat("ca-ES", { weekday:"short" }).format(dt);
+      const hh = String(dt.getHours()).padStart(2,"0");
+      return `${wd}. ${hh}:00`;
+    }
+  }
+
+  // Fallback si no hi ha ts_local
+  return h?.hour || "—";
+}
+    
     function timeAgo(ts){
       const n = Number(ts);
       if (!Number.isFinite(n)) return "—";
