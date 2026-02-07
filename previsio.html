@@ -167,35 +167,46 @@
       return new Date(Y, M-1, D, h, Number.isFinite(min) ? min : 0, 0, 0);
     }
 
-    // ÚNICA funció per l'etiqueta d'hora: accepta l'objecte horari i, si cal, usa _dt
-    function fmtHourLabelFromRow(row){
-      // 1) Preferim ts_local si ve del worker nou ("YYYY-MM-DDTHH:00:00")
+    // Converteix una fila horària a Date (prioritat: ts_local > ts > date+hour > avui+hour)
+    function rowToDate(row, todayYMD){
+      // 1) ts_local ("YYYY-MM-DDTHH:00:00") del worker nou
       const s = String(row?.ts_local ?? "").trim();
       if (s) {
-        const dt = new Date(s); // interpretat en hora local del navegador
-        if (!isNaN(dt.getTime())) {
-          const wd = new Intl.DateTimeFormat("ca-ES", { weekday:"short" }).format(dt);
-          const hh = String(dt.getHours()).padStart(2,"0");
-          return `${wd}. ${hh}:00`;
-        }
+        const d = new Date(s); // interpretat en hora local del navegador
+        if (!isNaN(d.getTime())) return d;
       }
 
-      // 2) Si hem calculat _dt a renderHourly, fem-lo servir
-      if (row?._dt instanceof Date && !isNaN(row._dt.getTime())) {
-        try{
-          return new Intl.DateTimeFormat("ca-ES", {
-            weekday: "short",
-            hour: "2-digit",
-            minute: "2-digit"
-          }).format(row._dt);
-        }catch{
-          const hh = String(row._dt.getHours()).padStart(2,"0");
-          return `${hh}:00`;
-        }
+      // 2) ts (epoch ms) si algun dia ho envies
+      const ts = Number(row?.ts);
+      if (Number.isFinite(ts)) {
+        const d = new Date(ts);
+        if (!isNaN(d.getTime())) return d;
       }
 
-      // 3) Fallback final
-      return row?.hour || "—";
+      // 3) date+hour si existeix
+      if (row?.date) {
+        const d = parseLocalDateTime(row.date, row.hour);
+        if (d && !isNaN(d.getTime())) return d;
+      }
+
+      // 4) fallback: avui + hour
+      const d = parseLocalDateTime(todayYMD, row?.hour);
+      if (d && !isNaN(d.getTime())) return d;
+
+      return null;
+    }
+
+    // Etiqueta horària única (sempre des d'un Date)
+    function fmtHourLabelFromDate(dt){
+      try{
+        return new Intl.DateTimeFormat("ca-ES", {
+          weekday: "short",
+          hour: "2-digit",
+          minute: "2-digit"
+        }).format(dt);
+      }catch{
+        return `${String(dt.getHours()).padStart(2,"0")}:00`;
+      }
     }
 
     function iconFromSky(s, hourStr){
@@ -251,26 +262,25 @@
 
       const todayYMD = ymdTodayLocal();
 
-      const list = hourly
+      // 1) Parse + window filter
+      let list = hourly
         .map(h => {
-          // Prioritat: ts (si hi és). Si no, date+hour. Si no, assumeix avui.
-          let dt = null;
-
-          const ts = Number(h.ts);
-          if (Number.isFinite(ts)) {
-            dt = new Date(ts);
-          } else if (h.date) {
-            dt = parseLocalDateTime(h.date, h.hour);
-          } else {
-            dt = parseLocalDateTime(todayYMD, h.hour);
-          }
-
+          const dt = rowToDate(h, todayYMD);
           const ms = dt ? dt.getTime() : NaN;
           return { ...h, _dt: dt, _ms: ms };
         })
         .filter(h => Number.isFinite(h._ms))
         .filter(h => h._ms >= startMs && h._ms < endMs)
         .sort((a,b) => a._ms - b._ms);
+
+      // 2) Dedup per timestamp (evita "ds 18:00" i "dg 18:00" pel mateix ms)
+      const seen = new Set();
+      list = list.filter(h => {
+        const k = String(h._ms);
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      });
 
       if (!list.length){
         wrap.innerHTML = `<p class="muted-line">Sense dades per a les properes 24 h.</p>`;
@@ -287,7 +297,7 @@
 
               return `
                 <article class="fx-item" role="listitem">
-                  <div class="fx-time">${fmtHourLabelFromRow(h)}</div>
+                  <div class="fx-time">${dt ? fmtHourLabelFromDate(dt) : (h.hour || "—")}</div>
                   <div class="fx-icon" aria-hidden="true">${iconFromSky(h.sky, hourStrForIcon)}</div>
                   <div class="fx-temp">${fmt1(h.temp_c)}°</div>
 
@@ -392,4 +402,3 @@
 
 </body>
 </html>
-```0
