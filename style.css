@@ -815,3 +815,9 @@ h2{
   border-radius: 999px;
   margin: 6px 0 10px;
 }
+.fx7-icon{
+  font-size: 22px;
+  line-height: 1;
+  opacity: .95;
+  justify-self: start;
+}
