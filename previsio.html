@@ -213,34 +213,54 @@ function renderHourly(hourly){
 }
 
     function renderDaily(daily){
-      const wrap = $("dailyWrap");
-      if (!wrap) return;
+  const wrap = $("dailyWrap");
+  if (!wrap) return;
 
-      if (!Array.isArray(daily) || !daily.length){
-        wrap.innerHTML = `<p class="muted-line">Sense dades diàries disponibles.</p>`;
-        return;
-      }
+  if (!Array.isArray(daily) || !daily.length){
+    wrap.innerHTML = `<p class="muted-line">Sense dades diàries disponibles.</p>`;
+    return;
+  }
 
-      wrap.innerHTML = `
-        <div class="fx-daily">
-          ${daily.map(d => `
-            <div class="fx-day">
-              <div class="fx-day__left">
-                <div class="fx-day__date">${fmtDateCA(d.date)}</div>
-                <div class="fx-day__sky">${d.sky || ""}</div>
-              </div>
-              <div class="fx-day__right">
-                <div class="fx-day__temps">
-                  <span class="fx-min">${fmt1(d.tmin_c)}°</span>
-                  <span class="fx-max">${fmt1(d.tmax_c)}°</span>
-                </div>
-                <div class="fx-day__pop">Pluja: ${fmtInt(d.pop_pct)}%</div>
-              </div>
+  // rang global per pintar una barreta proporcional
+  const mins = daily.map(d => Number(d.tmin_c)).filter(Number.isFinite);
+  const maxs = daily.map(d => Number(d.tmax_c)).filter(Number.isFinite);
+  const gMin = mins.length ? Math.min(...mins) : 0;
+  const gMax = maxs.length ? Math.max(...maxs) : 0;
+  const span = (gMax - gMin) || 1;
+
+  const bar = (tmin, tmax) => {
+    const a = Number(tmin), b = Number(tmax);
+    if (!Number.isFinite(a) || !Number.isFinite(b)) return "";
+    const left = ((a - gMin) / span) * 100;
+    const width = ((b - a) / span) * 100;
+    return `<div class="fx7-bar"><span style="left:${left}%;width:${width}%"></span></div>`;
+  };
+
+  wrap.innerHTML = `
+    <div class="fx7">
+      ${daily.map(d => `
+        <div class="fx7-row">
+          <div class="fx7-left">
+            <div class="fx7-date">${fmtDateCA(d.date)}</div>
+            <div class="fx7-sky">${d.sky || ""}</div>
+          </div>
+
+          <div class="fx7-mid">
+            ${bar(d.tmin_c, d.tmax_c)}
+          </div>
+
+          <div class="fx7-right">
+            <div class="fx7-temps">
+              <span class="fx7-min">${fmt1(d.tmin_c)}°</span>
+              <span class="fx7-max">${fmt1(d.tmax_c)}°</span>
             </div>
-          `).join("")}
+            <div class="fx7-pop">💧 ${fmtInt(d.pop_pct)}%</div>
+          </div>
         </div>
-      `;
-    }
+      `).join("")}
+    </div>
+  `;
+}
 
     async function main(){
       const status = $("fxStatus");
