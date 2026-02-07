@@ -246,8 +246,9 @@ function renderHourly(hourly){
           </div>
 
           <div class="fx7-mid">
-            ${bar(d.tmin_c, d.tmax_c)}
-          </div>
+  <div class="fx7-icon" aria-hidden="true">${iconFromSky(d.sky, "12:00")}</div>
+  ${bar(d.tmin_c, d.tmax_c)}
+</div>
 
           <div class="fx7-right">
             <div class="fx7-temps">
