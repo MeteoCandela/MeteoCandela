@@ -88,13 +88,25 @@
 
     const $ = (id) => document.getElementById(id);
 
+    // ===== Helpers robustos =====
+    function hourNum(hourStr){
+      const m = String(hourStr ?? "").match(/^\s*(\d{1,2})/); // "7:00" -> 7, "07:00" -> 7
+      return m ? Number(m[1]) : NaN;
+    }
+
     function fmt1(x){
-      const n = Number(x);
+      if (x === null || x === undefined) return "—";
+      const s = String(x).trim();
+      if (s === "") return "—";
+      const n = Number(s);
       return Number.isFinite(n) ? n.toFixed(1) : "—";
     }
 
     function fmtInt(x){
-      const n = Number(x);
+      if (x === null || x === undefined) return "—";
+      const s = String(x).trim();
+      if (s === "") return "—";
+      const n = Number(s);
       return Number.isFinite(n) ? String(Math.round(n)) : "—";
     }
 
@@ -126,142 +138,149 @@
     }
 
     function skyToIcon(sky){
-  const s = String(sky || "").toLowerCase();
+      const s = String(sky || "").toLowerCase();
 
-  // pluja / ruixats
-  if (s.includes("lluv") || s.includes("pluj") || s.includes("chub") || s.includes("precip")) return "🌧️";
-  // tempesta
-  if (s.includes("torment") || s.includes("tempest")) return "⛈️";
-  // neu
-  if (s.includes("nieve") || s.includes("neu")) return "🌨️";
-  // boira
-  if (s.includes("niebla") || s.includes("boira") || s.includes("bruma")) return "🌫️";
-  // núvols
-  if (s.includes("cubierto") || s.includes("muy nub") || s.includes("nuboso")) return "☁️";
-  if (s.includes("intervalos") || s.includes("poco nub")) return "⛅";
-  // cel serè
-  if (s.includes("despejado") || s.includes("seren")) return "☀️";
+      if (s.includes("lluv") || s.includes("pluj") || s.includes("chub") || s.includes("precip")) return "🌧️";
+      if (s.includes("torment") || s.includes("tempest")) return "⛈️";
+      if (s.includes("nieve") || s.includes("neu")) return "🌨️";
+      if (s.includes("niebla") || s.includes("boira") || s.includes("bruma")) return "🌫️";
+      if (s.includes("cubierto") || s.includes("muy nub") || s.includes("nuboso")) return "☁️";
+      if (s.includes("intervalos") || s.includes("poco nub")) return "⛅";
+      if (s.includes("despejado") || s.includes("seren")) return "☀️";
 
-  return "⛅";
-}
+      return "⛅";
+    }
 
-function iconFromSky(s, hourStr){
-  const h = Number(String(hourStr || "").slice(0,2));
-  const isNight = Number.isFinite(h) ? (h >= 20 || h < 8) : false;
+    function iconFromSky(s, hourStr){
+      const h = hourNum(hourStr);
+      const isNight = Number.isFinite(h) ? (h >= 20 || h < 8) : false;
 
-  if (!s) return isNight ? "🌙" : "🌤️";
-  const t = s.toLowerCase();
+      if (!s) return isNight ? "🌙" : "🌤️";
+      const t = String(s).toLowerCase();
 
-  if (t.includes("torment")) return "⛈️";
-  if (t.includes("lluvia") || t.includes("pluja")) return "🌧️";
-  if (t.includes("nieve") || t.includes("neu")) return "🌨️";
-  if (t.includes("niebla") || t.includes("boira")) return "🌫️";
-  if (t.includes("cubierto")) return "☁️";
-  if (t.includes("nuboso")) return isNight ? "☁️🌙" : "⛅";
-  if (t.includes("despejado")) return isNight ? "🌙" : "☀️";
-  return isNight ? "🌙" : "🌤️";
-}
+      if (t.includes("torment")) return "⛈️";
+      if (t.includes("lluvia") || t.includes("pluja")) return "🌧️";
+      if (t.includes("nieve") || t.includes("neu")) return "🌨️";
+      if (t.includes("niebla") || t.includes("boira")) return "🌫️";
+      if (t.includes("cubierto")) return "☁️";
+      if (t.includes("nuboso")) return isNight ? "☁️🌙" : "⛅";
+      if (t.includes("despejado")) return isNight ? "🌙" : "☀️";
+      return isNight ? "🌙" : "🌤️";
+    }
 
-function fmt0orDash(x){
-  const n = Number(x);
-  return Number.isFinite(n) ? String(Math.round(n)) : "—";
-}
+    function fmt0orDash(x){
+      if (x === null || x === undefined) return "—";
+      const s = String(x).trim();
+      if (s === "") return "—";
+      const n = Number(s);
+      return Number.isFinite(n) ? String(Math.round(n)) : "—";
+    }
 
-function fmtWind(h){
-  const v = Number(h.wind_kmh);
-  const g = Number(h.gust_kmh);
-  const dir = h.wind_dir ? String(h.wind_dir) : "";
-  const vTxt = Number.isFinite(v) ? `${Math.round(v)} km/h` : "—";
-  const gTxt = Number.isFinite(g) ? ` · ratxa ${Math.round(g)}` : "";
-  const dTxt = dir ? ` ${dir}` : "";
-  return `${vTxt}${dTxt}${gTxt}`;
-}
+    function fmtWind(h){
+      const v = Number(h.wind_kmh);
+      const g = Number(h.gust_kmh);
+      const dir = h.wind_dir ? String(h.wind_dir) : "";
+      const vTxt = Number.isFinite(v) ? `${Math.round(v)} km/h` : "—";
+      const gTxt = Number.isFinite(g) ? ` · ratxa ${Math.round(g)}` : "";
+      const dTxt = dir ? ` ${dir}` : "";
+      return `${vTxt}${dTxt}${gTxt}`;
+    }
 
-function renderHourly(hourly){
-  const wrap = $("hourlyWrap");
-  if (!wrap) return;
+    function renderHourly(hourly){
+      const wrap = $("hourlyWrap");
+      if (!wrap) return;
 
-  if (!Array.isArray(hourly) || !hourly.length){
-    wrap.innerHTML = `<p class="muted-line">Sense dades horàries disponibles.</p>`;
-    return;
-  }
+      if (!Array.isArray(hourly) || !hourly.length){
+        wrap.innerHTML = `<p class="muted-line">Sense dades horàries disponibles.</p>`;
+        return;
+      }
 
-  wrap.innerHTML = `
-    <div class="fx-shelf">
-     <div class="fx-track" aria-hidden="true"></div>
-      <div class="fx-rail" role="list" aria-label="Previsió per hores">
-        ${hourly.map(h => `
-          <article class="fx-item" role="listitem">
-            <div class="fx-time">${h.hour || "—"}</div>
-            <div class="fx-icon" aria-hidden="true">${iconFromSky(h.sky, h.hour)}</div>
-            <div class="fx-temp">${fmt1(h.temp_c)}°</div>
+      // Normalitza + ordena per hora (arregla "7:00" vs "07:00" i evita NaN)
+      const list = hourly
+        .map(h => ({ ...h, _hn: hourNum(h.hour) }))
+        .filter(h => Number.isFinite(h._hn))
+        .sort((a,b) => a._hn - b._hn);
 
-            <div class="fx-row">
-              <span class="fx-k">💧</span>
-              <span class="fx-v">${fmt0orDash(h.pop_pct)}%</span>
-            </div>
+      if (!list.length){
+        wrap.innerHTML = `<p class="muted-line">Sense dades horàries (format d'hora no reconegut).</p>`;
+        return;
+      }
 
-            <div class="fx-row fx-row--wind">
-              <span class="fx-k">💨</span>
-              <span class="fx-v">${fmtWind(h)}</span>
-            </div>
-          </article>
-        `).join("")}
-      </div>
-    </div>
-  `;
-}
+      wrap.innerHTML = `
+        <div class="fx-shelf">
+          <div class="fx-track" aria-hidden="true"></div>
+          <div class="fx-rail" role="list" aria-label="Previsió per hores">
+            ${list.map(h => `
+              <article class="fx-item" role="listitem">
+                <div class="fx-time">${h.hour || "—"}</div>
+                <div class="fx-icon" aria-hidden="true">${iconFromSky(h.sky, h.hour)}</div>
+                <div class="fx-temp">${fmt1(h.temp_c)}°</div>
 
-    function renderDaily(daily){
-  const wrap = $("dailyWrap");
-  if (!wrap) return;
+                <div class="fx-row">
+                  <span class="fx-k">💧</span>
+                  <span class="fx-v">${fmt0orDash(h.pop_pct)}%</span>
+                </div>
 
-  if (!Array.isArray(daily) || !daily.length){
-    wrap.innerHTML = `<p class="muted-line">Sense dades diàries disponibles.</p>`;
-    return;
-  }
-
-  // rang global per pintar una barreta proporcional
-  const mins = daily.map(d => Number(d.tmin_c)).filter(Number.isFinite);
-  const maxs = daily.map(d => Number(d.tmax_c)).filter(Number.isFinite);
-  const gMin = mins.length ? Math.min(...mins) : 0;
-  const gMax = maxs.length ? Math.max(...maxs) : 0;
-  const span = (gMax - gMin) || 1;
-
-  const bar = (tmin, tmax) => {
-    const a = Number(tmin), b = Number(tmax);
-    if (!Number.isFinite(a) || !Number.isFinite(b)) return "";
-    const left = ((a - gMin) / span) * 100;
-    const width = ((b - a) / span) * 100;
-    return `<div class="fx7-bar"><span style="left:${left}%;width:${width}%"></span></div>`;
-  };
-
-  wrap.innerHTML = `
-    <div class="fx7">
-      ${daily.map(d => `
-        <div class="fx7-row">
-          <div class="fx7-left">
-            <div class="fx7-date">${fmtDateCA(d.date)}</div>
-            <div class="fx7-sky">${d.sky || ""}</div>
-          </div>
-
-          <div class="fx7-mid">
-  <div class="fx7-icon" aria-hidden="true">${iconFromSky(d.sky, "12:00")}</div>
-  ${bar(d.tmin_c, d.tmax_c)}
-</div>
-
-          <div class="fx7-right">
-            <div class="fx7-temps">
-              <span class="fx7-min">${fmt1(d.tmin_c)}°</span>
-              <span class="fx7-max">${fmt1(d.tmax_c)}°</span>
-            </div>
-            <div class="fx7-pop">💧 ${fmtInt(d.pop_pct)}%</div>
+                <div class="fx-row fx-row--wind">
+                  <span class="fx-k">💨</span>
+                  <span class="fx-v">${fmtWind(h)}</span>
+                </div>
+              </article>
+            `).join("")}
           </div>
         </div>
-      `).join("")}
-    </div>
-  `;
-}
+      `;
+    }
+
+    function renderDaily(daily){
+      const wrap = $("dailyWrap");
+      if (!wrap) return;
+
+      if (!Array.isArray(daily) || !daily.length){
+        wrap.innerHTML = `<p class="muted-line">Sense dades diàries disponibles.</p>`;
+        return;
+      }
+
+      const mins = daily.map(d => Number(d.tmin_c)).filter(Number.isFinite);
+      const maxs = daily.map(d => Number(d.tmax_c)).filter(Number.isFinite);
+      const gMin = mins.length ? Math.min(...mins) : 0;
+      const gMax = maxs.length ? Math.max(...maxs) : 0;
+      const span = (gMax - gMin) || 1;
+
+      const bar = (tmin, tmax) => {
+        const a = Number(tmin), b = Number(tmax);
+        if (!Number.isFinite(a) || !Number.isFinite(b)) return "";
+        const left = ((a - gMin) / span) * 100;
+        const width = ((b - a) / span) * 100;
+        return `<div class="fx7-bar"><span style="left:${left}%;width:${width}%"></span></div>`;
+      };
+
+      wrap.innerHTML = `
+        <div class="fx7">
+          ${daily.map(d => `
+            <div class="fx7-row">
+              <div class="fx7-left">
+                <div class="fx7-date">${fmtDateCA(d.date)}</div>
+                <div class="fx7-sky">${d.sky || ""}</div>
+              </div>
+
+              <div class="fx7-mid">
+                <div class="fx7-icon" aria-hidden="true">${iconFromSky(d.sky, "12:00")}</div>
+                ${bar(d.tmin_c, d.tmax_c)}
+              </div>
+
+              <div class="fx7-right">
+                <div class="fx7-temps">
+                  <span class="fx7-min">${fmt1(d.tmin_c)}°</span>
+                  <span class="fx7-max">${fmt1(d.tmax_c)}°</span>
+                </div>
+                <div class="fx7-pop">💧 ${fmtInt(d.pop_pct)}%</div>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
 
     async function main(){
       const status = $("fxStatus");
@@ -296,3 +315,4 @@ function renderHourly(hourly){
 
 </body>
 </html>
+```0
