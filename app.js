@@ -84,7 +84,27 @@
     if (d >= 292.5 && d < 337.5) return "NW – Mestral";
     return "—";
   }
+  
+function pickHomeEmoji(row){
+  // Prioritat 1: pluja real ara mateix
+  const rate = Number(row?.rain_rate_mmh);
+  if (Number.isFinite(rate) && rate > 0) return "🌧️";
 
+  // (opcional) si vols també tenir en compte tempesta quan plou fort:
+  // if (Number.isFinite(rate) && rate >= 10) return "⛈️";
+
+  // Prioritat 2: dia/nit
+  const h = new Date().getHours();
+  const isNight = (h >= 20 || h < 8);
+  return isNight ? "🌙" : "🌤️";
+}
+
+function renderHomeIcon(row){
+  const el = document.getElementById("currentIcon");
+  if (!el) return;
+  el.textContent = pickHomeEmoji(row);
+}
+  
   function toNumOrNull(v) {
     if (v === null || v === undefined || v === "") return null;
     const n = Number(v);
