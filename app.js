@@ -548,9 +548,13 @@ function renderHomeIcon(row){
     }
 
     setSourceLine(`Font: ${sourceTag}`);
-    renderCurrent(actualRow, historyRows);
-    renderStatus(actualRow.ts, hb);
-    return actualRow;
+renderCurrent(actualRow, historyRows);
+
+// ✅ icona HOME (pluja real té prioritat)
+renderHomeIcon(actualRow);
+
+renderStatus(actualRow.ts, hb);
+return actualRow;
   }
 
   function renderChartsIfNeeded(reason) {
