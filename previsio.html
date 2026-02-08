@@ -168,41 +168,41 @@
 
     // Converteix una fila horària a Date (prioritat: ts_local > ts > date+hour > avui+hour)
     function rowToDate(row, todayYMD){
-      // 1) ts_local ("YYYY-MM-DDTHH:00:00") -> parse LOCAL explícit
-const s = String(row?.ts_local ?? "").trim();
-if (s) {
-  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/);
-  if (m) {
-    const Y = Number(m[1]);
-    const Mo = Number(m[2]);
-    const D = Number(m[3]);
-    const H = Number(m[4]);
-    const Mi = Number(m[5]);
-    const S = Number(m[6] ?? 0);
-    const d = new Date(Y, Mo - 1, D, H, Mi, S, 0); // <-- LOCAL garantida
+  // 1) ts_local ("YYYY-MM-DDTHH:00:00") -> parse LOCAL explícit
+  const s = String(row?.ts_local ?? "").trim();
+  if (s) {
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/);
+    if (m) {
+      const Y  = Number(m[1]);
+      const Mo = Number(m[2]);
+      const D  = Number(m[3]);
+      const H  = Number(m[4]);
+      const Mi = Number(m[5]);
+      const S  = Number(m[6] ?? 0);
+      const d = new Date(Y, Mo - 1, D, H, Mi, S, 0); // LOCAL
+      if (!isNaN(d.getTime())) return d;
+    }
+  } // ✅ IMPORTANT: tancar l'if (s)
+
+  // 2) ts (epoch ms)
+  const ts = Number(row?.ts);
+  if (Number.isFinite(ts)) {
+    const d = new Date(ts);
     if (!isNaN(d.getTime())) return d;
   }
+
+  // 3) date+hour
+  if (row?.date) {
+    const d = parseLocalDateTime(row.date, row.hour);
+    if (d && !isNaN(d.getTime())) return d;
+  }
+
+  // 4) fallback: avui + hour
+  const d = parseLocalDateTime(todayYMD, row?.hour);
+  if (d && !isNaN(d.getTime())) return d;
+
+  return null;
 }
-
-      // 2) ts (epoch ms) si algun dia ho envies
-      const ts = Number(row?.ts);
-      if (Number.isFinite(ts)) {
-        const d = new Date(ts);
-        if (!isNaN(d.getTime())) return d;
-      }
-
-      // 3) date+hour si existeix
-      if (row?.date) {
-        const d = parseLocalDateTime(row.date, row.hour);
-        if (d && !isNaN(d.getTime())) return d;
-      }
-
-      // 4) fallback: avui + hour
-      const d = parseLocalDateTime(todayYMD, row?.hour);
-      if (d && !isNaN(d.getTime())) return d;
-
-      return null;
-    }
 
     // Etiqueta horària única (sempre des d'un Date)
     function fmtHourLabelFromDate(dt){
