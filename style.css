@@ -955,6 +955,9 @@ h2{
 .wx--wind { color: rgba(200, 230, 201, .95); }
 /* Icona de la targeta "Actual" */
 .card { position: relative; } /* si ja ho tens, cap problema */
+.current-card{
+  position: relative;
+}
 
 .current-icon{
   position: absolute;
