@@ -966,17 +966,11 @@ h2{
   user-select: none;
   pointer-events: none;
 }
-#cardCurrent{ position: relative; }
-
-#cardCurrent{
-  position: relative;
-}
-
 .current-icon{
   position: absolute;
 
-  top: 46px;      /* just sota el títol "Actual" */
-  right: 18px;   /* enganxat al marge dret */
+  top: 28px;      /* puja icona */
+  right: 22px;   /* separa una mica del marge */
 
   font-size: 34px;
   line-height: 1;
