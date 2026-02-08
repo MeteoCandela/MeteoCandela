@@ -246,10 +246,10 @@ function skyToCA(s){
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
     
-    function svgIcon(id, cls){
+function svgIcon(id, cls){
   const href = `${ASSET_BASE}/icons/weather.svg#${id}`;
   return `<svg class="wx ${cls}" aria-hidden="true">
-    <use href="${href}"></use>
+    <use href="${href}" xlink:href="${href}"></use>
   </svg>`;
 }
 
