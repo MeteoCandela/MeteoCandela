@@ -270,6 +270,9 @@ function skyToCA(s){
       if (t.includes("nuboso")) return isNight ? "☁️🌙" : "⛅";
       if (t.includes("despejado")) return isNight ? "🌙" : "☀️";
       return isNight ? "🌙" : "🌤️";
+      if (t.includes("cobert")) return "☁️";
+if (t.includes("ennuvolat")) return isNight ? "☁️🌙" : "⛅";
+if (t.includes("serè")) return isNight ? "🌙" : "☀️";
     }
 
     function fmtWind(h){
