@@ -955,28 +955,28 @@ h2{
 .wx--wind { color: rgba(200, 230, 201, .95); }
 /* Icona de la targeta "Actual" */
 .card { position: relative; } /* si ja ho tens, cap problema */
-.current-card{
-  position: relative;
-}
 
-.current-icon{
-  position: absolute;
-
-  top: 28px;
-  right: 22px;
-
-  font-size: 34px;
-  line-height: 1;
-
-  opacity: .95;
-  filter: drop-shadow(0 4px 12px rgba(0,0,0,.35));
-
-  user-select: none;
-  pointer-events: none;
-}
 .card-head{
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap:12px;
+}
+/* Header de la card “Actual”: títol esquerra + icona dreta */
+#cardCurrent .card-head{
+  display: flex;
+  align-items: center;        /* mateixa alçada */
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* Icona a la dreta, alineada amb el títol */
+#cardCurrent .now-icon{
+  font-size: 34px;
+  line-height: 1;
+  opacity: .95;
+  user-select: none;
+  pointer-events: none;
+  flex: 0 0 auto;
+  transform: translateY(2px); /* micro-ajust perquè quedi visualment “entre” */
 }
