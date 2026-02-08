@@ -471,6 +471,11 @@ list = list.filter(h => {
 
         renderHourly(fx.hourly);
         renderDaily(fx.daily);
+
+        document.querySelector("#fxStatus").insertAdjacentHTML(
+  "afterend",
+  `<div style="padding:12px">TEST ICONA: ${svgIcon("sun","wx--sun")}</div>`
+);
       } catch(e){
         if (status) status.textContent = "No es pot carregar la previsió (/api/forecast).";
         const hw = $("hourlyWrap"); if (hw) hw.innerHTML = `<p class="muted-line">Error carregant previsió.</p>`;
