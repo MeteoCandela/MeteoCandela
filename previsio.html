@@ -216,7 +216,45 @@
         return `${String(dt.getHours()).padStart(2,"0")}:00`;
       }
     }
+function skyToCA(s){
+  if (!s) return s;
+  const txt = String(s).trim();
 
+  const map = {
+    "Poco nuboso": "Poc ennuvolat",
+    "Intervalos nubosos": "Intervals ennuvolats",
+    "Intervalos nubosos con lluvia escasa": "Intervals ennuvolats amb pluja feble",
+    "Intervalos nubosos con lluvia": "Intervals ennuvolats amb pluja",
+    "Nuboso": "Ennuvolat",
+    "Muy nuboso": "Molt ennuvolat",
+    "Cubierto": "Cobert",
+    "Despejado": "Serè",
+    "Lluvia": "Pluja",
+    "Lluvia escasa": "Pluja feble",
+    "Tormentas": "Tempestes",
+    "Tormenta": "Tempesta",
+    "Nieve": "Neu",
+    "Niebla": "Boira",
+    "Bruma": "Broma"
+  };
+
+  if (map[txt]) return map[txt];
+
+  // Fallback robust (aguanta variants)
+  return txt
+    .replaceAll("Intervalos nubosos", "Intervals ennuvolats")
+    .replaceAll("Poco nuboso", "Poc ennuvolat")
+    .replaceAll("Muy nuboso", "Molt ennuvolat")
+    .replaceAll("Despejado", "Serè")
+    .replaceAll("Cubierto", "Cobert")
+    .replaceAll("Nuboso", "Ennuvolat")
+    .replaceAll("lluvia escasa", "pluja feble")
+    .replaceAll("lluvia", "pluja")
+    .replaceAll("Tormentas", "Tempestes")
+    .replaceAll("Nieve", "Neu")
+    .replaceAll("Niebla", "Boira");
+}
+    
     function iconFromSky(s, hourStr){
       const h = hourNum(hourStr);
       const isNight = Number.isFinite(h) ? (h >= 20 || h < 8) : false;
