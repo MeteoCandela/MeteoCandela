@@ -876,7 +876,53 @@ h2{
   opacity: .92;
 }
 
-/* opcional: que no molesti a gent amb reducció de moviment */
+.install-tip{
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 14px;
+  background: rgba(0,0,0,.35);
+}
+
+.install-tip__card{
+  width: min(520px, 100%);
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(25, 33, 52, .92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #fff;
+  box-shadow: 0 18px 46px rgba(0,0,0,.45);
+  padding: 14px 14px 12px 14px;
+}
+
+.install-tip__title{
+  font-weight: 800;
+  font-size: 16px;
+  margin-bottom: 6px;
+}
+
+.install-tip__text{
+  opacity: .92;
+  line-height: 1.35;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.install-tip__close{
+  width: 100%;
+  border-radius: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.08);
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 @media (prefers-reduced-motion: reduce){
   .install-fab{ transition: none; }
 }
