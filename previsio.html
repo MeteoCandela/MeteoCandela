@@ -256,24 +256,48 @@ function skyToCA(s){
 }
     
     function iconFromSky(s, hourStr){
-      const h = hourNum(hourStr);
-      const isNight = Number.isFinite(h) ? (h >= 20 || h < 8) : false;
+  const h = hourNum(hourStr);
+  const isNight = Number.isFinite(h) ? (h >= 20 || h < 8) : false;
 
-      if (!s) return isNight ? "🌙" : "🌤️";
-      const t = String(s).toLowerCase();
+  if (!s) return isNight ? "🌙" : "🌤️";
+  const t = String(s).toLowerCase();
 
-      if (t.includes("torment")) return "⛈️";
-      if (t.includes("lluvia") || t.includes("pluja")) return "🌧️";
-      if (t.includes("nieve") || t.includes("neu")) return "🌨️";
-      if (t.includes("niebla") || t.includes("boira")) return "🌫️";
-      if (t.includes("cubierto")) return "☁️";
-      if (t.includes("nuboso")) return isNight ? "☁️🌙" : "⛅";
-      if (t.includes("despejado")) return isNight ? "🌙" : "☀️";
-      return isNight ? "🌙" : "🌤️";
-      if (t.includes("cobert")) return "☁️";
-if (t.includes("ennuvolat")) return isNight ? "☁️🌙" : "⛅";
-if (t.includes("serè")) return isNight ? "🌙" : "☀️";
-    }
+  // Tempestes
+  if (t.includes("torment")) return "⛈️";
+
+  // Neu
+  if (t.includes("nieve") || t.includes("neu")) return "🌨️";
+
+  // Boira / broma
+  if (t.includes("niebla") || t.includes("boira") || t.includes("bruma")) return "🌫️";
+
+  // Pluja feble
+  if (t.includes("pluja feble") || t.includes("lluvia escasa"))
+    return isNight ? "🌧️🌙" : "🌦️";
+
+  // Pluja normal
+  if (t.includes("pluja") || t.includes("lluvia"))
+    return "🌧️";
+
+  // Intervals ennuvolats
+  if (t.includes("intervals") || t.includes("intervalos"))
+    return isNight ? "☁️🌙" : "🌤️";
+
+  // Cobert
+  if (t.includes("cobert") || t.includes("cubierto"))
+    return "☁️";
+
+  // Ennuvolat
+  if (t.includes("ennuvolat") || t.includes("nuboso"))
+    return isNight ? "☁️🌙" : "⛅";
+
+  // Serè / despejat
+  if (t.includes("serè") || t.includes("despejado"))
+    return isNight ? "🌙" : "☀️";
+
+  // Fallback
+  return isNight ? "🌙" : "🌤️";
+}
 
     function fmtWind(h){
   const v = Number(h.wind_kmh);
