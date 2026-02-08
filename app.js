@@ -622,46 +622,93 @@
       console.error(e);
     }
   }
-// ===== PWA Install FAB (Android/Chrome) =====
+// ===== PWA Install FAB (Android/Chrome) + iOS tip =====
 (() => {
   const fab = () => document.getElementById("btnInstallFab");
+  const tip = () => document.getElementById("iosInstallTip");
+  const tipClose = () => document.getElementById("btnCloseIosTip");
 
-  // Si ja s'està executant com a "app", amaga el botó.
   function isStandalone() {
     return window.matchMedia?.("(display-mode: standalone)")?.matches
       || window.navigator?.standalone === true; // iOS legacy
   }
 
-  let deferredPrompt = null;
+  function isIOS() {
+    // iPadOS recent també pot reportar "MacIntel" amb touch points
+    const ua = navigator.userAgent || "";
+    const iOSUA = /iPad|iPhone|iPod/.test(ua);
+    const iPadOS = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+    return iOSUA || iPadOS;
+  }
 
-  function hide() {
+  function isSafari() {
+    const ua = navigator.userAgent || "";
+    const isAppleWebKit = /AppleWebKit/.test(ua);
+    const isChrome = /CriOS/.test(ua);
+    const isFirefox = /FxiOS/.test(ua);
+    return isAppleWebKit && !isChrome && !isFirefox;
+  }
+
+  function hideFab() {
     const b = fab();
     if (b) b.style.display = "none";
   }
 
-  function show() {
+  function showFab(labelText) {
     const b = fab();
-    if (b) b.style.display = "inline-flex";
+    if (!b) return;
+    if (labelText) b.textContent = labelText;
+    b.style.display = "inline-flex";
   }
 
-  // Amagar d'entrada si ja és app
-  if (isStandalone()) hide();
+  function openTip() {
+    const t = tip();
+    if (t) t.style.display = "flex";
+  }
 
-  // Quan el navegador permet instal·lar
+  function closeTip() {
+    const t = tip();
+    if (t) t.style.display = "none";
+  }
+
+  // Si ja s'executa com app, no mostrem res
+  if (isStandalone()) {
+    hideFab();
+    closeTip();
+    return;
+  }
+
+  // iOS/Safari: no hi ha beforeinstallprompt -> mostrem botó guia
+  if (isIOS() && isSafari()) {
+    showFab("📌 Afegir a inici");
+    const b = fab();
+    if (b) b.addEventListener("click", openTip);
+
+    const c = tipClose();
+    if (c) c.addEventListener("click", closeTip);
+
+    const t = tip();
+    if (t) t.addEventListener("click", (e) => {
+      if (e.target === t) closeTip(); // click fora del card
+    });
+
+    return;
+  }
+
+  // Android/Chrome i altres navegadors compatibles: prompt real
+  let deferredPrompt = null;
+
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
     deferredPrompt = e;
-
-    if (!isStandalone()) show();
+    showFab("⬇️ Instal·la l’app");
   });
 
-  // Quan s'ha instal·lat
   window.addEventListener("appinstalled", () => {
     deferredPrompt = null;
-    hide();
+    hideFab();
   });
 
-  // Click del botó
   document.addEventListener("click", async (e) => {
     const b = fab();
     if (!b || e.target !== b) return;
@@ -669,9 +716,8 @@
 
     deferredPrompt.prompt();
     await deferredPrompt.userChoice;
-
     deferredPrompt = null;
-    hide();
+    hideFab();
   });
 })();
   main();
