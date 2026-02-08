@@ -349,7 +349,7 @@ list = list.filter(h => {
               return `
                 <article class="fx-item" role="listitem">
                   <div class="fx-time">${dt ? fmtHourLabelFromDate(dt) : (h.hour || "—")}</div>
-                  <div class="fx-icon" aria-hidden="true">${iconFromSky(h.sky, hourStrForIcon)}</div>
+                  <div class="fx-icon" aria-hidden="true">${iconFromSky(skyToCA(h.sky), hourStrForIcon)}</div>
                   <div class="fx-temp">${fmt1(h.temp_c)}°</div>
 
                   <div class="fx-row">
