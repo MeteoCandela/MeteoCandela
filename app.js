@@ -622,6 +622,57 @@
       console.error(e);
     }
   }
+// ===== PWA Install FAB (Android/Chrome) =====
+(() => {
+  const fab = () => document.getElementById("btnInstallFab");
 
+  // Si ja s'està executant com a "app", amaga el botó.
+  function isStandalone() {
+    return window.matchMedia?.("(display-mode: standalone)")?.matches
+      || window.navigator?.standalone === true; // iOS legacy
+  }
+
+  let deferredPrompt = null;
+
+  function hide() {
+    const b = fab();
+    if (b) b.style.display = "none";
+  }
+
+  function show() {
+    const b = fab();
+    if (b) b.style.display = "inline-flex";
+  }
+
+  // Amagar d'entrada si ja és app
+  if (isStandalone()) hide();
+
+  // Quan el navegador permet instal·lar
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+
+    if (!isStandalone()) show();
+  });
+
+  // Quan s'ha instal·lat
+  window.addEventListener("appinstalled", () => {
+    deferredPrompt = null;
+    hide();
+  });
+
+  // Click del botó
+  document.addEventListener("click", async (e) => {
+    const b = fab();
+    if (!b || e.target !== b) return;
+    if (!deferredPrompt) return;
+
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+
+    deferredPrompt = null;
+    hide();
+  });
+})();
   main();
 })();
