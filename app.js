@@ -150,7 +150,22 @@
     const el = $("sourceLine");
     if (el) el.textContent = txt;
   }
+function pickHomeEmoji(row){
+  // Prioritat absoluta: pluja en temps real (Ecowitt)
+  const rate = Number(row?.rain_rate_mmh);
+  if (Number.isFinite(rate) && rate > 0) return "🌧️";
 
+  // Si no plou: dia/nit
+  const h = new Date().getHours();
+  const isNight = (h >= 20 || h < 8);
+  return isNight ? "🌙" : "🌤️";
+}
+
+function renderHomeIcon(row){
+  const el = $("currentIcon");
+  if (!el) return;
+  el.textContent = pickHomeEmoji(row);
+}
   function renderCurrent(current, historyRows) {
     if ($("temp")) $("temp").textContent = current.temp_c == null ? "—" : fmt1(current.temp_c);
     if ($("hum")) $("hum").textContent = current.hum_pct == null ? "—" : String(Math.round(current.hum_pct));
