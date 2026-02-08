@@ -570,11 +570,12 @@ function renderHomeIcon(row){
     setSourceLine(`Font: ${sourceTag}`);
 renderCurrent(actualRow, historyRows);
 
-// ✅ icona HOME (pluja real té prioritat)
-renderHomeIcon(actualRow);
+
 
 renderStatus(actualRow.ts, hb);
-return actualRow;
+// ✅ icona HOME (pluja real té prioritat)
+renderHomeIcon(actualRow);
+    return actualRow;
   }
 
   function renderChartsIfNeeded(reason) {
