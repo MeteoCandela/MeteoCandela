@@ -935,3 +935,21 @@ h2{
 .install-fab::before{
   content: "⬇️";
 }
+/* === MeteoValls SVG weather icons === */
+.wx{
+  width: 34px;
+  height: 34px;
+  display: inline-block;
+  color: rgba(255,255,255,.92); /* per defecte */
+  vertical-align: middle;
+}
+
+.wx use{ pointer-events: none; }
+
+/* Colors suaus (si vols tot blanc, elimina aquestes línies) */
+.wx--sun, .wx--partly { color: rgba(255, 214, 79, .95); }
+.wx--rain, .wx--drizzle { color: rgba(79, 195, 247, .95); }
+.wx--storm { color: rgba(186, 104, 200, .95); }
+.wx--fog, .wx--cloud, .wx--cloud-moon { color: rgba(176, 190, 197, .95); }
+.wx--snow { color: rgba(224, 247, 250, .95); }
+.wx--wind { color: rgba(200, 230, 201, .95); }
