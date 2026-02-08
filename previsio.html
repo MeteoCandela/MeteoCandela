@@ -227,14 +227,19 @@
     }
 
     function fmtWind(h){
-      const v = Number(h.wind_kmh);
-      const g = Number(h.gust_kmh);
-      const dir = h.wind_dir ? String(h.wind_dir) : "";
-      const vTxt = Number.isFinite(v) ? `${Math.round(v)} km/h` : "—";
-      const gTxt = Number.isFinite(g) ? ` · ratxa ${Math.round(g)}` : "";
-      const dTxt = dir ? ` ${dir}` : "";
-      return `${vTxt}${dTxt}${gTxt}`;
-    }
+  const v = Number(h.wind_kmh);
+  const g = Number(h.gust_kmh);
+  const dir = h.wind_dir ? String(h.wind_dir) : "";
+
+  const vTxt = Number.isFinite(v) ? `${Math.round(v)} km/h` : "—";
+  const dTxt = dir ? ` ${dir}` : "";
+  const gust = Number.isFinite(g) ? `<div class="fx-gust">ratxa ${Math.round(g)} km/h</div>` : "";
+
+  return `
+    <div class="fx-wind-main">${vTxt}${dTxt}</div>
+    ${gust}
+  `;
+}
 
     async function fetchForecast(){
       const res = await fetch(`${FORECAST_URL}?t=${Date.now()}`, { cache: "no-store" });
