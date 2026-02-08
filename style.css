@@ -846,3 +846,37 @@ h2{
   opacity: 0.7;
   margin-top: 2px;
 }
+.install-fab{
+  position: fixed;
+  right: 16px;
+  bottom: 18px;
+  z-index: 9999;
+
+  padding: 12px 14px;
+  border-radius: 999px;
+
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(25, 33, 52, .86);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1;
+
+  box-shadow: 0 14px 34px rgba(0,0,0,.35);
+  cursor: pointer;
+
+  transition: transform .12s ease, opacity .12s ease;
+}
+
+.install-fab:active{
+  transform: scale(.98);
+  opacity: .92;
+}
+
+/* opcional: que no molesti a gent amb reducció de moviment */
+@media (prefers-reduced-motion: reduce){
+  .install-fab{ transition: none; }
+}
