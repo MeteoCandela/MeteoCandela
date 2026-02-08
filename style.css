@@ -966,6 +966,11 @@ h2{
   user-select: none;
   pointer-events: none;
 }
+.current-icon{
+  font-size: 34px;
+  line-height: 1;
+  margin: 6px 0 10px 0;
+}
 .card-head{
   display:flex;
   align-items:center;
