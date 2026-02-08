@@ -956,26 +956,19 @@ h2{
 /* Icona de la targeta "Actual" */
 .card { position: relative; } /* si ja ho tens, cap problema */
 
-.now-icon{
-  position: absolute;
-  top: 64px;     /* ajusta si la vols més amunt/avall */
-  right: 18px;
-  font-size: 44px;
-  line-height: 1;
-  opacity: .95;
-  user-select: none;
-  pointer-events: none;
-}
 .current-icon{
   position: absolute;
 
-  top: 28px;      /* puja icona */
-  right: 22px;   /* separa una mica del marge */
+  top: 28px;
+  right: 22px;
 
   font-size: 34px;
   line-height: 1;
 
+  opacity: .95;
   filter: drop-shadow(0 4px 12px rgba(0,0,0,.35));
+
+  user-select: none;
   pointer-events: none;
 }
 .card-head{
@@ -983,11 +976,4 @@ h2{
   align-items:center;
   justify-content:space-between;
   gap:12px;
-}
-
-.now-icon{
-  font-size: 42px;
-  line-height: 1;
-  opacity: .95;
-  flex: 0 0 auto;
 }
