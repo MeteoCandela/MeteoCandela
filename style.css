@@ -968,13 +968,20 @@ h2{
 }
 #cardCurrent{ position: relative; }
 
+#cardCurrent{
+  position: relative;
+}
+
 .current-icon{
   position: absolute;
-  right: 18px;
-  top: 74px;              /* ajust fi: puja/baixa segons et quedi */
-  font-size: 40px;
+
+  top: 46px;      /* just sota el títol "Actual" */
+  right: 18px;   /* enganxat al marge dret */
+
+  font-size: 34px;
   line-height: 1;
-  filter: drop-shadow(0 6px 16px rgba(0,0,0,.35));
+
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,.35));
   pointer-events: none;
 }
 .card-head{
