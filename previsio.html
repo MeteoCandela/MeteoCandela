@@ -11,7 +11,7 @@
   <meta name="theme-color" content="#0b1220">
 
   <meta property="og:type" content="article">
-  <meta property="og:site_name" content="MeteoCandela">
+  <meta property="og:site_name" content="MeteoValls">
   <meta property="og:locale" content="ca_ES">
   <meta property="og:title" content="Previsió · MeteoValls (Valls · Alt Camp)">
   <meta property="og:description" content="Previsió horària (properes 24 h) i previsió diària 7 dies (AEMET).">
@@ -22,103 +22,7 @@
 </head>
 
 <body>
-<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
 
-  <symbol id="sun" viewBox="0 0 64 64">
-    <circle cx="32" cy="32" r="10" fill="none" stroke="currentColor" stroke-width="4"/>
-    <g stroke="currentColor" stroke-width="4" stroke-linecap="round">
-      <path d="M32 6v8"/><path d="M32 50v8"/>
-      <path d="M6 32h8"/><path d="M50 32h8"/>
-      <path d="M13 13l6 6"/><path d="M45 45l6 6"/>
-      <path d="M51 13l-6 6"/><path d="M19 45l-6 6"/>
-    </g>
-  </symbol>
-
-  <symbol id="moon" viewBox="0 0 64 64">
-    <path d="M40 10c-7 3-12 10-12 18 0 11 9 20 20 20 2 0 4 0 6-1-4 7-11 11-20 11-13 0-24-11-24-24 0-10 6-19 15-23 6-3 11-3 15-1z"
-          fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
-  </symbol>
-
-  <symbol id="cloud" viewBox="0 0 64 64">
-    <path d="M20 46h26c8 0 14-6 14-13s-6-13-14-13c-1 0-2 0-3 .2C40 14 34 10 27 10 17 10 9 18 9 28c0 1 0 2 .2 3C5 33 3 37 3 41c0 3 3 5 7 5h10z"
-          fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
-  </symbol>
-
-  <symbol id="partly" viewBox="0 0 64 64">
-    <g transform="translate(-6,-6)">
-      <circle cx="30" cy="30" r="7" fill="none" stroke="currentColor" stroke-width="4"/>
-      <g stroke="currentColor" stroke-width="4" stroke-linecap="round">
-        <path d="M30 14v5"/><path d="M30 41v5"/>
-        <path d="M14 30h5"/><path d="M41 30h5"/>
-        <path d="M19 19l4 4"/><path d="M37 37l4 4"/>
-        <path d="M41 19l-4 4"/><path d="M23 37l-4 4"/>
-      </g>
-    </g>
-    <path d="M20 50h26c8 0 14-6 14-13s-6-13-14-13c-1 0-2 0-3 .2C40 18 34 14 27 14 17 14 9 22 9 32c0 1 0 2 .2 3C5 37 3 41 3 45c0 3 3 5 7 5h10z"
-          fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
-  </symbol>
-
-  <symbol id="cloud-moon" viewBox="0 0 64 64">
-    <g transform="translate(6,-2)">
-      <path d="M36 12c-5 2-9 8-9 14 0 9 7 16 16 16 2 0 3 0 5-1-3 5-9 8-15 8-11 0-20-9-20-20 0-8 5-15 12-18 4-2 8-2 11 1z"
-            fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
-    </g>
-    <path d="M20 50h26c8 0 14-6 14-13s-6-13-14-13c-1 0-2 0-3 .2C40 18 34 14 27 14 17 14 9 22 9 32c0 1 0 2 .2 3C5 37 3 41 3 45c0 3 3 5 7 5h10z"
-          fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
-  </symbol>
-
-  <symbol id="rain" viewBox="0 0 64 64">
-    <path d="M20 36h26c8 0 14-6 14-13s-6-13-14-13c-1 0-2 0-3 .2C40 4 34 0 27 0 17 0 9 8 9 18c0 1 0 2 .2 3C5 23 3 27 3 31c0 3 3 5 7 5h10z"
-          transform="translate(0,10)"
-          fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
-    <g stroke="currentColor" stroke-width="4" stroke-linecap="round">
-      <path d="M22 50l-4 8"/><path d="M34 50l-4 8"/><path d="M46 50l-4 8"/>
-    </g>
-  </symbol>
-
-  <symbol id="drizzle" viewBox="0 0 64 64">
-    <path d="M20 36h26c8 0 14-6 14-13s-6-13-14-13c-1 0-2 0-3 .2C40 4 34 0 27 0 17 0 9 8 9 18c0 1 0 2 .2 3C5 23 3 27 3 31c0 3 3 5 7 5h10z"
-          transform="translate(0,10)"
-          fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
-    <g stroke="currentColor" stroke-width="4" stroke-linecap="round">
-      <path d="M24 52v6"/><path d="M36 52v6"/><path d="M48 52v6"/>
-    </g>
-  </symbol>
-
-  <symbol id="storm" viewBox="0 0 64 64">
-    <path d="M20 36h26c8 0 14-6 14-13s-6-13-14-13c-1 0-2 0-3 .2C40 4 34 0 27 0 17 0 9 8 9 18c0 1 0 2 .2 3C5 23 3 27 3 31c0 3 3 5 7 5h10z"
-          transform="translate(0,10)"
-          fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M34 46l-8 10h8l-4 8 12-14h-8l4-4z"
-          fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
-  </symbol>
-
-  <symbol id="snow" viewBox="0 0 64 64">
-    <path d="M20 36h26c8 0 14-6 14-13s-6-13-14-13c-1 0-2 0-3 .2C40 4 34 0 27 0 17 0 9 8 9 18c0 1 0 2 .2 3C5 23 3 27 3 31c0 3 3 5 7 5h10z"
-          transform="translate(0,10)"
-          fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
-    <g stroke="currentColor" stroke-width="4" stroke-linecap="round">
-      <path d="M22 52h0"/><path d="M34 56h0"/><path d="M46 52h0"/>
-    </g>
-  </symbol>
-
-  <symbol id="fog" viewBox="0 0 64 64">
-    <path d="M20 34h26c8 0 14-6 14-13s-6-13-14-13c-1 0-2 0-3 .2C40 2 34-2 27-2 17-2 9 6 9 16c0 1 0 2 .2 3C5 21 3 25 3 29c0 3 3 5 7 5h10z"
-          transform="translate(0,12)"
-          fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
-    <g stroke="currentColor" stroke-width="4" stroke-linecap="round" opacity=".95">
-      <path d="M12 50h40"/><path d="M8 56h44"/><path d="M14 62h36"/>
-    </g>
-  </symbol>
-
-  <symbol id="wind" viewBox="0 0 64 64">
-    <g fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M10 24h30c6 0 10-4 10-9 0-4-3-7-7-7-5 0-8 3-8 8"/>
-      <path d="M10 38h38c5 0 9-3 9-8 0-4-3-7-7-7-4 0-7 3-7 7"/>
-      <path d="M10 52h26c5 0 9-3 9-8 0-4-3-7-7-7"/>
-    </g>
-  </symbol>
-</svg>
   <header class="hero hero--small">
     <div class="hero__overlay"></div>
     <div class="hero__content">
@@ -164,7 +68,7 @@
         <div>Actualitzat: —</div>
       </div>
     </section>
-   
+
     <section class="card span2" style="text-align:center">
       <p><a href="/" class="back-link">← Tornar a Inici</a></p>
     </section>
@@ -180,11 +84,10 @@
     document.getElementById("year").textContent = new Date().getFullYear();
 
     const API_BASE = "/api";
-    const ASSET_BASE = location.pathname.startsWith("/MeteoCandela/") ? "/MeteoCandela" : "";
     const FORECAST_URL = `${API_BASE}/forecast`;
     const $ = (id) => document.getElementById(id);
 
-    // ===== Formatters / helpers =====
+    // ===== Helpers =====
     function hourNum(hourStr){
       const m = String(hourStr ?? "").match(/^\s*(\d{1,2})/);
       return m ? Number(m[1]) : NaN;
@@ -265,43 +168,43 @@
 
     // Converteix una fila horària a Date (prioritat: ts_local > ts > date+hour > avui+hour)
     function rowToDate(row, todayYMD){
-  // 1) ts_local ("YYYY-MM-DDTHH:00:00") -> parse LOCAL explícit
-  const s = String(row?.ts_local ?? "").trim();
-  if (s) {
-    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/);
-    if (m) {
-      const Y  = Number(m[1]);
-      const Mo = Number(m[2]);
-      const D  = Number(m[3]);
-      const H  = Number(m[4]);
-      const Mi = Number(m[5]);
-      const S  = Number(m[6] ?? 0);
-      const d = new Date(Y, Mo - 1, D, H, Mi, S, 0); // LOCAL
-      if (!isNaN(d.getTime())) return d;
+      // 1) ts_local ("YYYY-MM-DDTHH:00:00") -> parse LOCAL explícit
+      const s = String(row?.ts_local ?? "").trim();
+      if (s) {
+        const m = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/);
+        if (m) {
+          const Y  = Number(m[1]);
+          const Mo = Number(m[2]);
+          const D  = Number(m[3]);
+          const H  = Number(m[4]);
+          const Mi = Number(m[5]);
+          const S  = Number(m[6] ?? 0);
+          const d = new Date(Y, Mo - 1, D, H, Mi, S, 0); // LOCAL
+          if (!isNaN(d.getTime())) return d;
+        }
+      }
+
+      // 2) ts (epoch ms)
+      const ts = Number(row?.ts);
+      if (Number.isFinite(ts)) {
+        const d = new Date(ts);
+        if (!isNaN(d.getTime())) return d;
+      }
+
+      // 3) date+hour
+      if (row?.date) {
+        const d = parseLocalDateTime(row.date, row.hour);
+        if (d && !isNaN(d.getTime())) return d;
+      }
+
+      // 4) fallback: avui + hour
+      const d = parseLocalDateTime(todayYMD, row?.hour);
+      if (d && !isNaN(d.getTime())) return d;
+
+      return null;
     }
-  } // ✅ IMPORTANT: tancar l'if (s)
 
-  // 2) ts (epoch ms)
-  const ts = Number(row?.ts);
-  if (Number.isFinite(ts)) {
-    const d = new Date(ts);
-    if (!isNaN(d.getTime())) return d;
-  }
-
-  // 3) date+hour
-  if (row?.date) {
-    const d = parseLocalDateTime(row.date, row.hour);
-    if (d && !isNaN(d.getTime())) return d;
-  }
-
-  // 4) fallback: avui + hour
-  const d = parseLocalDateTime(todayYMD, row?.hour);
-  if (d && !isNaN(d.getTime())) return d;
-
-  return null;
-}
-
-    // Etiqueta horària única (sempre des d'un Date)
+    // Etiqueta horària (sempre des d'un Date)
     function fmtHourLabelFromDate(dt){
       try{
         return new Intl.DateTimeFormat("ca-ES", {
@@ -313,104 +216,70 @@
         return `${String(dt.getHours()).padStart(2,"0")}:00`;
       }
     }
-function skyToCA(s){
-  if (!s) return s;
 
-  let t = String(s).trim().toLowerCase();
+    // Traducció AEMET ES -> CA (robusta)
+    function skyToCA(s){
+      if (!s) return s;
 
-  // Connector castellà -> català
-  t = t.replaceAll(" con ", " amb ");
+      let t = String(s).trim().toLowerCase();
 
-  // Fenòmens
-  t = t.replaceAll("lluvia escasa", "pluja feble");
-  t = t.replaceAll("lluvia", "pluja");
-  t = t.replaceAll("tormentas", "tempestes");
-  t = t.replaceAll("tormenta", "tempesta");
-  t = t.replaceAll("nieve", "neu");
-  t = t.replaceAll("niebla", "boira");
-  t = t.replaceAll("bruma", "broma");
+      // Connector castellà -> català
+      t = t.replaceAll(" con ", " amb ");
 
-  // Estat del cel
-  t = t.replaceAll("intervalos nubosos", "intervals ennuvolats");
-  t = t.replaceAll("poco nuboso", "poc ennuvolat");
-  t = t.replaceAll("muy nuboso", "molt ennuvolat");
-  t = t.replaceAll("nuboso", "ennuvolat");
-  t = t.replaceAll("cubierto", "cobert");
-  t = t.replaceAll("despejado", "serè");
+      // Fenòmens
+      t = t.replaceAll("lluvia escasa", "pluja feble");
+      t = t.replaceAll("lluvia", "pluja");
+      t = t.replaceAll("tormentas", "tempestes");
+      t = t.replaceAll("tormenta", "tempesta");
+      t = t.replaceAll("nieve", "neu");
+      t = t.replaceAll("niebla", "boira");
+      t = t.replaceAll("bruma", "broma");
 
-  // Capitalitza la primera lletra (per mostrar-ho “net”)
-  return t.charAt(0).toUpperCase() + t.slice(1);
-}
-    
-function svgIcon(id, cls){
-  return `<svg class="wx ${cls}" aria-hidden="true" viewBox="0 0 64 64">
-    <use href="#${id}"></use>
-  </svg>`;
-}
+      // Estat del cel
+      t = t.replaceAll("intervalos nubosos", "intervals ennuvolats");
+      t = t.replaceAll("poco nuboso", "poc ennuvolat");
+      t = t.replaceAll("muy nuboso", "molt ennuvolat");
+      t = t.replaceAll("nuboso", "ennuvolat");
+      t = t.replaceAll("cubierto", "cobert");
+      t = t.replaceAll("despejado", "serè");
 
-function iconFromSky(s, hourStr){
-  const h = hourNum(hourStr);
-  const isNight = Number.isFinite(h) ? (h >= 20 || h < 8) : false;
+      return t.charAt(0).toUpperCase() + t.slice(1);
+    }
 
-  if (!s) return isNight ? svgIcon("moon","wx--moon") : svgIcon("partly","wx--partly");
-  const t = String(s).toLowerCase();
+    // Icones en emoji (nit/dia + fenòmens)
+    function iconFromSky(s, hourStr){
+      const h = hourNum(hourStr);
+      const isNight = Number.isFinite(h) ? (h >= 20 || h < 8) : false;
 
-  // Tempestes
-  if (t.includes("torment")) return svgIcon("storm","wx--storm");
+      const t = String(s || "").toLowerCase();
 
-  // Neu
-  if (t.includes("nieve") || t.includes("neu")) return svgIcon("snow","wx--snow");
+      if (t.includes("torment")) return "⛈️";
+      if (t.includes("nieve") || t.includes("neu")) return "🌨️";
+      if (t.includes("niebla") || t.includes("boira") || t.includes("bruma") || t.includes("broma")) return "🌫️";
+      if (t.includes("pluja feble") || t.includes("lluvia escasa")) return "🌦️";
+      if (t.includes("pluja") || t.includes("lluvia")) return "🌧️";
+      if (t.includes("cobert") || t.includes("cubierto")) return "☁️";
+      if (t.includes("intervals") || t.includes("intervalos")) return isNight ? "☁️🌙" : "🌤️";
+      if (t.includes("ennuvolat") || t.includes("nuboso")) return "⛅";
+      if (t.includes("serè") || t.includes("despejado")) return isNight ? "🌙" : "☀️";
 
-  // Boira / broma
-  if (t.includes("niebla") || t.includes("boira") || t.includes("bruma") || t.includes("broma"))
-    return svgIcon("fog","wx--fog");
-
-  // Pluja feble
-  if (t.includes("pluja feble") || t.includes("lluvia escasa"))
-    return svgIcon("drizzle","wx--drizzle");
-
-  // Pluja normal
-  if (t.includes("pluja") || t.includes("lluvia"))
-    return svgIcon("rain","wx--rain");
-
-  // Intervals ennuvolats
-  if (t.includes("intervals") || t.includes("intervalos"))
-    return isNight ? svgIcon("cloud-moon","wx--cloud-moon") : svgIcon("partly","wx--partly");
-
-  // Cobert
-  if (t.includes("cobert") || t.includes("cubierto"))
-    return svgIcon("cloud","wx--cloud");
-
-  // Ennuvolat
-  if (t.includes("ennuvolat") || t.includes("nuboso"))
-    return isNight ? svgIcon("cloud-moon","wx--cloud-moon") : svgIcon("cloud","wx--cloud");
-
-  // Serè / despejat
-  if (t.includes("serè") || t.includes("despejado"))
-    return isNight ? svgIcon("moon","wx--moon") : svgIcon("sun","wx--sun");
-
-  // Vent (si algun dia ho poses a sky)
-  if (t.includes("vent") || t.includes("wind"))
-    return svgIcon("wind","wx--wind");
-
-  // Fallback
-  return isNight ? svgIcon("moon","wx--moon") : svgIcon("partly","wx--partly");
-}
+      return isNight ? "🌙" : "🌤️";
+    }
 
     function fmtWind(h){
-  const v = Number(h.wind_kmh);
-  const g = Number(h.gust_kmh);
-  const dir = h.wind_dir ? String(h.wind_dir) : "";
+      const v = Number(h.wind_kmh);
+      const g = Number(h.gust_kmh);
+      const dir = h.wind_dir ? String(h.wind_dir) : "";
 
-  const vTxt = Number.isFinite(v) ? `${Math.round(v)} km/h` : "—";
-  const dTxt = dir ? ` ${dir}` : "";
-  const gust = Number.isFinite(g) ? `<div class="fx-gust">ratxa ${Math.round(g)} km/h</div>` : "";
+      const vTxt = Number.isFinite(v) ? `${Math.round(v)} km/h` : "—";
+      const dTxt = dir ? ` ${dir}` : "";
+      const gust = Number.isFinite(g) ? `<div class="fx-gust">ratxa ${Math.round(g)} km/h</div>` : "";
 
-  return `
-    <div class="fx-wind-main">${vTxt}${dTxt}</div>
-    ${gust}
-  `;
-}
+      return `
+        <div class="fx-wind-main">${vTxt}${dTxt}</div>
+        ${gust}
+      `;
+    }
 
     async function fetchForecast(){
       const res = await fetch(`${FORECAST_URL}?t=${Date.now()}`, { cache: "no-store" });
@@ -438,7 +307,7 @@ function iconFromSky(s, hourStr){
 
       const todayYMD = ymdTodayLocal();
 
-      // 1) Parse + window filter
+      // Parse + window filter
       let list = hourly
         .map(h => {
           const dt = rowToDate(h, todayYMD);
@@ -449,14 +318,14 @@ function iconFromSky(s, hourStr){
         .filter(h => h._ms >= startMs && h._ms < endMs)
         .sort((a,b) => a._ms - b._ms);
 
-      // 2) Dedup per hora (bucket): evita duplicats “mateixa hora” encara que variï ms
-const seen = new Set();
-list = list.filter(h => {
-  const bucket = Math.floor(h._ms / 3600000); // 1 bucket = 1 hora
-  if (seen.has(bucket)) return false;
-  seen.add(bucket);
-  return true;
-});
+      // Dedup per hora (bucket)
+      const seen = new Set();
+      list = list.filter(h => {
+        const bucket = Math.floor(h._ms / 3600000);
+        if (seen.has(bucket)) return false;
+        seen.add(bucket);
+        return true;
+      });
 
       if (!list.length){
         wrap.innerHTML = `<p class="muted-line">Sense dades per a les properes 24 h.</p>`;
@@ -469,12 +338,16 @@ list = list.filter(h => {
           <div class="fx-rail" role="list" aria-label="Previsió properes 24 hores">
             ${list.map(h => {
               const dt = h._dt;
-              const hourStrForIcon = dt ? `${String(dt.getHours()).padStart(2,"0")}:00` : (h.hour || "12:00");
+              const hourStrForIcon = dt
+                ? `${String(dt.getHours()).padStart(2,"0")}:00`
+                : (h.hour || "12:00");
+
+              const skyCA = skyToCA(h.sky);
 
               return `
                 <article class="fx-item" role="listitem">
                   <div class="fx-time">${dt ? fmtHourLabelFromDate(dt) : (h.hour || "—")}</div>
-                  <div class="fx-icon" aria-hidden="true">${iconFromSky(skyToCA(h.sky), hourStrForIcon)}</div>
+                  <div class="fx-icon" aria-hidden="true">${iconFromSky(skyCA, hourStrForIcon)}</div>
                   <div class="fx-temp">${fmt1(h.temp_c)}°</div>
 
                   <div class="fx-row">
@@ -484,7 +357,7 @@ list = list.filter(h => {
 
                   <div class="fx-row fx-row--wind">
                     <span class="fx-k">💨</span>
-                  <div class="fx-v">${fmtWind(h)}</div>
+                    <div class="fx-v">${fmtWind(h)}</div>
                   </div>
                 </article>
               `;
@@ -519,27 +392,30 @@ list = list.filter(h => {
 
       wrap.innerHTML = `
         <div class="fx7">
-          ${daily.map(d => `
-            <div class="fx7-row">
-              <div class="fx7-left">
-                <div class="fx7-date">${fmtDateCA(d.date)}</div>
-                <div class="fx7-sky">${skyToCA(d.sky) || ""}</div>
-              </div>
-
-              <div class="fx7-mid">
-                <div class="fx7-icon" aria-hidden="true">${iconFromSky(skyToCA(d.sky), "12:00")}</div>
-                ${bar(d.tmin_c, d.tmax_c)}
-              </div>
-
-              <div class="fx7-right">
-                <div class="fx7-temps">
-                  <span class="fx7-min">${fmt1(d.tmin_c)}°</span>
-                  <span class="fx7-max">${fmt1(d.tmax_c)}°</span>
+          ${daily.map(d => {
+            const skyCA = skyToCA(d.sky);
+            return `
+              <div class="fx7-row">
+                <div class="fx7-left">
+                  <div class="fx7-date">${fmtDateCA(d.date)}</div>
+                  <div class="fx7-sky">${skyCA || ""}</div>
                 </div>
-                <div class="fx7-pop">💧 ${fmtInt(d.pop_pct)}%</div>
+
+                <div class="fx7-mid">
+                  <div class="fx7-icon" aria-hidden="true">${iconFromSky(skyCA, "12:00")}</div>
+                  ${bar(d.tmin_c, d.tmax_c)}
+                </div>
+
+                <div class="fx7-right">
+                  <div class="fx7-temps">
+                    <span class="fx7-min">${fmt1(d.tmin_c)}°</span>
+                    <span class="fx7-max">${fmt1(d.tmax_c)}°</span>
+                  </div>
+                  <div class="fx7-pop">💧 ${fmtInt(d.pop_pct)}%</div>
+                </div>
               </div>
-            </div>
-          `).join("")}
+            `;
+          }).join("")}
         </div>
       `;
     }
@@ -567,11 +443,8 @@ list = list.filter(h => {
         renderHourly(fx.hourly);
         renderDaily(fx.daily);
 
-        document.querySelector("#fxStatus").insertAdjacentHTML(
-  "afterend",
-  `<div style="padding:12px">TEST ICONA: ${svgIcon("sun","wx--sun")}</div>`
-);
       } catch(e){
+        console.error(e);
         if (status) status.textContent = "No es pot carregar la previsió (/api/forecast).";
         const hw = $("hourlyWrap"); if (hw) hw.innerHTML = `<p class="muted-line">Error carregant previsió.</p>`;
         const dw = $("dailyWrap");  if (dw) dw.innerHTML = `<p class="muted-line">Error carregant previsió.</p>`;
