@@ -84,7 +84,7 @@
     document.getElementById("year").textContent = new Date().getFullYear();
 
     const API_BASE = "/api";
-    const ASSET_BASE = (location.pathname.includes("/MeteoCandela/")) ? "/MeteoCandela" : "";
+    const ASSET_BASE = location.pathname.startsWith("/MeteoCandela/") ? "/MeteoCandela" : "";
     const FORECAST_URL = `${API_BASE}/forecast`;
     const $ = (id) => document.getElementById(id);
 
