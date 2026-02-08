@@ -953,3 +953,16 @@ h2{
 .wx--fog, .wx--cloud, .wx--cloud-moon { color: rgba(176, 190, 197, .95); }
 .wx--snow { color: rgba(224, 247, 250, .95); }
 .wx--wind { color: rgba(200, 230, 201, .95); }
+/* Icona de la targeta "Actual" */
+.card { position: relative; } /* si ja ho tens, cap problema */
+
+.now-icon{
+  position: absolute;
+  top: 64px;     /* ajusta si la vols més amunt/avall */
+  right: 18px;
+  font-size: 44px;
+  line-height: 1;
+  opacity: .95;
+  user-select: none;
+  pointer-events: none;
+}
