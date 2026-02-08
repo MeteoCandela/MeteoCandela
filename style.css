@@ -926,3 +926,12 @@ h2{
 @media (prefers-reduced-motion: reduce){
   .install-fab{ transition: none; }
 }
+.install-fab{
+  gap: 8px;
+  align-items: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.install-fab::before{
+  content: "⬇️";
+}
