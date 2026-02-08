@@ -246,48 +246,60 @@ function skyToCA(s){
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
     
-    function iconFromSky(s, hourStr){
+    function svgIcon(id, cls){
+  const href = `${ASSET_BASE}/icons/weather.svg#${id}`;
+  return `<svg class="wx ${cls}" aria-hidden="true">
+    <use href="${href}"></use>
+  </svg>`;
+}
+
+function iconFromSky(s, hourStr){
   const h = hourNum(hourStr);
   const isNight = Number.isFinite(h) ? (h >= 20 || h < 8) : false;
 
-  if (!s) return isNight ? "🌙" : "🌤️";
+  if (!s) return isNight ? svgIcon("moon","wx--moon") : svgIcon("partly","wx--partly");
   const t = String(s).toLowerCase();
 
   // Tempestes
-  if (t.includes("torment")) return "⛈️";
+  if (t.includes("torment")) return svgIcon("storm","wx--storm");
 
   // Neu
-  if (t.includes("nieve") || t.includes("neu")) return "🌨️";
+  if (t.includes("nieve") || t.includes("neu")) return svgIcon("snow","wx--snow");
 
   // Boira / broma
-  if (t.includes("niebla") || t.includes("boira") || t.includes("bruma")) return "🌫️";
+  if (t.includes("niebla") || t.includes("boira") || t.includes("bruma") || t.includes("broma"))
+    return svgIcon("fog","wx--fog");
 
   // Pluja feble
   if (t.includes("pluja feble") || t.includes("lluvia escasa"))
-    return isNight ? "🌧️🌙" : "🌦️";
+    return svgIcon("drizzle","wx--drizzle");
 
   // Pluja normal
   if (t.includes("pluja") || t.includes("lluvia"))
-    return "🌧️";
+    return svgIcon("rain","wx--rain");
 
   // Intervals ennuvolats
   if (t.includes("intervals") || t.includes("intervalos"))
-    return isNight ? "☁️🌙" : "🌤️";
+    return isNight ? svgIcon("cloud-moon","wx--cloud-moon") : svgIcon("partly","wx--partly");
 
   // Cobert
   if (t.includes("cobert") || t.includes("cubierto"))
-    return "☁️";
+    return svgIcon("cloud","wx--cloud");
 
   // Ennuvolat
   if (t.includes("ennuvolat") || t.includes("nuboso"))
-    return isNight ? "☁️🌙" : "⛅";
+    return isNight ? svgIcon("cloud-moon","wx--cloud-moon") : svgIcon("cloud","wx--cloud");
 
   // Serè / despejat
   if (t.includes("serè") || t.includes("despejado"))
-    return isNight ? "🌙" : "☀️";
+    return isNight ? svgIcon("moon","wx--moon") : svgIcon("sun","wx--sun");
+
+  // Vent (si algun dia ho poses a sky)
+  if (t.includes("vent") || t.includes("wind"))
+    return svgIcon("wind","wx--wind");
 
   // Fallback
-  return isNight ? "🌙" : "🌤️";
+  return isNight ? svgIcon("moon","wx--moon") : svgIcon("partly","wx--partly");
 }
 
     function fmtWind(h){
