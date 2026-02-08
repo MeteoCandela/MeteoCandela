@@ -966,10 +966,16 @@ h2{
   user-select: none;
   pointer-events: none;
 }
+#cardCurrent{ position: relative; }
+
 .current-icon{
-  font-size: 34px;
+  position: absolute;
+  right: 18px;
+  top: 74px;              /* ajust fi: puja/baixa segons et quedi */
+  font-size: 40px;
   line-height: 1;
-  margin: 6px 0 10px 0;
+  filter: drop-shadow(0 6px 16px rgba(0,0,0,.35));
+  pointer-events: none;
 }
 .card-head{
   display:flex;
