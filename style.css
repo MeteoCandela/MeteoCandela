@@ -966,3 +966,16 @@ h2{
   user-select: none;
   pointer-events: none;
 }
+.card-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.now-icon{
+  font-size: 42px;
+  line-height: 1;
+  opacity: .95;
+  flex: 0 0 auto;
+}
