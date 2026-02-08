@@ -1,14 +1,16 @@
 (() => {
-  const BASE = (location.pathname.includes("/MeteoCandela/")) ? "/MeteoCandela" : "";
-  const API_BASE = "/api";
-  const HISTORY_URL   = `${API_BASE}/history`;
-  const CURRENT_URL   = `${API_BASE}/current`;
+  // Detecta si estàs servint sota subpath (ex: GitHub Pages /MeteoCandela/)
+  const BASE = location.pathname.includes("/MeteoCandela/") ? "/MeteoCandela" : "";
+  const API_BASE = `${BASE}/api`;
+
+  const HISTORY_URL = `${API_BASE}/history`;
+  const CURRENT_URL = `${API_BASE}/current`;
   const HEARTBEAT_URL = `${API_BASE}/heartbeat`;
 
   // ===== REFRESH SETTINGS =====
-  const REFRESH_CURRENT_MS  = 60 * 1000;   // 1 min (current + heartbeat)
-  const REFRESH_HISTORY_MS  = 30 * 60 * 1000; // 30 min (history)
-  const REFRESH_ON_VISIBLE  = true;        // refresca quan tornes a la pestanya
+  const REFRESH_CURRENT_MS = 60 * 1000;       // 1 min (current + heartbeat)
+  const REFRESH_HISTORY_MS = 30 * 60 * 1000;  // 30 min (history)
+  const REFRESH_ON_VISIBLE = true;            // refresca quan tornes a la pestanya
 
   const $ = (id) => document.getElementById(id);
 
@@ -56,7 +58,7 @@
   function startEndMsFromDayKey(dayKey) {
     const [y, m, d] = dayKey.split("-").map(Number);
     const start = new Date(y, m - 1, d, 0, 0, 0, 0).getTime();
-    const end   = new Date(y, m - 1, d, 23, 59, 59, 999).getTime();
+    const end = new Date(y, m - 1, d, 23, 59, 59, 999).getTime();
     return { start, end };
   }
 
@@ -72,15 +74,14 @@
     if (deg == null || Number.isNaN(Number(deg))) return "—";
     const d = ((Number(deg) % 360) + 360) % 360;
 
-    if (d >= 337.5 || d < 22.5)   return "N – Tramuntana";
-    if (d >= 22.5  && d < 67.5)   return "NE – Gregal";
-    if (d >= 67.5  && d < 112.5)  return "E – Llevant";
-    if (d >= 112.5 && d < 157.5)  return "SE – Xaloc";
-    if (d >= 157.5 && d < 202.5)  return "S – Migjorn";
-    if (d >= 202.5 && d < 247.5)  return "SW – Garbí";
-    if (d >= 247.5 && d < 292.5)  return "W – Ponent";
-    if (d >= 292.5 && d < 337.5)  return "NW – Mestral";
-
+    if (d >= 337.5 || d < 22.5) return "N – Tramuntana";
+    if (d >= 22.5 && d < 67.5) return "NE – Gregal";
+    if (d >= 67.5 && d < 112.5) return "E – Llevant";
+    if (d >= 112.5 && d < 157.5) return "SE – Xaloc";
+    if (d >= 157.5 && d < 202.5) return "S – Migjorn";
+    if (d >= 202.5 && d < 247.5) return "SW – Garbí";
+    if (d >= 247.5 && d < 292.5) return "W – Ponent";
+    if (d >= 292.5 && d < 337.5) return "NW – Mestral";
     return "—";
   }
 
@@ -97,7 +98,7 @@
       if (r.temp_f != null) tempC = fToC(Number(r.temp_f));
       else if (r.temperature != null) {
         const t = Number(r.temperature);
-        tempC = (t >= 80) ? fToC(t) : t;
+        tempC = (t >= 80) ? fToC(t) : t; // heuristic F vs C
       }
     }
 
@@ -123,7 +124,7 @@
 
     // PLUJA
     const hum = r.hum_pct ?? r.humidity ?? r.hum ?? null;
-    const rainDay  = r.rain_day_mm ?? r.rain_day ?? r.daily_rain ?? r.rainfall_daily ?? null;
+    const rainDay = r.rain_day_mm ?? r.rain_day ?? r.daily_rain ?? r.rainfall_daily ?? null;
     const rainRate = r.rain_rate_mmh ?? r.rain_rate ?? r.rainrate ?? null;
 
     return {
@@ -152,7 +153,7 @@
 
   function renderCurrent(current, historyRows) {
     if ($("temp")) $("temp").textContent = current.temp_c == null ? "—" : fmt1(current.temp_c);
-    if ($("hum"))  $("hum").textContent  = current.hum_pct == null ? "—" : String(Math.round(current.hum_pct));
+    if ($("hum")) $("hum").textContent = current.hum_pct == null ? "—" : String(Math.round(current.hum_pct));
     if ($("wind")) $("wind").textContent = current.wind_kmh == null ? "—" : fmt1(current.wind_kmh);
     if ($("rainDay")) $("rainDay").textContent = current.rain_day_mm == null ? "—" : fmt1(current.rain_day_mm);
 
@@ -168,6 +169,7 @@
 
       const todayRows = historyRows.filter(r => r.ts >= start && r.ts <= end).slice();
 
+      // afegeix current si és d'avui i és més nou que l'últim històric
       if (current && Number.isFinite(current.ts) && current.ts >= start && current.ts <= end) {
         const lastHistTs = todayRows.length ? todayRows[todayRows.length - 1].ts : null;
         if (!lastHistTs || current.ts > lastHistTs) todayRows.push(current);
@@ -247,13 +249,12 @@
     for (const r of rows) set.add(dayKeyFromTs(r.ts));
     set.add(dayKeyFromTs(Date.now()));
     if (current && Number.isFinite(current.ts)) set.add(dayKeyFromTs(current.ts));
-    return Array.from(set).sort();
+    return Array.from(set).sort(); // YYYY-MM-DD ordena bé lexicogràficament
   }
 
   function labelForDay(dayKey) {
     const today = dayKeyFromTs(Date.now());
     const yesterday = dayKeyFromTs(Date.now() - 24 * 60 * 60 * 1000);
-
     const pretty = dayKey.split("-").reverse().join("/");
     if (dayKey === today) return `Avui (${pretty})`;
     if (dayKey === yesterday) return `Ahir (${pretty})`;
@@ -274,14 +275,14 @@
       sel.appendChild(opt);
     }
 
-    const idx0 = Math.max(0, dayKeys.indexOf(initialKey));
-    sel.value = dayKeys[idx0] || dayKeys[dayKeys.length - 1];
+    const idx0 = dayKeys.indexOf(initialKey);
+    sel.value = (idx0 >= 0) ? dayKeys[idx0] : (dayKeys[dayKeys.length - 1] || initialKey);
 
     function currentIndex() { return dayKeys.indexOf(sel.value); }
     function updateButtons() {
       const i = currentIndex();
       prev.disabled = (i <= 0);
-      next.disabled = (i >= dayKeys.length - 1);
+      next.disabled = (i < 0 || i >= dayKeys.length - 1);
     }
 
     sel.addEventListener("change", () => {
@@ -297,7 +298,7 @@
 
     next.addEventListener("click", () => {
       const i = currentIndex();
-      if (i < dayKeys.length - 1) { sel.value = dayKeys[i + 1]; sel.dispatchEvent(new Event("change")); }
+      if (i >= 0 && i < dayKeys.length - 1) { sel.value = dayKeys[i + 1]; sel.dispatchEvent(new Event("change")); }
     });
 
     updateButtons();
@@ -305,14 +306,21 @@
   }
 
   // ===== Charts =====
-  function buildChartsForDay(allRows, dayKey) {
+  function buildChartsForDay(allRows, dayKey, currentMaybe) {
     const { start, end } = startEndMsFromDayKey(dayKey);
-    const rDay = allRows.filter(r => r.ts >= start && r.ts <= end);
+
+    // rows del dia
+    const rDay = allRows.filter(r => r.ts >= start && r.ts <= end).slice();
+
+    // si el dia és avui i tenim current més nou que l'últim històric d'avui, l'afegim per "quasi temps real"
+    if (currentMaybe && Number.isFinite(currentMaybe.ts) && currentMaybe.ts >= start && currentMaybe.ts <= end) {
+      const lastTs = rDay.length ? rDay[rDay.length - 1].ts : null;
+      if (!lastTs || currentMaybe.ts > lastTs) rDay.push(currentMaybe);
+    }
 
     const labels = rDay.map(r => fmtTime(r.ts));
-
     const temp = rDay.map(r => (Number.isFinite(Number(r.temp_c)) ? Number(r.temp_c) : null));
-    const hum  = rDay.map(r => (Number.isFinite(Number(r.hum_pct)) ? Number(r.hum_pct) : null));
+    const hum = rDay.map(r => (Number.isFinite(Number(r.hum_pct)) ? Number(r.hum_pct) : null));
     const wind = rDay.map(r => (Number.isFinite(Number(r.wind_kmh)) ? Number(r.wind_kmh) : null));
     const gust = rDay.map(r => (Number.isFinite(Number(r.gust_kmh)) ? Number(r.gust_kmh) : null));
 
@@ -328,13 +336,14 @@
     const dayTxt = fmtDayLong(dayKey);
 
     if ($("chartTempTitle")) $("chartTempTitle").textContent = `Temperatura (°C) · ${dayTxt}`;
-    if ($("chartHumTitle"))  $("chartHumTitle").textContent  = `Humitat (%) · ${dayTxt}`;
+    if ($("chartHumTitle")) $("chartHumTitle").textContent = `Humitat (%) · ${dayTxt}`;
     if ($("chartWindTitle")) $("chartWindTitle").textContent = `Vent i ratxa (km/h) · ${dayTxt}`;
     if ($("chartRainTitle")) $("chartRainTitle").textContent = `Pluja acumulada (mm) · ${dayTxt}`;
 
     const dayLabel = $("dayLabel");
     if (dayLabel) dayLabel.textContent = rDay.length ? dayTxt : `${dayTxt} · sense dades`;
 
+    // destroy previs
     if (window.__chartTemp) window.__chartTemp.destroy();
     if (window.__chartHum) window.__chartHum.destroy();
     if (window.__chartWind) window.__chartWind.destroy();
@@ -445,15 +454,12 @@
     if (!rDay.length) {
       if (rainCanvas) rainCanvas.style.display = "none";
       if (rainMsgEl) { rainMsgEl.textContent = ""; rainMsgEl.style.display = "none"; }
-
     } else if (!hasRainSensorData) {
       if (rainCanvas) rainCanvas.style.display = "none";
       if (rainMsgEl) { rainMsgEl.textContent = "Sense dades de precipitació per al dia seleccionat."; rainMsgEl.style.display = "block"; }
-
     } else if (!hasAnyRain) {
       if (rainCanvas) rainCanvas.style.display = "none";
       if (rainMsgEl) { rainMsgEl.textContent = "Sense precipitació registrada"; rainMsgEl.style.display = "block"; }
-
     } else {
       if (rainCanvas) rainCanvas.style.display = "block";
       if (rainMsgEl) { rainMsgEl.textContent = ""; rainMsgEl.style.display = "none"; }
@@ -467,8 +473,7 @@
       });
     }
   }
-
-  // ===== State + polling =====
+// ===== State + polling =====
   const state = {
     historyRows: [],
     current: null,
@@ -524,17 +529,21 @@
     if (!actualRow) {
       setSourceLine("Sense dades carregades.");
       if ($("statusLine")) $("statusLine").textContent = "No es pot mostrar informació: falta history/current.";
-      return;
+      return null;
     }
 
     setSourceLine(`Font: ${sourceTag}`);
     renderCurrent(actualRow, historyRows);
     renderStatus(actualRow.ts, hb);
+    return actualRow;
+  }
 
-    // si el selector ja està muntat, només redibuixem el dia seleccionat
-    if (state.selectedDay) {
-      buildChartsForDay(historyRows, state.selectedDay);
-    }
+  function renderChartsIfNeeded(reason) {
+    if (!state.selectedDay) return;
+    // Si estàs veient "avui", actualitza gràfiques també amb current (cada minut)
+    const todayKey = dayKeyFromTs(Date.now());
+    const currentMaybe = (state.selectedDay === todayKey) ? state.current : null;
+    buildChartsForDay(state.historyRows || [], state.selectedDay, currentMaybe);
   }
 
   // ===== Main =====
@@ -542,10 +551,10 @@
     try {
       if ($("year")) $("year").textContent = String(new Date().getFullYear());
 
-      // 1) Carrega history UNA vegada (i munta selector)
+      // 1) Carrega history UNA vegada
       await loadHistoryOnce();
 
-      // 2) Carrega current + heartbeat (i pinta)
+      // 2) Carrega current + heartbeat
       await loadCurrentAndHeartbeat();
 
       // 3) Muntar selector de dia
@@ -554,40 +563,47 @@
       if (!initialActual) { renderAll(); return; }
 
       const dayKeys = buildDayListFromRows(historyRows, state.current);
-      const initial = getUrlDayParam() || dayKeyFromTs(initialActual.ts);
+      const wanted = getUrlDayParam();
+      const initial = (wanted && dayKeys.includes(wanted)) ? wanted : dayKeyFromTs(initialActual.ts);
 
       const selected = setupDaySelector(dayKeys, initial, (k) => {
         state.selectedDay = k;
-        buildChartsForDay(state.historyRows, k);
+        renderChartsIfNeeded("day-change");
       });
 
       state.selectedDay = selected || initial;
 
-      // primera renderització completa
+      // primera renderització
       renderAll();
-      buildChartsForDay(state.historyRows, state.selectedDay);
+      renderChartsIfNeeded("first");
 
       // 4) Polling: current+heartbeat sovint
       state.timers.cur = setInterval(async () => {
         await loadCurrentAndHeartbeat();
         renderAll();
+
+        // si estàs veient avui, refresca gràfiques amb current
+        renderChartsIfNeeded("current-tick");
       }, REFRESH_CURRENT_MS);
 
-      // 5) Polling: history rarament (per “estirar” els dies nous)
+      // 5) Polling: history rarament (dies nous / dades noves)
       state.timers.hist = setInterval(async () => {
         await loadHistoryOnce();
+
         // si han aparegut dies nous, reconstruïm selector mantenint selecció
         const dayKeys2 = buildDayListFromRows(state.historyRows, state.current);
-        const keep = state.selectedDay || getUrlDayParam() || dayKeyFromTs(Date.now());
+        const keepWanted = state.selectedDay || getUrlDayParam() || dayKeyFromTs(Date.now());
+        const keep = dayKeys2.includes(keepWanted) ? keepWanted : (dayKeys2[dayKeys2.length - 1] || keepWanted);
 
         const sel = setupDaySelector(dayKeys2, keep, (k) => {
           state.selectedDay = k;
-          buildChartsForDay(state.historyRows, k);
+          renderChartsIfNeeded("day-change");
         });
 
         state.selectedDay = sel || keep;
+
         renderAll();
-        buildChartsForDay(state.historyRows, state.selectedDay);
+        renderChartsIfNeeded("history-tick");
       }, REFRESH_HISTORY_MS);
 
       // 6) Opcional: quan tornes a la pestanya, refresca “al moment”
@@ -596,6 +612,7 @@
           if (document.visibilityState !== "visible") return;
           await loadCurrentAndHeartbeat();
           renderAll();
+          renderChartsIfNeeded("visible");
         });
       }
 
@@ -607,5 +624,4 @@
   }
 
   main();
-
 })();
