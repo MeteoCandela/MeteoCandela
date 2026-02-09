@@ -206,7 +206,16 @@
       $("tempSub").textContent =
         current.dew_c == null ? "Punt de rosada: —" : `Punt de rosada: ${fmt1(current.dew_c)} °C`;
     }
-
+const st = getSunTimesToday();
+const sunEl = $("sunSub");
+if (sunEl) {
+  if (!st) sunEl.textContent = "Sol: —";
+  else {
+    const sr = new Intl.DateTimeFormat("ca-ES",{hour:"2-digit",minute:"2-digit"}).format(st.sunrise);
+    const ss = new Intl.DateTimeFormat("ca-ES",{hour:"2-digit",minute:"2-digit"}).format(st.sunset);
+    sunEl.textContent = `Sol: sortida ${sr} · posta ${ss}`;
+  }
+}
     const elMinMax = $("tempMinMax");
     if (elMinMax && Array.isArray(historyRows) && historyRows.length) {
       const todayKey = dayKeyFromTs(Date.now());
