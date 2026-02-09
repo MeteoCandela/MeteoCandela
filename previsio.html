@@ -254,30 +254,25 @@ function rotateDailyToToday(daily){
       return t.charAt(0).toUpperCase() + t.slice(1);
     }
 
-    // Icones en emoji (nit/dia + fenòmens)
-function iconFromSky(s, hourStr){
-  const h = hourNum(hourStr);
-  const isNight = Number.isFinite(h) ? (h >= 20 || h < 8) : false; // <8 millor que <7
-
-  const t = String(s || "").toLowerCase();
-
-  // Fenòmens (primer)
-  if (t.includes("torment")) return isNight ? "🌙⛈️" : "⛈️";
-  if (t.includes("nieve") || t.includes("neu")) return isNight ? "🌙🌨️" : "🌨️";
-  if (t.includes("niebla") || t.includes("boira") || t.includes("bruma") || t.includes("broma")) return "🌫️";
-
-  // Pluja (variant nit/dia)
-  if (t.includes("pluja feble") || t.includes("lluvia escasa")) return isNight ? "🌙🌧️" : "🌦️";
-  if (t.includes("pluja") || t.includes("lluvia")) return isNight ? "🌙🌧️" : "🌧️";
-
-  // Estat del cel
-  if (t.includes("cobert") || t.includes("cubierto")) return "☁️";
-  if (t.includes("intervals") || t.includes("intervalos")) return isNight ? "☁️🌙" : "🌤️";
-  if (t.includes("ennuvolat") || t.includes("nuboso")) return isNight ? "☁️" : ⛅";
-  if (t.includes("serè") || t.includes("despejado")) return isNight ? "🌙" : "☀️";
-
-  return isNight ? "🌙" : "🌤️";
-}
+  // Icones en emoji (nit/dia + fenòmens)  
+    function iconFromSky(s, hourStr){  
+      const h = hourNum(hourStr);  
+      const isNight = Number.isFinite(h) ? (h >= 20 || h < 7) : false;  
+  
+      const t = String(s || "").toLowerCase();  
+  
+      if (t.includes("torment")) return "⛈️";  
+      if (t.includes("nieve") || t.includes("neu")) return "🌨️";  
+      if (t.includes("niebla") || t.includes("boira") || t.includes("bruma") || t.includes("broma")) return "🌫️";  
+      if (t.includes("pluja feble") || t.includes("lluvia escasa")) return isNight ? "🌧️" : "🌦️";  
+      if (t.includes("pluja") || t.includes("lluvia")) return "🌧️";  
+      if (t.includes("cobert") || t.includes("cubierto")) return "☁️";  
+      if (t.includes("intervals") || t.includes("intervalos")) return isNight ? "☁️🌙" : "🌤️";  
+      if (t.includes("ennuvolat") || t.includes("nuboso")) return isNight ? "☁️" : "⛅";  
+      if (t.includes("serè") || t.includes("despejado")) return isNight ? "🌙" : "☀️";  
+  
+      return isNight ? "🌙" : "🌤️";  
+    }  
 
     function fmtWind(h){
       const v = Number(h.wind_kmh);
