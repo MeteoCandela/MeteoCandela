@@ -635,6 +635,7 @@ if (sunEl) {
     renderCurrent(actualRow, historyRows);
     renderStatus(actualRow.ts, hb);
     renderHomeIcon(actualRow);
+    renderSunSub();
 
     return actualRow;
   }
