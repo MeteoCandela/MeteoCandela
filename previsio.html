@@ -449,7 +449,8 @@ function rotateDailyToToday(daily){
         }
 
         renderHourly(fx.hourly);
-        renderDaily(fx.daily);
+        const dailyFixed = rotateDailyToToday(fx.daily);
+        renderDaily(dailyFixed);
 
       } catch(e){
         console.error(e);
