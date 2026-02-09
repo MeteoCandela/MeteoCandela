@@ -86,13 +86,17 @@
   }
 
   // ===== Dia/Nit real (SunCalc) — Valls =====
-  // IMPORTANT: cal carregar SunCalc a index.html:
+  // IMPORTANT: cal carregar SunCalc a index.html (abans de app.js):
   // <script defer src="https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.js"></script>
   const VALLS_LAT = 41.2869;
   const VALLS_LON = 1.2490;
 
+  function fmtHM(d) {
+    return new Intl.DateTimeFormat("ca-ES", { hour: "2-digit", minute: "2-digit" }).format(d);
+  }
+
   function getSunTimesToday() {
-    if (!window.SunCalc) return null;
+    if (!window.SunCalc || typeof window.SunCalc.getTimes !== "function") return null;
     const now = new Date();
     const t = window.SunCalc.getTimes(now, VALLS_LAT, VALLS_LON);
     return (t && t.sunrise && t.sunset) ? { sunrise: t.sunrise, sunset: t.sunset } : null;
@@ -103,6 +107,21 @@
     if (!st) return null;
     const now = new Date();
     return (now < st.sunrise || now >= st.sunset);
+  }
+
+  function renderSunSub() {
+    const el = $("sunSub");
+    if (!el) return;
+
+    const st = getSunTimesToday();
+    if (!st) {
+      el.textContent = "Sol: —";
+      return;
+    }
+
+    const now = new Date();
+    const isNight = (now < st.sunrise || now >= st.sunset);
+    el.textContent = `Sol: sortida ${fmtHM(st.sunrise)} · posta ${fmtHM(st.sunset)} · ${isNight ? "nit" : "dia"}`;
   }
 
   // ===== Icona home (pluja real té prioritat) =====
@@ -206,16 +225,10 @@
       $("tempSub").textContent =
         current.dew_c == null ? "Punt de rosada: —" : `Punt de rosada: ${fmt1(current.dew_c)} °C`;
     }
-const st = getSunTimesToday();
-const sunEl = $("sunSub");
-if (sunEl) {
-  if (!st) sunEl.textContent = "Sol: —";
-  else {
-    const sr = new Intl.DateTimeFormat("ca-ES",{hour:"2-digit",minute:"2-digit"}).format(st.sunrise);
-    const ss = new Intl.DateTimeFormat("ca-ES",{hour:"2-digit",minute:"2-digit"}).format(st.sunset);
-    sunEl.textContent = `Sol: sortida ${sr} · posta ${ss}`;
-  }
-}
+
+    // Sol (sortida/posta) — ho renderitzem aquí també per si renderAll no s'executa en algun punt
+    renderSunSub();
+
     const elMinMax = $("tempMinMax");
     if (elMinMax && Array.isArray(historyRows) && historyRows.length) {
       const todayKey = dayKeyFromTs(Date.now());
@@ -520,7 +533,7 @@ if (sunEl) {
       });
     }
 
-    const rainCanvas = $("chartRain");
+  const rainCanvas = $("chartRain");
     const rainMsgEl = $("rainMsg");
 
     const hasRainSensorData = rainAcc.some(v => v != null && Number.isFinite(v));
@@ -608,30 +621,7 @@ if (sunEl) {
     state.hb = hb;
     return { current, hb };
   }
-function fmtHM(d){
-  return new Intl.DateTimeFormat("ca-ES", { hour: "2-digit", minute: "2-digit" }).format(d);
-}
 
-function renderSunSub(){
-  const el = $("sunSub");
-  if (!el) return;
-
-  if (!window.SunCalc){
-    el.textContent = "Sol: — (SunCalc no carregat)";
-    return;
-  }
-
-  const now = new Date();
-  const t = window.SunCalc.getTimes(now, VALLS_LAT, VALLS_LON);
-
-  if (!t?.sunrise || !t?.sunset){
-    el.textContent = "Sol: —";
-    return;
-  }
-
-  const isNight = (now < t.sunrise || now >= t.sunset);
-  el.textContent = `Sol: sortida ${fmtHM(t.sunrise)} · posta ${fmtHM(t.sunset)} · ${isNight ? "nit" : "dia"}`;
-}
   function renderAll() {
     const historyRows = state.historyRows || [];
     const current = state.current;
