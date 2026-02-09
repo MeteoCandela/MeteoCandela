@@ -257,7 +257,7 @@ function rotateDailyToToday(daily){
     // Icones en emoji (nit/dia + fenòmens)
     function iconFromSky(s, hourStr){
       const h = hourNum(hourStr);
-      const isNight = Number.isFinite(h) ? (h >= 20 || h < 8) : false;
+      const isNight = Number.isFinite(h) ? (h >= 20 || h < 7) : false;
 
       const t = String(s || "").toLowerCase();
 
