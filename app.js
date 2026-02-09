@@ -362,7 +362,8 @@ function renderHomeIcon(row){
     const rainRaw = rDay.map(r => (r.rain_day_mm == null ? null : Number(r.rain_day_mm)));
 
 const rainAcc = [];
-let last = null;
+let base = null;   // valor de referència (zero del dia o del segment)
+let prev = null;
 
 for (const v0 of rainRaw) {
   const v = (v0 == null || !Number.isFinite(v0)) ? null : v0;
@@ -372,14 +373,17 @@ for (const v0 of rainRaw) {
     continue;
   }
 
-  // Acceptem reset diari (0 després de valors >0)
-  if (last != null && v < last - 0.05) {
-    last = v;
-  } else {
-    last = v;
+  // Si és el primer valor vàlid, fixa base perquè el dia comenci a 0
+  if (base == null) base = v;
+
+  // Si detectem “reset” (baixa sobtada), reiniciem base en aquest punt
+  if (prev != null && v < prev - 0.05) {
+    base = v;
   }
 
-  rainAcc.push(last);
+  const adj = Math.max(0, v - base); // acumulada “real” dins del dia/segment
+  rainAcc.push(adj);
+  prev = v;
 }
 
     const { min: vMin, max: vMax } = minMax(temp);
