@@ -84,27 +84,23 @@
     if (d >= 292.5 && d < 337.5) return "NW – Mestral";
     return "—";
   }
-  
-function pickHomeEmoji(row){
-  // Prioritat 1: pluja real ara mateix
-  const rate = Number(row?.rain_rate_mmh);
-  if (Number.isFinite(rate) && rate > 0) return "🌧️";
 
-  // (opcional) si vols també tenir en compte tempesta quan plou fort:
-  // if (Number.isFinite(rate) && rate >= 10) return "⛈️";
+  // ===== Icona home (pluja real té prioritat) =====
+  function pickHomeEmoji(row) {
+    const rate = Number(row?.rain_rate_mmh);
+    if (Number.isFinite(rate) && rate > 0) return "🌧️";
 
-  // Prioritat 2: dia/nit
-  const h = new Date().getHours();
-  const isNight = (h >= 20 || h < 8);
-  return isNight ? "🌙" : "🌤️";
-}
+    const h = new Date().getHours();
+    const isNight = (h >= 20 || h < 8);
+    return isNight ? "🌙" : "🌤️";
+  }
 
-function renderHomeIcon(row){
-  const el = document.getElementById("currentIcon");
-  if (!el) return;
-  el.textContent = pickHomeEmoji(row);
-}
-  
+  function renderHomeIcon(row) {
+    const el = $("currentIcon");
+    if (!el) return;
+    el.textContent = pickHomeEmoji(row);
+  }
+
   function toNumOrNull(v) {
     if (v === null || v === undefined || v === "") return null;
     const n = Number(v);
@@ -170,22 +166,7 @@ function renderHomeIcon(row){
     const el = $("sourceLine");
     if (el) el.textContent = txt;
   }
-function pickHomeEmoji(row){
-  // Prioritat absoluta: pluja en temps real (Ecowitt)
-  const rate = Number(row?.rain_rate_mmh);
-  if (Number.isFinite(rate) && rate > 0) return "🌧️";
 
-  // Si no plou: dia/nit
-  const h = new Date().getHours();
-  const isNight = (h >= 20 || h < 8);
-  return isNight ? "🌙" : "🌤️";
-}
-
-function renderHomeIcon(row){
-  const el = $("currentIcon");
-  if (!el) return;
-  el.textContent = pickHomeEmoji(row);
-}
   function renderCurrent(current, historyRows) {
     if ($("temp")) $("temp").textContent = current.temp_c == null ? "—" : fmt1(current.temp_c);
     if ($("hum")) $("hum").textContent = current.hum_pct == null ? "—" : String(Math.round(current.hum_pct));
@@ -359,40 +340,40 @@ function renderHomeIcon(row){
     const wind = rDay.map(r => (Number.isFinite(Number(r.wind_kmh)) ? Number(r.wind_kmh) : null));
     const gust = rDay.map(r => (Number.isFinite(Number(r.gust_kmh)) ? Number(r.gust_kmh) : null));
 
+    // ===== PLUJA (fix: no arrosseguem offset d'ahir) =====
+    // rain_day_mm és "pluja acumulada del dia" del sensor, però a vegades comença el matí amb un valor d'ahir (offset).
+    // Solució: calcular pluja incremental: sumem només increments > 0.05 i ignorem el primer valor.
     const rainRaw = rDay.map(r => (r.rain_day_mm == null ? null : Number(r.rain_day_mm)));
 
-const rainRaw = rDay.map(r => (r.rain_day_mm == null ? null : Number(r.rain_day_mm)));
+    const rainAcc = [];
+    let acc = 0;
+    let prev = null;
 
-const rainAcc = [];
-let acc = 0;
-let prev = null;
+    for (const v0 of rainRaw) {
+      const v = (v0 == null || !Number.isFinite(v0)) ? null : v0;
 
-for (const v0 of rainRaw) {
-  const v = (v0 == null || !Number.isFinite(v0)) ? null : v0;
+      if (v == null) {
+        rainAcc.push(null);
+        continue;
+      }
 
-  if (v == null) {
-    rainAcc.push(null);
-    continue;
-  }
+      // Primer punt vàlid: no comptem offset inicial
+      if (prev == null) {
+        prev = v;
+        rainAcc.push(0);
+        continue;
+      }
 
-  // Primer punt vàlid: NO comptem l’offset inicial
-  if (prev == null) {
-    prev = v;
-    rainAcc.push(0);
-    continue;
-  }
+      const dv = v - prev;
 
-  const dv = v - prev;
+      // increments reals (tolerància soroll)
+      if (dv > 0.05) acc += dv;
 
-  // Si puja, és pluja real acumulada (tolerància per soroll)
-  if (dv > 0.05) acc += dv;
+      // si baixa (reset/offset), no restem: només actualitzem referència
+      prev = v;
 
-  // Si baixa fort, és reset (canvi de dia a l’estació): no restem, només reseteja prev
-  // (acc es manté perquè és “pluja d’aquest dia” segons la nostra definició)
-  prev = v;
-
-  rainAcc.push(Number(acc.toFixed(3)));
-}
+      rainAcc.push(Number(acc.toFixed(3)));
+    }
 
     const { min: vMin, max: vMax } = minMax(temp);
     const dayTxt = fmtDayLong(dayKey);
@@ -508,7 +489,9 @@ for (const v0 of rainRaw) {
 
     const hasRainSensorData = rainAcc.some(v => v != null && Number.isFinite(v));
     const lastRain = (() => {
-      for (let i = rainAcc.length - 1; i >= 0; i--) if (rainAcc[i] != null && Number.isFinite(rainAcc[i])) return Number(rainAcc[i]);
+      for (let i = rainAcc.length - 1; i >= 0; i--) {
+        if (rainAcc[i] != null && Number.isFinite(rainAcc[i])) return Number(rainAcc[i]);
+      }
       return null;
     })();
     const hasAnyRain = (hasRainSensorData && lastRain != null && lastRain > 0);
@@ -530,8 +513,25 @@ for (const v0 of rainRaw) {
 
       window.__chartRain = new Chart(rainCanvas, {
         type: "line",
-        data: { labels, datasets: [{ label: "Pluja acumulada", data: rainAcc, tension: 0, pointRadius: 2, pointHoverRadius: 6, pointHitRadius: 12, borderWidth: 2, fill: true, stepped: true }] },
-        options: { ...commonBase, scales: { ...commonBase.scales, y: { min: 0, suggestedMax: yMax } }, plugins: { legend: { display: false }, tooltip: commonTooltip("mm") } }
+        data: {
+          labels,
+          datasets: [{
+            label: "Pluja acumulada",
+            data: rainAcc,
+            tension: 0,
+            pointRadius: 2,
+            pointHoverRadius: 6,
+            pointHitRadius: 12,
+            borderWidth: 2,
+            fill: true,
+            stepped: true
+          }]
+        },
+        options: {
+          ...commonBase,
+          scales: { ...commonBase.scales, y: { min: 0, suggestedMax: yMax } },
+          plugins: { legend: { display: false }, tooltip: commonTooltip("mm") }
+        }
       });
     }
   }
@@ -595,19 +595,15 @@ for (const v0 of rainRaw) {
     }
 
     setSourceLine(`Font: ${sourceTag}`);
-renderCurrent(actualRow, historyRows);
+    renderCurrent(actualRow, historyRows);
+    renderStatus(actualRow.ts, hb);
+    renderHomeIcon(actualRow);
 
-
-
-renderStatus(actualRow.ts, hb);
-// ✅ icona HOME (pluja real té prioritat)
-renderHomeIcon(actualRow);
     return actualRow;
   }
 
-  function renderChartsIfNeeded(reason) {
+  function renderChartsIfNeeded() {
     if (!state.selectedDay) return;
-    // Si estàs veient "avui", actualitza gràfiques també amb current (cada minut)
     const todayKey = dayKeyFromTs(Date.now());
     const currentMaybe = (state.selectedDay === todayKey) ? state.current : null;
     buildChartsForDay(state.historyRows || [], state.selectedDay, currentMaybe);
@@ -635,42 +631,39 @@ renderHomeIcon(actualRow);
 
       const selected = setupDaySelector(dayKeys, initial, (k) => {
         state.selectedDay = k;
-        renderChartsIfNeeded("day-change");
+        renderChartsIfNeeded();
       });
 
       state.selectedDay = selected || initial;
 
       // primera renderització
       renderAll();
-      renderChartsIfNeeded("first");
+      renderChartsIfNeeded();
 
       // 4) Polling: current+heartbeat sovint
       state.timers.cur = setInterval(async () => {
         await loadCurrentAndHeartbeat();
         renderAll();
-
-        // si estàs veient avui, refresca gràfiques amb current
-        renderChartsIfNeeded("current-tick");
+        renderChartsIfNeeded();
       }, REFRESH_CURRENT_MS);
 
       // 5) Polling: history rarament (dies nous / dades noves)
       state.timers.hist = setInterval(async () => {
         await loadHistoryOnce();
 
-        // si han aparegut dies nous, reconstruïm selector mantenint selecció
         const dayKeys2 = buildDayListFromRows(state.historyRows, state.current);
         const keepWanted = state.selectedDay || getUrlDayParam() || dayKeyFromTs(Date.now());
         const keep = dayKeys2.includes(keepWanted) ? keepWanted : (dayKeys2[dayKeys2.length - 1] || keepWanted);
 
         const sel = setupDaySelector(dayKeys2, keep, (k) => {
           state.selectedDay = k;
-          renderChartsIfNeeded("day-change");
+          renderChartsIfNeeded();
         });
 
         state.selectedDay = sel || keep;
 
         renderAll();
-        renderChartsIfNeeded("history-tick");
+        renderChartsIfNeeded();
       }, REFRESH_HISTORY_MS);
 
       // 6) Opcional: quan tornes a la pestanya, refresca “al moment”
@@ -679,7 +672,7 @@ renderHomeIcon(actualRow);
           if (document.visibilityState !== "visible") return;
           await loadCurrentAndHeartbeat();
           renderAll();
-          renderChartsIfNeeded("visible");
+          renderChartsIfNeeded();
         });
       }
 
@@ -689,103 +682,102 @@ renderHomeIcon(actualRow);
       console.error(e);
     }
   }
-// ===== PWA Install FAB (Android/Chrome) + iOS tip =====
-(() => {
-  const fab = () => document.getElementById("btnInstallFab");
-  const tip = () => document.getElementById("iosInstallTip");
-  const tipClose = () => document.getElementById("btnCloseIosTip");
 
-  function isStandalone() {
-    return window.matchMedia?.("(display-mode: standalone)")?.matches
-      || window.navigator?.standalone === true; // iOS legacy
-  }
+  // ===== PWA Install FAB (Android/Chrome) + iOS tip =====
+  (() => {
+    const fab = () => document.getElementById("btnInstallFab");
+    const tip = () => document.getElementById("iosInstallTip");
+    const tipClose = () => document.getElementById("btnCloseIosTip");
 
-  function isIOS() {
-    // iPadOS recent també pot reportar "MacIntel" amb touch points
-    const ua = navigator.userAgent || "";
-    const iOSUA = /iPad|iPhone|iPod/.test(ua);
-    const iPadOS = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
-    return iOSUA || iPadOS;
-  }
+    function isStandalone() {
+      return window.matchMedia?.("(display-mode: standalone)")?.matches
+        || window.navigator?.standalone === true; // iOS legacy
+    }
 
-  function isSafari() {
-    const ua = navigator.userAgent || "";
-    const isAppleWebKit = /AppleWebKit/.test(ua);
-    const isChrome = /CriOS/.test(ua);
-    const isFirefox = /FxiOS/.test(ua);
-    return isAppleWebKit && !isChrome && !isFirefox;
-  }
+    function isIOS() {
+      const ua = navigator.userAgent || "";
+      const iOSUA = /iPad|iPhone|iPod/.test(ua);
+      const iPadOS = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+      return iOSUA || iPadOS;
+    }
 
-  function hideFab() {
-    const b = fab();
-    if (b) b.style.display = "none";
-  }
+    function isSafari() {
+      const ua = navigator.userAgent || "";
+      const isAppleWebKit = /AppleWebKit/.test(ua);
+      const isChrome = /CriOS/.test(ua);
+      const isFirefox = /FxiOS/.test(ua);
+      return isAppleWebKit && !isChrome && !isFirefox;
+    }
 
-  function showFab(labelText) {
-    const b = fab();
-    if (!b) return;
-    if (labelText) b.textContent = labelText;
-    b.style.display = "inline-flex";
-  }
+    function hideFab() {
+      const b = fab();
+      if (b) b.style.display = "none";
+    }
 
-  function openTip() {
-    const t = tip();
-    if (t) t.style.display = "flex";
-  }
+    function showFab(labelText) {
+      const b = fab();
+      if (!b) return;
+      if (labelText) b.textContent = labelText;
+      b.style.display = "inline-flex";
+    }
 
-  function closeTip() {
-    const t = tip();
-    if (t) t.style.display = "none";
-  }
+    function openTip() {
+      const t = tip();
+      if (t) t.style.display = "flex";
+    }
 
-  // Si ja s'executa com app, no mostrem res
-  if (isStandalone()) {
-    hideFab();
-    closeTip();
-    return;
-  }
+    function closeTip() {
+      const t = tip();
+      if (t) t.style.display = "none";
+    }
 
-  // iOS/Safari: no hi ha beforeinstallprompt -> mostrem botó guia
-  if (isIOS() && isSafari()) {
-    showFab("📌 Afegir a inici");
-    const b = fab();
-    if (b) b.addEventListener("click", openTip);
+    if (isStandalone()) {
+      hideFab();
+      closeTip();
+      return;
+    }
 
-    const c = tipClose();
-    if (c) c.addEventListener("click", closeTip);
+    if (isIOS() && isSafari()) {
+      showFab("📌 Afegir a inici");
+      const b = fab();
+      if (b) b.addEventListener("click", openTip);
 
-    const t = tip();
-    if (t) t.addEventListener("click", (e) => {
-      if (e.target === t) closeTip(); // click fora del card
+      const c = tipClose();
+      if (c) c.addEventListener("click", closeTip);
+
+      const t = tip();
+      if (t) t.addEventListener("click", (e) => {
+        if (e.target === t) closeTip();
+      });
+
+      return;
+    }
+
+    let deferredPrompt = null;
+
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      showFab("⬇️ Instal·la l’app");
     });
 
-    return;
-  }
+    window.addEventListener("appinstalled", () => {
+      deferredPrompt = null;
+      hideFab();
+    });
 
-  // Android/Chrome i altres navegadors compatibles: prompt real
-  let deferredPrompt = null;
+    document.addEventListener("click", async (e) => {
+      const b = fab();
+      if (!b || e.target !== b) return;
+      if (!deferredPrompt) return;
 
-  window.addEventListener("beforeinstallprompt", (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    showFab("⬇️ Instal·la l’app");
-  });
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      hideFab();
+    });
+  })();
 
-  window.addEventListener("appinstalled", () => {
-    deferredPrompt = null;
-    hideFab();
-  });
-
-  document.addEventListener("click", async (e) => {
-    const b = fab();
-    if (!b || e.target !== b) return;
-    if (!deferredPrompt) return;
-
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    deferredPrompt = null;
-    hideFab();
-  });
-})();
   main();
 })();
+ 
