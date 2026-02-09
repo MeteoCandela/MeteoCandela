@@ -108,7 +108,15 @@
       const n = Number(s);
       return Number.isFinite(n) ? String(Math.round(n)) : "—";
     }
+function rotateDailyToToday(daily){
+  if (!Array.isArray(daily) || !daily.length) return daily;
 
+  const today = ymdTodayLocal(); // "YYYY-MM-DD" local
+  const idx = daily.findIndex(d => String(d?.date).slice(0,10) === today);
+
+  if (idx <= 0) return daily; // ja comença per avui o no trobat
+  return daily.slice(idx).concat(daily.slice(0, idx));
+}
     function fmt0orDash(x){
       if (x === null || x === undefined) return "—";
       const s = String(x).trim();
