@@ -360,12 +360,27 @@ function renderHomeIcon(row){
     const gust = rDay.map(r => (Number.isFinite(Number(r.gust_kmh)) ? Number(r.gust_kmh) : null));
 
     const rainRaw = rDay.map(r => (r.rain_day_mm == null ? null : Number(r.rain_day_mm)));
-    const rainAcc = [];
-    let acc = 0;
-    for (const v of rainRaw) {
-      if (v == null || !Number.isFinite(v)) rainAcc.push(null);
-      else { acc = Math.max(acc, v); rainAcc.push(acc); }
-    }
+
+const rainAcc = [];
+let last = null;
+
+for (const v0 of rainRaw) {
+  const v = (v0 == null || !Number.isFinite(v0)) ? null : v0;
+
+  if (v == null) {
+    rainAcc.push(null);
+    continue;
+  }
+
+  // Acceptem reset diari (0 després de valors >0)
+  if (last != null && v < last - 0.05) {
+    last = v;
+  } else {
+    last = v;
+  }
+
+  rainAcc.push(last);
+}
 
     const { min: vMin, max: vMax } = minMax(temp);
     const dayTxt = fmtDayLong(dayKey);
