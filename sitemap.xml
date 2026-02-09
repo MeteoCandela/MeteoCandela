@@ -4,25 +4,33 @@
   <!-- Portada -->
   <url>
     <loc>https://meteocandela.cat/</loc>
-    <lastmod>2026-02-01</lastmod>
-    <changefreq>hourly</changefreq>
+    <lastmod>2026-02-09</lastmod>
+    <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
 
-  <!-- Sobre l’estació -->
+  <!-- Previsió -->
   <url>
-    <loc>https://meteocandela.cat/sobre.html</loc>
-    <lastmod>2026-02-01</lastmod>
-    <changefreq>monthly</changefreq>
+    <loc>https://meteocandela.cat/previsio.html</loc>
+    <lastmod>2026-02-09</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Històric -->
+  <url>
+    <loc>https://meteocandela.cat/historic.html</loc>
+    <lastmod>2026-02-09</lastmod>
+    <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
 
+  <!-- Sobre -->
   <url>
-  <loc>https://meteocandela.cat/historic.html</loc>
-  <lastmod>2026-02-02</lastmod>
-  <changefreq>daily</changefreq>
-  <priority>0.6</priority>
-</url>
-  
-</urlset>
+    <loc>https://meteocandela.cat/sobre.html</loc>
+    <lastmod>2026-02-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
 
+</urlset>
