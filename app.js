@@ -361,8 +361,10 @@ function renderHomeIcon(row){
 
     const rainRaw = rDay.map(r => (r.rain_day_mm == null ? null : Number(r.rain_day_mm)));
 
+const rainRaw = rDay.map(r => (r.rain_day_mm == null ? null : Number(r.rain_day_mm)));
+
 const rainAcc = [];
-let base = null;   // valor de referència (zero del dia o del segment)
+let acc = 0;
 let prev = null;
 
 for (const v0 of rainRaw) {
@@ -373,17 +375,23 @@ for (const v0 of rainRaw) {
     continue;
   }
 
-  // Si és el primer valor vàlid, fixa base perquè el dia comenci a 0
-  if (base == null) base = v;
-
-  // Si detectem “reset” (baixa sobtada), reiniciem base en aquest punt
-  if (prev != null && v < prev - 0.05) {
-    base = v;
+  // Primer punt vàlid: NO comptem l’offset inicial
+  if (prev == null) {
+    prev = v;
+    rainAcc.push(0);
+    continue;
   }
 
-  const adj = Math.max(0, v - base); // acumulada “real” dins del dia/segment
-  rainAcc.push(adj);
+  const dv = v - prev;
+
+  // Si puja, és pluja real acumulada (tolerància per soroll)
+  if (dv > 0.05) acc += dv;
+
+  // Si baixa fort, és reset (canvi de dia a l’estació): no restem, només reseteja prev
+  // (acc es manté perquè és “pluja d’aquest dia” segons la nostra definició)
   prev = v;
+
+  rainAcc.push(Number(acc.toFixed(3)));
 }
 
     const { min: vMin, max: vMax } = minMax(temp);
