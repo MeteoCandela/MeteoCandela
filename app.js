@@ -608,7 +608,30 @@ if (sunEl) {
     state.hb = hb;
     return { current, hb };
   }
+function fmtHM(d){
+  return new Intl.DateTimeFormat("ca-ES", { hour: "2-digit", minute: "2-digit" }).format(d);
+}
 
+function renderSunSub(){
+  const el = $("sunSub");
+  if (!el) return;
+
+  if (!window.SunCalc){
+    el.textContent = "Sol: — (SunCalc no carregat)";
+    return;
+  }
+
+  const now = new Date();
+  const t = window.SunCalc.getTimes(now, VALLS_LAT, VALLS_LON);
+
+  if (!t?.sunrise || !t?.sunset){
+    el.textContent = "Sol: —";
+    return;
+  }
+
+  const isNight = (now < t.sunrise || now >= t.sunset);
+  el.textContent = `Sol: sortida ${fmtHM(t.sunrise)} · posta ${fmtHM(t.sunset)} · ${isNight ? "nit" : "dia"}`;
+}
   function renderAll() {
     const historyRows = state.historyRows || [];
     const current = state.current;
