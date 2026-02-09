@@ -85,13 +85,42 @@
     return "—";
   }
 
+  // ===== Dia/Nit real (SunCalc) — Valls =====
+  // IMPORTANT: cal carregar SunCalc a index.html:
+  // <script defer src="https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.js"></script>
+  const VALLS_LAT = 41.2869;
+  const VALLS_LON = 1.2490;
+
+  function getSunTimesToday() {
+    if (!window.SunCalc) return null;
+    const now = new Date();
+    const t = window.SunCalc.getTimes(now, VALLS_LAT, VALLS_LON);
+    return (t && t.sunrise && t.sunset) ? { sunrise: t.sunrise, sunset: t.sunset } : null;
+  }
+
+  function isNightNowBySun() {
+    const st = getSunTimesToday();
+    if (!st) return null;
+    const now = new Date();
+    return (now < st.sunrise || now >= st.sunset);
+  }
+
   // ===== Icona home (pluja real té prioritat) =====
   function pickHomeEmoji(row) {
+    // 1) pluja real ara mateix
     const rate = Number(row?.rain_rate_mmh);
     if (Number.isFinite(rate) && rate > 0) return "🌧️";
 
-    const h = new Date().getHours();
-    const isNight = (h >= 20 || h < 8);
+    // 2) dia/nit real per sortida/posta
+    const night = isNightNowBySun();
+
+    // 3) fallback si SunCalc no està carregat
+    const fallbackNight = (() => {
+      const h = new Date().getHours();
+      return (h >= 20 || h < 8);
+    })();
+
+    const isNight = (night === null) ? fallbackNight : night;
     return isNight ? "🌙" : "🌤️";
   }
 
@@ -341,8 +370,6 @@
     const gust = rDay.map(r => (Number.isFinite(Number(r.gust_kmh)) ? Number(r.gust_kmh) : null));
 
     // ===== PLUJA (fix: no arrosseguem offset d'ahir) =====
-    // rain_day_mm és "pluja acumulada del dia" del sensor, però a vegades comença el matí amb un valor d'ahir (offset).
-    // Solució: calcular pluja incremental: sumem només increments > 0.05 i ignorem el primer valor.
     const rainRaw = rDay.map(r => (r.rain_day_mm == null ? null : Number(r.rain_day_mm)));
 
     const rainAcc = [];
@@ -535,7 +562,8 @@
       });
     }
   }
-// ===== State + polling =====
+
+  // ===== State + polling =====
   const state = {
     historyRows: [],
     current: null,
@@ -780,4 +808,3 @@
 
   main();
 })();
- 
