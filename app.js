@@ -121,7 +121,7 @@
 
     const now = new Date();
     const isNight = (now < st.sunrise || now >= st.sunset);
-    el.textContent = `Sol: sortida ${fmtHM(st.sunrise)} · posta ${fmtHM(st.sunset)} · ${isNight ? "nit" : "dia"}`;
+    el.textContent = `Sol: Sortida ${fmtHM(st.sunrise)}h · Posta ${fmtHM(st.sunset)}h`;
   }
 
   // ===== Icona home (pluja real té prioritat) =====
