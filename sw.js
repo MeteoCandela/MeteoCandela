@@ -4,7 +4,7 @@
 // - HTML (navegació): network-first amb fallback a última versió cachejada
 // - Assets (css/js/png/svg/woff2...): stale-while-revalidate (ràpid i fiable)
 
-const VERSION = "2026-02-10-02";
+const VERSION = "2026-02-10-03";
 const CACHE_NAME = `meteovalls-${VERSION}`;
 
 // Només el mínim imprescindible (pots afegir icones si vols)
@@ -14,6 +14,7 @@ const PRECACHE_URLS = [
   "/style.css",
   "/app.js",
   "/vendor/chart.umd.min.js",
+  "/vendor/suncalc.min.js",
   "/favicon.png",
   "/apple-touch-icon.png",
   "/android-chrome-192.png",
