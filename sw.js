@@ -13,6 +13,7 @@ const PRECACHE_URLS = [
   "/site.webmanifest",
   "/style.css",
   "/app.js",
+  "/vendor/chart.umd.min.js",
   "/favicon.png",
   "/apple-touch-icon.png",
   "/android-chrome-192.png",
