@@ -1,44 +1,36 @@
-// sw.js — MeteoValls
-// Objectiu: PWA fiable per dades en temps real.
-// - Cache només assets estàtics (app shell)
-// - Network-first per HTML (sempre última versió)
-// - Stale-while-revalidate per CSS/JS/imatges
-// - MAI cachejar /api/*
-// - Fallback offline a /offline.html (si existeix)
+// sw.js — MeteoValls (sense offline.html, sense Chart local)
+// Estratègia:
+// - /api/*: sempre xarxa (no cache)
+// - HTML (navegació): network-first amb fallback a última versió cachejada
+// - Assets (css/js/png/svg/woff2...): stale-while-revalidate (ràpid i fiable)
 
-const VERSION = "2026-02-10-01";
-const CACHE_NAME = `meteovalls-shell-${VERSION}`;
+const VERSION = "2026-02-10-02";
+const CACHE_NAME = `meteovalls-${VERSION}`;
 
-// Ajusta aquesta llista si canvies noms o afegeixes fitxers.
-// Consell: mantén-la curta. Tot el que no hi sigui es servirà igualment per xarxa.
+// Només el mínim imprescindible (pots afegir icones si vols)
 const PRECACHE_URLS = [
-  "/",                 // entry
-  "/index.html",       // si existeix (si no, no passa res: es capturarà al fetch HTML)
+  "/",
+  "/site.webmanifest",
   "/style.css",
   "/app.js",
-  "/site.webmanifest",
   "/favicon.png",
   "/apple-touch-icon.png",
   "/android-chrome-192.png",
   "/android-chrome-512.png",
-  "/og-image.png",
-  "/offline.html",     // crea'l si vols fallback offline real
-  // Si tens Chart.js en local:
-  "/vendor/chart.umd.js",
 ];
 
-// No cachejar mai l'API
 function isApiRequest(url) {
   return url.pathname.startsWith("/api/");
 }
 
 function isHtmlRequest(request) {
-  return request.mode === "navigate" ||
-    (request.headers.get("accept") || "").includes("text/html");
+  return (
+    request.mode === "navigate" ||
+    (request.headers.get("accept") || "").includes("text/html")
+  );
 }
 
-function isStaticAssetRequest(url) {
-  // assets típics (css/js/img/font)
+function isStaticAsset(url) {
   return (
     url.pathname.endsWith(".css") ||
     url.pathname.endsWith(".js") ||
@@ -63,16 +55,14 @@ self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
 
-    // Precache tolerant: si algun asset no existeix (p.ex. /index.html), no trenquem instal·lació.
+    // Precache tolerant: si algun fitxer no existeix, no trenquem la instal·lació
     await Promise.allSettled(
-      PRECACHE_URLS.map(async (u) => {
+      PRECACHE_URLS.map(async (path) => {
         try {
-          // cache: 'reload' força a saltar caches HTTP del navegador durant install
-          const req = new Request(u, { cache: "reload" });
-          const res = await fetch(req);
-          if (res.ok) await cache.put(u, res);
+          const res = await fetch(new Request(path, { cache: "reload" }));
+          if (res.ok) await cache.put(path, res);
         } catch {
-          // ignorem errors d’asset individual
+          // ignorem errors individuals
         }
       })
     );
@@ -81,62 +71,49 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
-    // Neteja caches antigues
+    // Esborra caches antigues
     const keys = await caches.keys();
     await Promise.all(
-      keys.map((k) => {
-        if (k.startsWith("meteovalls-shell-") && k !== CACHE_NAME) {
-          return caches.delete(k);
-        }
-      })
+      keys.map((k) => (k.startsWith("meteovalls-") && k !== CACHE_NAME ? caches.delete(k) : null))
     );
 
     await self.clients.claim();
   })());
 });
 
-// Permet forçar update: des de la web pots fer postMessage({type:"SKIP_WAITING"})
+// Opcional: forçar update del SW des de la web
 self.addEventListener("message", (event) => {
-  if (event?.data?.type === "SKIP_WAITING") {
-    self.skipWaiting();
-  }
+  if (event?.data?.type === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("fetch", (event) => {
   const req = event.request;
 
-  // Només GET
+  // només GET
   if (req.method !== "GET") return;
 
   const url = new URL(req.url);
 
-  // Només mateix origen (evitem cachejar CDNs)
+  // només mateix origen (no cachegem CDNs)
   if (url.origin !== self.location.origin) return;
 
-  // MAI cachejar /api/*
+  // API: sempre xarxa, mai cache
   if (isApiRequest(url)) {
     event.respondWith(fetch(req));
     return;
   }
 
-  // HTML: Network-first + fallback offline
+  // HTML: network-first, fallback a cache
   if (isHtmlRequest(req)) {
     event.respondWith((async () => {
+      const cache = await caches.open(CACHE_NAME);
       try {
         const res = await fetch(req);
-        // Opcional: guarda la darrera pàgina per obrir offline
-        const cache = await caches.open(CACHE_NAME);
-        cache.put(req, res.clone()).catch(() => {});
+        if (res && res.ok) cache.put(req, res.clone()).catch(() => {});
         return res;
       } catch {
-        // Offline: prova cache i després /offline.html
-        const cached = await caches.match(req);
-        if (cached) return cached;
-
-        const offline = await caches.match("/offline.html");
-        if (offline) return offline;
-
-        return new Response("Offline", {
+        const cached = await cache.match(req);
+        return cached || new Response("Offline", {
           status: 503,
           headers: { "content-type": "text/plain; charset=utf-8" },
         });
@@ -145,33 +122,33 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Assets estàtics: Stale-while-revalidate
-  if (isStaticAssetRequest(url)) {
+  // Assets: stale-while-revalidate
+  if (isStaticAsset(url)) {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
       const cached = await cache.match(req);
 
-      const fetchPromise = fetch(req)
+      const update = fetch(req)
         .then((res) => {
           if (res && res.ok) cache.put(req, res.clone()).catch(() => {});
           return res;
         })
         .catch(() => null);
 
-      // Torna cache si existeix, i en paral·lel actualitza
-      if (cached) return cached;
+      // si tenim cache, retornem-la immediatament i actualitzem en segon pla
+      if (cached) {
+        event.waitUntil(update);
+        return cached;
+      }
 
-      // Si no hi ha cache, espera xarxa; si falla, retorna el que puguis
-      const net = await fetchPromise;
-      if (net) return net;
-
-      // fallback (p.ex. icones)
-      return new Response("", { status: 504 });
+      // si no hi ha cache, provem xarxa; si falla, 504
+      const net = await update;
+      return net || new Response("", { status: 504 });
     })());
     return;
   }
 
-  // Resta: per defecte xarxa amb fallback a cache (conservador)
+  // Resta: xarxa amb fallback a cache
   event.respondWith((async () => {
     try {
       return await fetch(req);
