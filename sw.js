@@ -1,13 +1,12 @@
-// sw.js — MeteoValls (sense offline.html, sense Chart local)
+// sw.js — MeteoValls
 // Estratègia:
 // - /api/*: sempre xarxa (no cache)
-// - HTML (navegació): network-first amb fallback a última versió cachejada
-// - Assets (css/js/png/svg/woff2...): stale-while-revalidate (ràpid i fiable)
+// - HTML (navegació): network-first amb fallback a cache; si no hi ha cache -> home
+// - Assets (css/js/png/svg/woff2...): stale-while-revalidate
 
-const VERSION = "2026-02-10-03";
+const VERSION = "2026-02-10-04";
 const CACHE_NAME = `meteovalls-${VERSION}`;
 
-// Només el mínim imprescindible (pots afegir icones si vols)
 const PRECACHE_URLS = [
   "/",
   "/index.html",
@@ -66,7 +65,7 @@ self.addEventListener("install", (event) => {
       PRECACHE_URLS.map(async (path) => {
         try {
           const res = await fetch(new Request(path, { cache: "reload" }));
-          if (res.ok) await cache.put(path, res);
+          if (res.ok) await cache.put(path, res.clone());
         } catch {
           // ignorem errors individuals
         }
@@ -80,7 +79,9 @@ self.addEventListener("activate", (event) => {
     // Esborra caches antigues
     const keys = await caches.keys();
     await Promise.all(
-      keys.map((k) => (k.startsWith("meteovalls-") && k !== CACHE_NAME ? caches.delete(k) : null))
+      keys.map((k) =>
+        (k.startsWith("meteovalls-") && k !== CACHE_NAME) ? caches.delete(k) : null
+      )
     );
 
     await self.clients.claim();
@@ -109,17 +110,25 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // HTML: network-first, fallback a cache
+  // HTML: network-first, fallback a cache; si no hi ha cache -> home
   if (isHtmlRequest(req)) {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
+
       try {
         const res = await fetch(req);
         if (res && res.ok) cache.put(req, res.clone()).catch(() => {});
         return res;
       } catch {
         const cached = await cache.match(req);
-        return cached || new Response("Offline", {
+        if (cached) return cached;
+
+        // fallback a HOME per evitar pantalla blanca
+        const home =
+          (await cache.match("/")) ||
+          (await cache.match("/index.html"));
+
+        return home || new Response("Offline", {
           status: 503,
           headers: { "content-type": "text/plain; charset=utf-8" },
         });
