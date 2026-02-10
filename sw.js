@@ -2,7 +2,7 @@
 // Estratègia:
 // - /api/*: sempre xarxa (no cache)
 // - HTML (navegació): network-first amb fallback a cache; si no hi ha cache -> home
-// - Assets (css/js/png/svg/woff2...): stale-while-revalidate
+// - Assets (css/js/png/svg/woff2...): stale-while-revalidate (ignorant ?v=)
 
 const VERSION = "2026-02-10-04";
 const CACHE_NAME = `meteovalls-${VERSION}`;
@@ -54,13 +54,28 @@ function isStaticAsset(url) {
   );
 }
 
+// Normalitza: guardem/cachegem per pathname (ignorem ?v=)
+function cleanKeyRequest(originalRequest, urlObj) {
+  return new Request(urlObj.pathname, {
+    method: "GET",
+    headers: originalRequest.headers,
+    credentials: originalRequest.credentials,
+    redirect: originalRequest.redirect,
+    referrer: originalRequest.referrer,
+    referrerPolicy: originalRequest.referrerPolicy,
+    integrity: originalRequest.integrity,
+    cache: "default",
+    mode: "same-origin",
+  });
+}
+
 self.addEventListener("install", (event) => {
   self.skipWaiting();
 
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
 
-    // Precache tolerant: si algun fitxer no existeix, no trenquem la instal·lació
+    // Precache tolerant
     await Promise.allSettled(
       PRECACHE_URLS.map(async (path) => {
         try {
@@ -76,54 +91,56 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
-    // Esborra caches antigues
     const keys = await caches.keys();
     await Promise.all(
       keys.map((k) =>
         (k.startsWith("meteovalls-") && k !== CACHE_NAME) ? caches.delete(k) : null
       )
     );
-
     await self.clients.claim();
   })());
 });
 
-// Opcional: forçar update del SW des de la web
 self.addEventListener("message", (event) => {
   if (event?.data?.type === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("fetch", (event) => {
   const req = event.request;
-
-  // només GET
   if (req.method !== "GET") return;
 
   const url = new URL(req.url);
-
-  // només mateix origen (no cachegem CDNs)
   if (url.origin !== self.location.origin) return;
 
-  // API: sempre xarxa, mai cache
+  // API: sempre xarxa
   if (isApiRequest(url)) {
     event.respondWith(fetch(req));
     return;
   }
 
-  // HTML: network-first, fallback a cache; si no hi ha cache -> home
+  // HTML: network-first, fallback cache (ignorant query); si no -> home
   if (isHtmlRequest(req)) {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
 
       try {
         const res = await fetch(req);
-        if (res && res.ok) cache.put(req, res.clone()).catch(() => {});
+        if (res && res.ok) {
+          // Per HTML, guardem també una clau "neteja" per si hi ha querystrings
+          const cleanReq = cleanKeyRequest(req, url);
+          cache.put(cleanReq, res.clone()).catch(() => {});
+          cache.put(req, res.clone()).catch(() => {});
+        }
         return res;
       } catch {
-        const cached = await cache.match(req);
+        // prova cache amb i sense query
+        const cached =
+          (await cache.match(req)) ||
+          (await cache.match(req, { ignoreSearch: true })) ||
+          (await cache.match(cleanKeyRequest(req, url)));
+
         if (cached) return cached;
 
-        // fallback a HOME per evitar pantalla blanca
         const home =
           (await cache.match("/")) ||
           (await cache.match("/index.html"));
@@ -137,33 +154,41 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Assets: stale-while-revalidate
+  // Assets: stale-while-revalidate (ignorar ?v=)
   if (isStaticAsset(url)) {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
-      const cached = await cache.match(req);
+
+      const cleanReq = cleanKeyRequest(req, url);
+
+      // Busquem cache per clau neta (això arregla style.css?v=...)
+      const cached =
+        (await cache.match(cleanReq)) ||
+        (await cache.match(req)) ||
+        (await cache.match(req, { ignoreSearch: true }));
 
       const update = fetch(req)
         .then((res) => {
-          if (res && res.ok) cache.put(req, res.clone()).catch(() => {});
+          if (res && res.ok) {
+            // Guardem per pathname (sense query)
+            cache.put(cleanReq, res.clone()).catch(() => {});
+          }
           return res;
         })
         .catch(() => null);
 
-      // si tenim cache, retornem-la immediatament i actualitzem en segon pla
       if (cached) {
         event.waitUntil(update);
         return cached;
       }
 
-      // si no hi ha cache, provem xarxa; si falla, 504
       const net = await update;
       return net || new Response("", { status: 504 });
     })());
     return;
   }
 
-  // Resta: xarxa amb fallback a cache
+  // Resta: xarxa amb fallback cache
   event.respondWith((async () => {
     try {
       return await fetch(req);
