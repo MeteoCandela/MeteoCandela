@@ -1,7 +1,7 @@
 {
   "name": "MeteoValls",
   "short_name": "MeteoValls",
-  "id": "/?source=pwa",
+  "id": "/",
   "start_url": "/?source=pwa",
   "scope": "/",
   "lang": "ca",
@@ -9,8 +9,10 @@
   "background_color": "#0b1220",
   "theme_color": "#0b1220",
   "description": "Estació meteorològica automàtica a Valls (Alt Camp) amb dades en temps real i gràfiques diàries.",
+  "orientation": "portrait",
+  "categories": ["weather", "utilities"],
   "icons": [
-    { "src": "/android-chrome-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/android-chrome-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "/android-chrome-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/android-chrome-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }
