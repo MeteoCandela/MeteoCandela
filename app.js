@@ -1,3 +1,9 @@
+// Register Service Worker (PWA)
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(console.error);
+  });
+}
 (() => {
   // Detecta si estàs servint sota subpath (ex: GitHub Pages /MeteoCandela/)
   const BASE = location.pathname.includes("/MeteoCandela/") ? "/MeteoCandela" : "";
