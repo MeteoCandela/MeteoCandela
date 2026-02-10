@@ -13,7 +13,7 @@ const PRECACHE_URLS = [
   "/index.html",
   "/previsio.html",
   "/historic.html",
-  "/sobre.html", // si
+  "/sobre.html",
   "/site.webmanifest",
   "/style.css",
   "/app.js",
