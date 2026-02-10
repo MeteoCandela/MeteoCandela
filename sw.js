@@ -1,23 +1,29 @@
 // sw.js — MeteoValls
-// Estratègia:
-// - /api/*: sempre xarxa (no cache)
-// - HTML (navegació): network-first amb fallback a cache; si no hi ha cache -> home
-// - Assets (css/js/png/svg/woff2...): stale-while-revalidate (ignorant ?v=)
+// Objectiu:
+// - PWA "shell offline" robusta: totes les pàgines (index/previsio/historic/sobre) amb CSS/JS offline
+// - /api/* sempre xarxa (no cache) per evitar dades velles
+// - Assets: stale-while-revalidate amb clau neta (ignora ?v=)
+// - Navegació HTML: network-first; offline -> cache; si no -> home (evita blanc)
 
-const VERSION = "2026-02-10-04";
-const CACHE_NAME = `meteovalls-${VERSION}`;
+const VERSION = "2026-02-10-06";
+const CACHE_PREFIX = "meteovalls-";
+const CACHE_NAME = `${CACHE_PREFIX}${VERSION}`;
 
+// Precache: pàgines + assets essencials
 const PRECACHE_URLS = [
   "/",
   "/index.html",
   "/previsio.html",
   "/historic.html",
   "/sobre.html",
+
   "/site.webmanifest",
   "/style.css",
   "/app.js",
+
   "/vendor/chart.umd.min.js",
   "/vendor/suncalc.min.js",
+
   "/favicon.png",
   "/apple-touch-icon.png",
   "/android-chrome-192.png",
@@ -54,7 +60,7 @@ function isStaticAsset(url) {
   );
 }
 
-// Normalitza: guardem/cachegem per pathname (ignorem ?v=)
+// Clau neta: guardem al cache per pathname (ignorem ?v=)
 function cleanKeyRequest(originalRequest, urlObj) {
   return new Request(urlObj.pathname, {
     method: "GET",
@@ -69,34 +75,36 @@ function cleanKeyRequest(originalRequest, urlObj) {
   });
 }
 
+async function precacheAll() {
+  const cache = await caches.open(CACHE_NAME);
+
+  await Promise.allSettled(
+    PRECACHE_URLS.map(async (path) => {
+      try {
+        const res = await fetch(new Request(path, { cache: "reload" }));
+        if (res && res.ok) await cache.put(path, res.clone());
+      } catch {
+        // ignorem errors individuals
+      }
+    })
+  );
+}
+
+async function cleanupOldCaches() {
+  const keys = await caches.keys();
+  await Promise.all(
+    keys.map((k) => (k.startsWith(CACHE_PREFIX) && k !== CACHE_NAME ? caches.delete(k) : null))
+  );
+}
+
 self.addEventListener("install", (event) => {
   self.skipWaiting();
-
-  event.waitUntil((async () => {
-    const cache = await caches.open(CACHE_NAME);
-
-    // Precache tolerant
-    await Promise.allSettled(
-      PRECACHE_URLS.map(async (path) => {
-        try {
-          const res = await fetch(new Request(path, { cache: "reload" }));
-          if (res.ok) await cache.put(path, res.clone());
-        } catch {
-          // ignorem errors individuals
-        }
-      })
-    );
-  })());
+  event.waitUntil(precacheAll());
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
-    const keys = await caches.keys();
-    await Promise.all(
-      keys.map((k) =>
-        (k.startsWith("meteovalls-") && k !== CACHE_NAME) ? caches.delete(k) : null
-      )
-    );
+    await cleanupOldCaches();
     await self.clients.claim();
   })());
 });
@@ -107,39 +115,48 @@ self.addEventListener("message", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const req = event.request;
+
+  // Només GET
   if (req.method !== "GET") return;
 
   const url = new URL(req.url);
+
+  // Només same-origin (no cachegem CDNs)
   if (url.origin !== self.location.origin) return;
 
-  // API: sempre xarxa
+  // 1) API: network-only
   if (isApiRequest(url)) {
     event.respondWith(fetch(req));
     return;
   }
 
-  // HTML: network-first, fallback cache (ignorant query); si no -> home
+  // 2) HTML: network-first -> cache; offline -> cache; si no -> home
   if (isHtmlRequest(req)) {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
+      const cleanReq = cleanKeyRequest(req, url);
 
       try {
         const res = await fetch(req);
         if (res && res.ok) {
-          // Per HTML, guardem també una clau "neteja" per si hi ha querystrings
-          const cleanReq = cleanKeyRequest(req, url);
+          // Guardem amb clau neta i també amb la request real (per si hi ha query)
           cache.put(cleanReq, res.clone()).catch(() => {});
           cache.put(req, res.clone()).catch(() => {});
         }
         return res;
       } catch {
-        // prova cache amb i sense query
         const cached =
           (await cache.match(req)) ||
           (await cache.match(req, { ignoreSearch: true })) ||
-          (await cache.match(cleanKeyRequest(req, url)));
+          (await cache.match(cleanReq));
 
         if (cached) return cached;
+
+        // Fallback explícit per /sobre o /sobre/
+        if (url.pathname === "/sobre" || url.pathname === "/sobre/") {
+          const about = await cache.match("/sobre.html");
+          if (about) return about;
+        }
 
         const home =
           (await cache.match("/")) ||
@@ -154,14 +171,12 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Assets: stale-while-revalidate (ignorar ?v=)
+  // 3) Assets: stale-while-revalidate amb clau neta (ignorem ?v=)
   if (isStaticAsset(url)) {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
-
       const cleanReq = cleanKeyRequest(req, url);
 
-      // Busquem cache per clau neta (això arregla style.css?v=...)
       const cached =
         (await cache.match(cleanReq)) ||
         (await cache.match(req)) ||
@@ -169,10 +184,7 @@ self.addEventListener("fetch", (event) => {
 
       const update = fetch(req)
         .then((res) => {
-          if (res && res.ok) {
-            // Guardem per pathname (sense query)
-            cache.put(cleanReq, res.clone()).catch(() => {});
-          }
+          if (res && res.ok) cache.put(cleanReq, res.clone()).catch(() => {});
           return res;
         })
         .catch(() => null);
@@ -188,7 +200,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Resta: xarxa amb fallback cache
+  // 4) Resta: network-first amb fallback cache
   event.respondWith((async () => {
     try {
       return await fetch(req);
