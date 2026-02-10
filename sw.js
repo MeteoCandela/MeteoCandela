@@ -10,6 +10,10 @@ const CACHE_NAME = `meteovalls-${VERSION}`;
 // Només el mínim imprescindible (pots afegir icones si vols)
 const PRECACHE_URLS = [
   "/",
+  "/index.html",
+  "/previsio.html",
+  "/historic.html",
+  "/sobre.html", // si
   "/site.webmanifest",
   "/style.css",
   "/app.js",
