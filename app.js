@@ -601,32 +601,42 @@ if ("serviceWorker" in navigator) {
   };
 
   async function loadHistoryOnce() {
+  try {
     const h = await fetchJson(`${HISTORY_URL}?t=${Date.now()}`);
     const rawHist = Array.isArray(h) ? h : [];
     state.historyRows = rawHist
       .map(normalizeRow)
       .filter(r => Number.isFinite(r.ts))
       .sort((a, b) => a.ts - b.ts);
-    return state.historyRows;
+  } catch (e) {
+    console.warn("History offline o no disponible");
+    state.historyRows = state.historyRows || [];
   }
+  return state.historyRows;
+}
 
   async function loadCurrentAndHeartbeat() {
-    let current = null;
-    try {
-      const c = await fetchJson(`${CURRENT_URL}?t=${Date.now()}`);
-      if (c && typeof c === "object") {
-        const cc = normalizeRow(c);
-        if (Number.isFinite(cc.ts)) current = cc;
-      }
-    } catch {}
+  let current = state.current;
+  let hb = state.hb;
 
-    let hb = null;
-    try { hb = await fetchJson(`${HEARTBEAT_URL}?t=${Date.now()}`); } catch {}
-
-    state.current = current;
-    state.hb = hb;
-    return { current, hb };
+  try {
+    const c = await fetchJson(`${CURRENT_URL}?t=${Date.now()}`);
+    const cc = normalizeRow(c);
+    if (Number.isFinite(cc.ts)) current = cc;
+  } catch {
+    console.warn("Current offline");
   }
+
+  try {
+    hb = await fetchJson(`${HEARTBEAT_URL}?t=${Date.now()}`);
+  } catch {
+    console.warn("Heartbeat offline");
+  }
+
+  state.current = current;
+  state.hb = hb;
+  return { current, hb };
+}
 
   function renderAll() {
     const historyRows = state.historyRows || [];
@@ -734,10 +744,10 @@ if ("serviceWorker" in navigator) {
       }
 
     } catch (e) {
-      if ($("statusLine")) $("statusLine").textContent = "⚠️ Error JS: revisa app.js (consola).";
-      setSourceLine("Error carregant la pàgina.");
-      console.error(e);
-    }
+  console.warn("Inicialització parcial (offline?)", e);
+  renderAll();            // 👈 IMPORTANT
+  renderChartsIfNeeded(); // 👈 IMPORTANT
+}
   }
 
   // ===== PWA Install FAB (Android/Chrome) + iOS tip =====
