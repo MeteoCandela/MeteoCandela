@@ -1,19 +1,20 @@
 <!doctype html>
 <html lang="ca">
 <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <!-- PWA / iOS -->
+  <meta name="theme-color" content="#0b1220">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="MeteoValls">
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
 
   <!-- SEO bàsic -->
   <title>MeteoValls · Estació meteorològica de Valls (Alt Camp) en temps real</title>
   <meta name="description" content="MeteoValls (abans MeteoCandela) és una estació meteorològica automàtica a Valls (Alt Camp) amb dades en temps real de temperatura, humitat, vent, ratxes i pluja. Gràfiques actualitzades cada 5 minuts.">
   <link rel="canonical" href="https://meteocandela.cat/">
-
   <meta name="robots" content="index,follow">
-  <meta name="theme-color" content="#0b1220">
 
   <!-- Open Graph (WhatsApp / Facebook / Telegram) -->
   <meta property="og:type" content="website">
@@ -22,9 +23,7 @@
   <meta property="og:title" content="MeteoValls · Estació meteorològica de Valls (Alt Camp)">
   <meta property="og:description" content="MeteoValls (abans MeteoCandela). Dades en temps real de temperatura, humitat, vent, ratxes i pluja.">
   <meta property="og:url" content="https://meteocandela.cat/">
-
   <meta property="og:image" content="https://meteocandela.cat/og-image.png">
-  <meta property="og:image:url" content="https://meteocandela.cat/og-image.png">
   <meta property="og:image:secure_url" content="https://meteocandela.cat/og-image.png">
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
@@ -114,13 +113,22 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png">
+
+  <!-- PWA manifest -->
   <link rel="manifest" href="/site.webmanifest">
 
   <!-- CSS / JS (PUJA el número quan facis canvis!) -->
-  <link rel="stylesheet" href="style.css?v=2026-02-01-81">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="/style.css?v=2026-02-01-81">
+
+  <!-- IMPORTANT (recomanat): evita dependència de CDN per PWA/TWA.
+       Si encara no tens Chart.js en local, deixa la línia CDN (comentada) fins que el copiïs.
+       Quan el tinguis, usa el fitxer local i elimina el CDN. -->
+  <script defer src="/vendor/chart.umd.js"></script>
+  <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> -->
+
   <script defer src="https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.js"></script>
-  <script defer src="app.js?v=2026-02-02-07"></script>
+  <script defer src="/app.js?v=2026-02-02-07"></script>
 </head>
 
 
