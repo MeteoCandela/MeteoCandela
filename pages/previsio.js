@@ -2,6 +2,8 @@
 import { $ } from "../lib/dom.js";
 import { getApi } from "../lib/env.js";
 
+const LS_KEY = "meteovalls:muni_id";
+
 function hourNum(hourStr){
   const m = String(hourStr ?? "").match(/^\s*(\d{1,2})/);
   return m ? Number(m[1]) : NaN;
@@ -177,11 +179,33 @@ function fmtWind(h){
   return `<div class="fx-wind-main">${vTxt}${dTxt}</div>${gust}`;
 }
 
-async function fetchForecast(FORECAST_URL){
-  const res = await fetch(`${FORECAST_URL}?t=${Date.now()}`, { cache: "no-store" });
+async function fetchJson(url){
+  const res = await fetch(url, { cache: "no-store" });
   const txt = await res.text();
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}: ${txt.slice(0,140)}`);
-  return JSON.parse(txt);
+  let data = null;
+  try { data = txt ? JSON.parse(txt) : null; } catch { data = null; }
+  if (!res.ok) {
+    const msg = (data && (data.error || data.detail)) ? `${data.error || "error"} ${data.detail || ""}` : txt.slice(0,140);
+    throw new Error(`HTTP ${res.status}: ${msg}`);
+  }
+  return data;
+}
+
+function deriveMunicipisUrl(forecastUrl){
+  // Si el teu FORECAST_URL és ".../api/forecast", això dona ".../api/municipis"
+  return String(forecastUrl || "").replace(/\/forecast(\?.*)?$/i, "/municipis");
+}
+
+async function fetchMunicipis(MUNICIPIS_URL){
+  // cache buster suau
+  return fetchJson(`${MUNICIPIS_URL}?t=${Date.now()}`);
+}
+
+async function fetchForecast(FORECAST_URL, muniId){
+  const url = new URL(FORECAST_URL, window.location.origin);
+  if (muniId) url.searchParams.set("m", muniId);
+  url.searchParams.set("t", String(Date.now())); // bust cache
+  return fetchJson(url.toString());
 }
 
 function renderHourly(hourly){
@@ -312,21 +336,32 @@ function renderDaily(daily){
   `;
 }
 
+function setHeaderPlace(place){
+  const h1 = document.getElementById("fxTitle");
+  if (h1 && place) h1.textContent = `Previsió · ${place}`;
+}
+
 export function initPrevisio() {
   const { FORECAST_URL } = getApi();
+  const MUNICIPIS_URL = deriveMunicipisUrl(FORECAST_URL);
+
   const y = $("year");
   if (y) y.textContent = String(new Date().getFullYear());
 
-  async function main(){
+  const sel = document.getElementById("muniSelect");
+
+  async function loadAndRender(muniId){
     const status = $("fxStatus");
     const meta = $("fxMeta");
 
     try{
-      const fx = await fetchForecast(FORECAST_URL);
+      const fx = await fetchForecast(FORECAST_URL, muniId);
 
       const provider = fx.provider || "—";
-      const place = fx.place || "Valls (Alt Camp)";
+      const place = fx.place || "Alt Camp";
       const updated = fx.updated_ts ? timeAgo(fx.updated_ts) : "—";
+
+      setHeaderPlace(place);
 
       if (status) status.textContent = `Previsió: ${place} · ${provider} · Actualitzat ${updated}.`;
       if (meta) {
@@ -338,7 +373,6 @@ export function initPrevisio() {
 
       renderHourly(fx.hourly);
       renderDaily(rotateDailyToToday(fx.daily));
-
     } catch(e){
       console.error(e);
       if (status) status.textContent = "No es pot carregar la previsió (/api/forecast).";
@@ -347,5 +381,40 @@ export function initPrevisio() {
     }
   }
 
-  main();
-}
+  async function initSelect(){
+    if (!sel) return;
+
+    try{
+      const cfg = await fetchMunicipis(MUNICIPIS_URL);
+      const municipis = Array.isArray(cfg?.municipis) ? cfg.municipis : [];
+      const defId = String(cfg?.default_id || "43161");
+
+      // options
+      sel.innerHTML = municipis
+        .slice()
+        .sort((a,b) => String(a.name).localeCompare(String(b.name), "ca"))
+        .map(m => `<option value="${String(m.id)}">${String(m.name)}</option>`)
+        .join("");
+
+      // valor inicial
+      const saved = localStorage.getItem(LS_KEY);
+      const startId = (saved && municipis.some(m => String(m.id) === String(saved))) ? String(saved) : defId;
+      sel.value = startId;
+
+      sel.addEventListener("change", () => {
+        const id = String(sel.value || defId);
+        localStorage.setItem(LS_KEY, id);
+        loadAndRender(id);
+      });
+
+      // primer render
+      await loadAndRender(startId);
+    } catch(e){
+      console.error(e);
+      // si falla municipis, almenys renderitza Valls sense selector
+      await loadAndRender(null);
+    }
+  }
+
+  initSelect();
+    }
