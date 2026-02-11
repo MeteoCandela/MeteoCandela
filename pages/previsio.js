@@ -358,8 +358,6 @@ function renderDaily(daily){
 }
 
 export function initPrevisio() {
-  const tag = document.getElementById("buildTag");
-  if (tag) tag.textContent = "BUILD: 2026-02-11-100 (previsio.js nou)";
   const { FORECAST_URL } = getApi();
   const MUNICIPIS_URL = deriveMunicipisUrl(FORECAST_URL);
 
