@@ -127,26 +127,34 @@ function fmtHourLabelFromDate(dt){
 
 function skyToCA(s){
   if (!s) return s;
-  let t = String(s).trim().toLowerCase();
-  t = t.replaceAll(" con ", " amb ");
 
-  t = t.replaceAll("lluvia escasa", "pluja feble");
-  t = t.replaceAll("lluvia", "pluja");
-  t = t.replaceAll("tormentas", "tempestes");
-  t = t.replaceAll("tormenta", "tempesta");
-  t = t.replaceAll("nieve", "neu");
-  t = t.replaceAll("niebla", "boira");
-  t = t.replaceAll("bruma", "broma");
+  // normalitza: minúscules, espais, sense duplicats
+  let t = String(s).trim().toLowerCase().replace(/\s+/g, " ");
 
-  t = t.replaceAll("intervalos nubosos", "intervals ennuvolats");
-  t = t.replaceAll("poco nuboso", "poc ennuvolat");
-  t = t.replaceAll("muy nuboso", "molt ennuvolat");
-  t = t.replaceAll("nuboso", "ennuvolat");
-  t = t.replaceAll("cubierto", "cobert");
-  t = t.replaceAll("despejado", "cel serè");
+  // traduccions més específiques primer
   t = t.replace(/\bnubes\s+altas\b/g, "núvols alts");
-t = t.replace(/\bnubes\s+medias\b/g, "núvols mitjans");
+  t = t.replace(/\bnubes\s+medias\b/g, "núvols mitjans");
+  t = t.replace(/\bnubes\s+bajas\b/g, "núvols baixos");
 
+  t = t.replace(/\bintervalos\s+nubosos\b/g, "intervals ennuvolats");
+  t = t.replace(/\bpoco\s+nuboso\b/g, "poc ennuvolat");
+  t = t.replace(/\bmuy\s+nuboso\b/g, "molt ennuvolat");
+  t = t.replace(/\bnuboso\b/g, "ennuvolat");
+  t = t.replace(/\bcubierto\b/g, "cobert");
+  t = t.replace(/\bdespejado\b/g, "cel serè");
+
+  t = t.replace(/\blluvia\s+escasa\b/g, "pluja feble");
+  t = t.replace(/\blluvia\b/g, "pluja");
+  t = t.replace(/\btormentas\b/g, "tempestes");
+  t = t.replace(/\btormenta\b/g, "tempesta");
+  t = t.replace(/\bnieve\b/g, "neu");
+  t = t.replace(/\bniebla\b/g, "boira");
+  t = t.replace(/\bbruma\b/g, "broma");
+
+  // “con” -> “amb” (millor al final)
+  t = t.replace(/\bcon\b/g, "amb");
+
+  // capitalitza primera lletra
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
@@ -361,7 +369,20 @@ export function initPrevisio() {
 
       const provider = fx.provider || "—";
       const placeRaw = fx.place || "Valls";
-      const place = String(placeRaw).replace(/\s*\([^)]*\)\s*/g, " ").trim(); // elimina "(...)"
+let place = String(placeRaw);
+
+// elimina (....)
+place = place.replace(/\s*\([^)]*\)\s*/g, " ");
+
+// elimina "· Alt Camp" o ", Alt Camp" o " Alt Camp" al final
+place = place.replace(/\s*[·,]\s*alt\s*camp\s*$/i, "");
+place = place.replace(/\s+alt\s*camp\s*$/i, "");
+
+// neteja espais
+place = place.replace(/\s+/g, " ").trim();
+
+// fallback si queda buit
+if (!place) place = "Valls";
       const updated = fx.updated_ts ? timeAgo(fx.updated_ts) : "—";
 
 setHeaderPlace(place);
