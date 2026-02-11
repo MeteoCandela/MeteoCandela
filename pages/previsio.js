@@ -2,8 +2,6 @@
 import { $ } from "../lib/dom.js";
 import { getApi } from "../lib/env.js";
 
-console.log("✅ previsio.js CARREGAT", new Date().toISOString());
-
 const LS_KEY = "meteovalls:muni_id";
 
 function hourNum(hourStr){
@@ -130,13 +128,14 @@ function fmtHourLabelFromDate(dt){
 function skyToCA(s){
   if (!s) return s;
 
-  // normalitza: minúscules, espais, sense duplicats
+  // normalitza
   let t = String(s).trim().toLowerCase().replace(/\s+/g, " ");
 
-  // traduccions més específiques primer
+  // IMPORTANT: “nubes altas” pot venir amb coma o “con…”
   t = t.replace(/\bnubes\s+altas\b/g, "núvols alts");
   t = t.replace(/\bnubes\s+medias\b/g, "núvols mitjans");
   t = t.replace(/\bnubes\s+bajas\b/g, "núvols baixos");
+  t = t.replace(/\bnubes\b/g, "núvols"); // fallback
 
   t = t.replace(/\bintervalos\s+nubosos\b/g, "intervals ennuvolats");
   t = t.replace(/\bpoco\s+nuboso\b/g, "poc ennuvolat");
@@ -153,10 +152,9 @@ function skyToCA(s){
   t = t.replace(/\bniebla\b/g, "boira");
   t = t.replace(/\bbruma\b/g, "broma");
 
-  // “con” -> “amb” (millor al final)
+  // “con” -> “amb”
   t = t.replace(/\bcon\b/g, "amb");
 
-  // capitalitza primera lletra
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
@@ -204,20 +202,31 @@ async function fetchJson(url){
 }
 
 function deriveMunicipisUrl(forecastUrl){
-  // Si el teu FORECAST_URL és ".../api/forecast", això dona ".../api/municipis"
   return String(forecastUrl || "").replace(/\/forecast(\?.*)?$/i, "/municipis");
 }
 
 async function fetchMunicipis(MUNICIPIS_URL){
-  // cache buster suau
   return fetchJson(`${MUNICIPIS_URL}?t=${Date.now()}`);
 }
 
 async function fetchForecast(FORECAST_URL, muniId){
   const url = new URL(FORECAST_URL, window.location.origin);
   if (muniId) url.searchParams.set("m", muniId);
-  url.searchParams.set("t", String(Date.now())); // bust cache
+  url.searchParams.set("t", String(Date.now()));
   return fetchJson(url.toString());
+}
+
+// ⬇️ AIXÒ ÉS EL QUE ET GARANTEIX “SENSE ALT CAMP”
+function getSelectedMuniName(){
+  const sel = document.getElementById("muniSelect");
+  const opt = sel?.selectedOptions?.[0];
+  return opt ? String(opt.textContent || "").trim() : "";
+}
+
+function setHeaderPlace(){
+  const h1 = document.getElementById("fxTitle");
+  const name = getSelectedMuniName() || "Valls";
+  if (h1) h1.textContent = `Previsió · ${name}`;
 }
 
 function renderHourly(hourly){
@@ -348,13 +357,7 @@ function renderDaily(daily){
   `;
 }
 
-function setHeaderPlace(place){
-  const h1 = document.getElementById("fxTitle");
-  if (h1 && place) h1.textContent = `Previsió · ${place}`;
-}
-
 export function initPrevisio() {
-  console.log("✅ initPrevisio() EXECUTAT");
   const { FORECAST_URL } = getApi();
   const MUNICIPIS_URL = deriveMunicipisUrl(FORECAST_URL);
 
@@ -371,26 +374,14 @@ export function initPrevisio() {
       const fx = await fetchForecast(FORECAST_URL, muniId);
 
       const provider = fx.provider || "—";
-      const placeRaw = fx.place || "Valls";
-let place = String(placeRaw);
-
-// elimina (....)
-place = place.replace(/\s*\([^)]*\)\s*/g, " ");
-
-// elimina "· Alt Camp" o ", Alt Camp" o " Alt Camp" al final
-place = place.replace(/\s*[·,]\s*alt\s*camp\s*$/i, "");
-place = place.replace(/\s+alt\s*camp\s*$/i, "");
-
-// neteja espais
-place = place.replace(/\s+/g, " ").trim();
-
-// fallback si queda buit
-if (!place) place = "Valls";
       const updated = fx.updated_ts ? timeAgo(fx.updated_ts) : "—";
 
-setHeaderPlace(place);
+      // ✅ títol sempre des del selector (sense Alt Camp)
+      setHeaderPlace();
 
-      if (status) status.textContent = `Previsió: ${place} · ${provider} · Actualitzat ${updated}.`;
+      const placeForStatus = getSelectedMuniName() || (fx.place || "Valls");
+      if (status) status.textContent = `Previsió: ${placeForStatus} · ${provider} · Actualitzat ${updated}.`;
+
       if (meta) {
         meta.innerHTML = `
           <div>Font: <strong>${provider}</strong></div>
@@ -416,14 +407,12 @@ setHeaderPlace(place);
       const municipis = Array.isArray(cfg?.municipis) ? cfg.municipis : [];
       const defId = String(cfg?.default_id || "43161");
 
-      // options
       sel.innerHTML = municipis
         .slice()
         .sort((a,b) => String(a.name).localeCompare(String(b.name), "ca"))
         .map(m => `<option value="${String(m.id)}">${String(m.name)}</option>`)
         .join("");
 
-      // valor inicial
       const saved = localStorage.getItem(LS_KEY);
       const startId = (saved && municipis.some(m => String(m.id) === String(saved))) ? String(saved) : defId;
       sel.value = startId;
@@ -434,11 +423,9 @@ setHeaderPlace(place);
         loadAndRender(id);
       });
 
-      // primer render
       await loadAndRender(startId);
     } catch(e){
       console.error(e);
-      // si falla municipis, almenys renderitza Valls sense selector
       await loadAndRender(null);
     }
   }
