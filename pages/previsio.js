@@ -354,6 +354,7 @@ function setHeaderPlace(place){
 }
 
 export function initPrevisio() {
+  console.log("✅ initPrevisio() EXECUTAT");
   const { FORECAST_URL } = getApi();
   const MUNICIPIS_URL = deriveMunicipisUrl(FORECAST_URL);
 
