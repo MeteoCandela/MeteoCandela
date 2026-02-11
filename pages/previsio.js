@@ -2,6 +2,8 @@
 import { $ } from "../lib/dom.js";
 import { getApi } from "../lib/env.js";
 
+console.log("✅ previsio.js CARREGAT", new Date().toISOString());
+
 const LS_KEY = "meteovalls:muni_id";
 
 function hourNum(hourStr){
