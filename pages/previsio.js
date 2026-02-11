@@ -216,17 +216,16 @@ async function fetchForecast(FORECAST_URL, muniId){
   return fetchJson(url.toString());
 }
 
-// ⬇️ AIXÒ ÉS EL QUE ET GARANTEIX “SENSE ALT CAMP”
+// ✅ nom sempre del selector (això evita “(Alt Camp)”)
 function getSelectedMuniName(){
   const sel = document.getElementById("muniSelect");
   const opt = sel?.selectedOptions?.[0];
   return opt ? String(opt.textContent || "").trim() : "";
 }
 
-function setHeaderPlace(place){
-  let name = String(place || "").trim();
-
-  // cas especial: Valls
+// ✅ títol sempre net + cas especial Valls
+function setHeaderPlace(){
+  let name = getSelectedMuniName() || "Valls";
   if (name.toLowerCase() === "valls") name = "Ciutat de Valls";
 
   const h1 = document.getElementById("fxTitle");
@@ -380,10 +379,11 @@ export function initPrevisio() {
       const provider = fx.provider || "—";
       const updated = fx.updated_ts ? timeAgo(fx.updated_ts) : "—";
 
-      // ✅ títol sempre des del selector (sense Alt Camp)
+      // ✅ títol sempre des del selector (sense Alt Camp) + cas Valls
       setHeaderPlace();
 
-      const placeForStatus = getSelectedMuniName() || (fx.place || "Valls");
+      // ✅ status també consistent (del selector)
+      const placeForStatus = getSelectedMuniName() || "Valls";
       if (status) status.textContent = `Previsió: ${placeForStatus} · ${provider} · Actualitzat ${updated}.`;
 
       if (meta) {
@@ -421,9 +421,14 @@ export function initPrevisio() {
       const startId = (saved && municipis.some(m => String(m.id) === String(saved))) ? String(saved) : defId;
       sel.value = startId;
 
+      // ✅ títol correcte abans de carregar API (instant)
+      setHeaderPlace();
+
       sel.addEventListener("change", () => {
         const id = String(sel.value || defId);
         localStorage.setItem(LS_KEY, id);
+        // actualitza títol immediatament en canviar
+        setHeaderPlace();
         loadAndRender(id);
       });
 
@@ -435,4 +440,4 @@ export function initPrevisio() {
   }
 
   initSelect();
-  }
+}
