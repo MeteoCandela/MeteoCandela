@@ -144,8 +144,8 @@ function skyToCA(s){
   t = t.replaceAll("nuboso", "ennuvolat");
   t = t.replaceAll("cubierto", "cobert");
   t = t.replaceAll("despejado", "cel serè");
-  t = t.replaceAll("nubes altas", "núvols alts");
-  t = t.replaceAll("nubes medias", "núvols mitjans");
+  t = t.replace(/\bnubes\s+altas\b/g, "núvols alts");
+t = t.replace(/\bnubes\s+medias\b/g, "núvols mitjans");
 
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
@@ -360,9 +360,9 @@ export function initPrevisio() {
       const fx = await fetchForecast(FORECAST_URL, muniId);
 
       const provider = fx.provider || "—";
-const placeRaw = fx.place || "Valls";
-const place = placeRaw.replace(/\s*\(.*?\)/g, ""); // elimina "(Alt Camp)"
-const updated = fx.updated_ts ? timeAgo(fx.updated_ts) : "—";
+      const placeRaw = fx.place || "Valls";
+      const place = String(placeRaw).replace(/\s*\([^)]*\)\s*/g, " ").trim(); // elimina "(...)"
+      const updated = fx.updated_ts ? timeAgo(fx.updated_ts) : "—";
 
 setHeaderPlace(place);
 
