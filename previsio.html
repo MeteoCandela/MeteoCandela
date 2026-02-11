@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Previsió (Alt Camp) · MeteoValls</title>
-  <meta name="description" content="Previsió meteorològica Alt Camp: horària (properes 24 h) i previsió diària 7 dies (AEMET).">
+  <title>Previsió · MeteoValls</title>
+  <meta name="description" content="Previsió meteorològica: horària (properes 24 h) i previsió diària 7 dies (AEMET).">
 
   <link rel="canonical" href="https://meteocandela.cat/previsio.html">
   <meta name="robots" content="index,follow">
@@ -13,12 +13,12 @@
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="MeteoValls">
   <meta property="og:locale" content="ca_ES">
-  <meta property="og:title" content="Previsió · MeteoValls (Alt Camp)">
+  <meta property="og:title" content="Previsió · MeteoValls">
   <meta property="og:description" content="Previsió horària (properes 24 h) i previsió diària 7 dies (AEMET).">
   <meta property="og:url" content="https://meteocandela.cat/previsio.html">
   <meta property="og:image" content="https://meteocandela.cat/og-image.png">
 
-  <link rel="stylesheet" href="/style.css?v=2026-02-11-02">
+  <link rel="stylesheet" href="/style.css?v=2026-02-11-03">
 </head>
 
 <body data-page="previsio">
@@ -30,9 +30,8 @@
 
       <div class="status" id="fxStatus">Carregant previsió…</div>
 
-      <!-- Selector municipi -->
-      <div class="subs" style="margin-top:10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap">
-        <label for="muniSelect" class="muted-line" style="margin:0">Municipi:</label>
+      <!-- Selector municipi (UI bonica, sense inline styles) -->
+      <div class="muni-picker" aria-label="Selector de municipi">
         <select id="muniSelect" aria-label="Selecciona municipi"></select>
       </div>
     </div>
