@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Previsió Ciutat de Valls · MeteoValls</title>
-  <meta name="description" content="Previsió meteorològica per Valls (Alt Camp): horària (properes 24 h) i previsió diària 7 dies (AEMET).">
+  <title>Previsió (Alt Camp) · MeteoValls</title>
+  <meta name="description" content="Previsió meteorològica Alt Camp: horària (properes 24 h) i previsió diària 7 dies (AEMET).">
 
   <link rel="canonical" href="https://meteocandela.cat/previsio.html">
   <meta name="robots" content="index,follow">
@@ -13,22 +13,28 @@
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="MeteoValls">
   <meta property="og:locale" content="ca_ES">
-  <meta property="og:title" content="Previsió · MeteoValls (Valls · Alt Camp)">
+  <meta property="og:title" content="Previsió · MeteoValls (Alt Camp)">
   <meta property="og:description" content="Previsió horària (properes 24 h) i previsió diària 7 dies (AEMET).">
   <meta property="og:url" content="https://meteocandela.cat/previsio.html">
   <meta property="og:image" content="https://meteocandela.cat/og-image.png">
 
-  <link rel="stylesheet" href="/style.css?v=2026-02-07-03">
+  <link rel="stylesheet" href="/style.css?v=2026-02-11-02">
 </head>
 
-<body>
 <body data-page="previsio">
   <header class="hero hero--small">
     <div class="hero__overlay"></div>
     <div class="hero__content">
-      <h1>Previsió Ciutat de Valls</h1>
-      <p>MeteoValls · Temps Vallenc</p>
+      <h1 id="fxTitle">Previsió (Alt Camp)</h1>
+      <p id="fxSubtitle">MeteoValls · AEMET</p>
+
       <div class="status" id="fxStatus">Carregant previsió…</div>
+
+      <!-- Selector municipi -->
+      <div class="subs" style="margin-top:10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+        <label for="muniSelect" class="muted-line" style="margin:0">Municipi:</label>
+        <select id="muniSelect" aria-label="Selecciona municipi"></select>
+      </div>
     </div>
   </header>
 
@@ -79,6 +85,6 @@
     <span>© <span id="year"></span> MeteoValls</span>
   </footer>
 
-<script type="module" src="/app.js?v=2026-02-11-01"></script>
+  <script type="module" src="/app.js?v=2026-02-11-02"></script>
 </body>
 </html>
