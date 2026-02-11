@@ -223,9 +223,13 @@ function getSelectedMuniName(){
   return opt ? String(opt.textContent || "").trim() : "";
 }
 
-function setHeaderPlace(){
+function setHeaderPlace(place){
+  let name = String(place || "").trim();
+
+  // cas especial: Valls
+  if (name.toLowerCase() === "valls") name = "Ciutat de Valls";
+
   const h1 = document.getElementById("fxTitle");
-  const name = getSelectedMuniName() || "Valls";
   if (h1) h1.textContent = `Previsió · ${name}`;
 }
 
