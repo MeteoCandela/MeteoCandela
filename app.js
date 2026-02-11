@@ -1,5 +1,5 @@
 // app.js — entrypoint únic (ESM)
-const V = "2026-02-11-99"; // <— PUJA AQUEST NÚMERO CADA COP QUE TOQUIS JS
+export const V = "2026-02-11-100"; // PUJA AQUEST NÚMERO QUAN TOQUIS JS
 
 // Service Worker (PWA)
 if ("serviceWorker" in navigator) {
@@ -8,12 +8,12 @@ if ("serviceWorker" in navigator) {
   });
 }
 
-// imports amb versió (IMPORTANT)
-import { initInstallFab } from `./lib/install.js?v=${V}`;
-import { initHome } from `./pages/home.js?v=${V}`;
-import { initPrevisio } from `./pages/previsio.js?v=${V}`;
-import { initHistoric } from `./pages/historic.js?v=${V}`;
-import { initSobre } from `./pages/sobre.js?v=${V}`;
+// IMPORTANT: imports estàtics normals (NO templates)
+import { initInstallFab } from "./lib/install.js";
+import { initHome } from "./pages/home.js";
+import { initPrevisio } from "./pages/previsio.js";
+import { initHistoric } from "./pages/historic.js";
+import { initSobre } from "./pages/sobre.js";
 
 function boot() {
   initInstallFab();
