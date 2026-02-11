@@ -5,7 +5,7 @@
 // - Assets: stale-while-revalidate amb clau neta (ignora ?v=)
 // - Navegació HTML: network-first; offline -> cache; si no -> home (evita blanc)
 
-const VERSION = "2026-02-10-06";
+const VERSION = "2026-02-10-07";
 const CACHE_PREFIX = "meteovalls-";
 const CACHE_NAME = `${CACHE_PREFIX}${VERSION}`;
 
