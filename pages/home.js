@@ -7,7 +7,7 @@ import { renderHomeIcon, renderSunSub } from "../lib/sun.js";
 import { buildChartsForDay } from "../lib/charts_day.js";
 
 const REFRESH_CURRENT_MS = 60 * 1000;
-const REFRESH_HISTORY_MS = 30 * 60 * 1000;
+const REFRESH_HISTORY_MS = 60 * 60 * 1000;
 const REFRESH_ON_VISIBLE = true;
 
 function setSourceLine(txt) {
