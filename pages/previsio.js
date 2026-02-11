@@ -360,10 +360,11 @@ export function initPrevisio() {
       const fx = await fetchForecast(FORECAST_URL, muniId);
 
       const provider = fx.provider || "—";
-      const place = fx.place || "Alt Camp";
-      const updated = fx.updated_ts ? timeAgo(fx.updated_ts) : "—";
+const placeRaw = fx.place || "Valls";
+const place = placeRaw.replace(/\s*\(.*?\)/g, ""); // elimina "(Alt Camp)"
+const updated = fx.updated_ts ? timeAgo(fx.updated_ts) : "—";
 
-      setHeaderPlace(place);
+setHeaderPlace(place);
 
       if (status) status.textContent = `Previsió: ${place} · ${provider} · Actualitzat ${updated}.`;
       if (meta) {
