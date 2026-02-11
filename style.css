@@ -980,66 +980,39 @@ h2{
   flex: 0 0 auto;
   transform: translateY(2px); /* micro-ajust perquè quedi visualment “entre” */
 }
-.muni-picker {
-  margin-top: 12px;
+/* --- Previsió: selector municipi --- */
+.muni-picker{
+  margin-top: 10px;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start; /* sempre a l'esquerra */
 }
 
-.muni-picker select {
+.muni-picker select{
   appearance: none;
   -webkit-appearance: none;
 
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.25);
-  border-radius: 999px;
-
-  padding: 10px 42px 10px 18px;
-
-  color: #fff;
+  /* més petit */
+  padding: 8px 36px 8px 14px;
   font-size: 15px;
-  font-weight: 500;
 
-  min-width: 200px;
-  max-width: 80vw;
-
-  text-align: center;
-
-  backdrop-filter: blur(6px);
-
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='white'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 14px center;
-}
-
-.muni-picker select option {
-  color: #000;
-}
-.muni-picker {
-  margin-top: 12px;
-}
-
-.muni-picker select {
-  appearance: none;
-  -webkit-appearance: none;
-
-  padding: 10px 42px 10px 18px;
   border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.35);
 
   background:
     rgba(0,0,0,.35)
     url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14'><polygon points='2,4 12,4 7,10' fill='white'/></svg>")
-    no-repeat right 14px center;
+    no-repeat right 12px center;
 
-  color: white;
-  border: 1px solid rgba(255,255,255,.35);
+  color: #fff;
 
-  font-size: 16px;
-  font-weight: 500;
+  /* clau: no creix infinit, i els llargs fan ellipsis */
+  width: 240px;         /* base */
+  max-width: 72vw;      /* en mòbil */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 
+  text-align: left;     /* text alineat a l'esquerra */
   backdrop-filter: blur(6px);
-  box-shadow: 0 6px 20px rgba(0,0,0,.35);
-
-  min-width: 200px;
-  text-align: center;
+  box-shadow: 0 6px 18px rgba(0,0,0,.30);
 }
