@@ -144,6 +144,8 @@ function skyToCA(s){
   t = t.replaceAll("nuboso", "ennuvolat");
   t = t.replaceAll("cubierto", "cobert");
   t = t.replaceAll("despejado", "serè");
+  t = t.replaceAll("nubes altas", "núvols alts");
+  t = t.replaceAll("nubes medias", "núvols mitjans");
 
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
