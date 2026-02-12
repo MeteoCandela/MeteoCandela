@@ -1,5 +1,5 @@
 // app.js — entrypoint únic (ESM)
-export const V = "2026-02-12-201"; // PUJA AQUEST NÚMERO QUAN TOQUIS JS
+export const V = "2026-02-12-301"; // 🔁 puja això quan canviïs JS
 
 // Service Worker (PWA)
 if ("serviceWorker" in navigator) {
@@ -8,23 +8,49 @@ if ("serviceWorker" in navigator) {
   });
 }
 
-// IMPORTANT: imports estàtics normals (NO templates)
-import { initInstallFab } from "./lib/install.js";
-import { initHome } from "./pages/home.js";
-import { initPrevisio } from "./pages/previsio.js";
-import { initHistoric } from "./pages/historic.js";
-import { initSobre } from "./pages/sobre.js";
-
-function boot() {
-  initInstallFab();
-
+async function boot() {
   const page = document.body?.dataset?.page || "home";
-  switch (page) {
-    case "home":      initHome(); break;
-    case "previsio":  initPrevisio(); break;
-    case "historic":  initHistoric(); break;
-    case "sobre":     initSobre(); break;
-    default:          initHome();
+
+  // initInstallFab (versionat també)
+  try {
+    const install = await import(`./lib/install.js?v=${V}`);
+    install?.initInstallFab?.();
+  } catch (e) {
+    console.warn("install.js no carregat", e);
+  }
+
+  // Pàgines (versionades)
+  try {
+    switch (page) {
+      case "home": {
+        const m = await import(`./pages/home.js?v=${V}`);
+        m.initHome?.();
+        break;
+      }
+      case "previsio": {
+        const m = await import(`./pages/previsio.js?v=${V}`);
+        m.initPrevisio?.();
+        break;
+      }
+      case "historic": {
+        const m = await import(`./pages/historic.js?v=${V}`);
+        m.initHistoric?.();
+        break;
+      }
+      case "sobre": {
+        const m = await import(`./pages/sobre.js?v=${V}`);
+        m.initSobre?.();
+        break;
+      }
+      default: {
+        const m = await import(`./pages/home.js?v=${V}`);
+        m.initHome?.();
+      }
+    }
+  } catch (e) {
+    console.error("BOOT ERROR:", e);
+    const s = document.getElementById("fxStatus");
+    if (s) s.textContent = `Error JS: ${e?.message || e}`;
   }
 }
 
