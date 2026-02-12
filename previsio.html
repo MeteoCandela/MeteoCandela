@@ -26,15 +26,14 @@
     <div class="hero__overlay"></div>
     <div class="hero__content">
       <h1 id="fxTitle">Previsió</h1>
-      <p id="fxSubtitle">MeteoValls · Municipis Alt Camp</p>
+      <p id="fxSubtitle">MeteoValls · Alt Camp i capitals de comarca</p>
 
       <div class="status" id="fxStatus">Carregant previsió…</div>
 
-      <!-- Selector municipi (UI bonica, sense inline styles) -->
       <div class="muni-picker">
-  <label for="muniSelect" class="sr-only">Municipi</label>
-  <select id="muniSelect" aria-label="Selecciona municipi"></select>
-</div>
+        <label for="muniSelect" class="sr-only">Municipi</label>
+        <select id="muniSelect" aria-label="Selecciona municipi"></select>
+      </div>
     </div>
   </header>
 
@@ -47,7 +46,6 @@
       </nav>
     </section>
 
-    <!-- HOURLY -->
     <section class="card span2">
       <h2>Previsió horària (properes 24 h)</h2>
       <div id="hourlyWrap">
@@ -55,7 +53,6 @@
       </div>
     </section>
 
-    <!-- DAILY -->
     <section class="card span2">
       <h2>Previsió 7 dies</h2>
       <div id="dailyWrap">
@@ -66,7 +63,6 @@
       </p>
     </section>
 
-    <!-- RESUM -->
     <section class="card span2">
       <h2>Obtenció dades</h2>
       <div class="subs" id="fxMeta">
