@@ -164,7 +164,7 @@ function iconFromSky(s, hourStr){
 
   const t = String(s || "").toLowerCase();
 
-  if (t.includes("torment")) || t.includes("tempesta")) return "⛈️";
+  if (t.includes("torment")) || t.includes("tempest")) return "⛈️";
   if (t.includes("nieve") || t.includes("neu")) return "🌨️";
   if (t.includes("niebla") || t.includes("boira") || t.includes("bruma") || t.includes("broma")) return "🌫️";
   if (t.includes("pluja feble") || t.includes("lluvia escasa")) return isNight ? "🌧️" : "🌦️";
