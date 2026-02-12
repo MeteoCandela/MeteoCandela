@@ -1190,3 +1190,33 @@ h2{
   line-height: 1.15;
   max-width: 65%;
 }
+/* === RETOCS FINALS HOME (Actual) === */
+
+/* 1) Números KPIs una mica més petits (abans 38px) */
+#cardCurrent .kpi-val{
+  font-size: 34px;   /* prova 33–35 si vols més fi */
+}
+
+/* 2) "Font: dades en temps real" com a pill petita */
+#cardCurrent .now-source{
+  margin: 6px 0 12px;
+}
+
+#cardCurrent .pill{
+  display: inline-flex;
+  align-items: center;
+
+  font-size: 13px;
+  line-height: 1;
+
+  padding: 7px 10px;
+  border-radius: 12px;                 /* rectangular suau */
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.82);
+
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
