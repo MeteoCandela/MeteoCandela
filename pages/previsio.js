@@ -164,14 +164,14 @@ function iconFromSky(s, hourStr){
 
   const t = String(s || "").toLowerCase();
 
-  if (t.includes("torment")) || t.includes("tempest")) return "⛈️";
+  if (t.includes("torment") || t.includes("tempest")) return "⛈️";
   if (t.includes("nieve") || t.includes("neu")) return "🌨️";
   if (t.includes("niebla") || t.includes("boira") || t.includes("bruma") || t.includes("broma")) return "🌫️";
   if (t.includes("pluja feble") || t.includes("lluvia escasa")) return isNight ? "🌧️" : "🌦️";
   if (t.includes("pluja") || t.includes("lluvia")) return "🌧️";
   if (t.includes("cobert") || t.includes("cubierto")) return "☁️";
   if (t.includes("intervals") || t.includes("intervalos")) return isNight ? "☁️🌙" : "🌤️";
-  if (t.includes("ennuvolat") || t.includes("nuboso")) return isNight ? "☁️" : "⛅";
+  if (t.includes("ennuvolat") || t.includes("nuboso") || t.includes("núvols")) return isNight ? "☁️" : "⛅";
   if (t.includes("serè") || t.includes("despejado")) return isNight ? "🌙" : "☀️";
 
   return isNight ? "🌙" : "🌤️";
