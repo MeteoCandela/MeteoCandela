@@ -7,28 +7,15 @@ const LS_ZONE = "meteovalls:fx_zone";
 const LS_MUNI_GLOBAL = "meteovalls:muni_id"; // compat vell
 const LS_MUNI_BY_ZONE_PREFIX = "meteovalls:muni_id:";
 
-// IDs
-const VALLS_ID = "43161";
-
-// Labels finals que volem a UI
-const ZONES_WANTED = [
-  "Municipis Alt Camp",
-  "Capitals província Tarragona",
-  "Capitals província Barcelona",
-  "Capitals província Girona",
-  "Capitals província Lleida",
-];
-
-// Defaults per zona (labels finals)
+// Defaults per zona (labels han de coincidir amb el Worker)
 const DEFAULT_BY_ZONE_LABEL = {
-  "Municipis Alt Camp": VALLS_ID,
-  "Capitals província Tarragona": "43148", // Tarragona
-  "Capitals província Barcelona": "08019", // Barcelona
-  "Capitals província Girona": "17079",    // Girona
-  "Capitals província Lleida": "25120",    // Lleida
+  "Municipis Alt Camp": "43161",             // Valls
+  "Capitals província Tarragona": "43148",   // Tarragona
+  "Capitals província Barcelona": "08019",   // Barcelona
+  "Capitals província Girona": "17079",      // Girona
+  "Capitals província Lleida": "25120",      // Lleida
 };
 
-// -------------------- util format --------------------
 function hourNum(hourStr){
   const m = String(hourStr ?? "").match(/^\s*(\d{1,2})/);
   return m ? Number(m[1]) : NaN;
@@ -216,9 +203,7 @@ async function fetchJson(url){
   let data = null;
   try { data = txt ? JSON.parse(txt) : null; } catch { data = null; }
   if (!res.ok) {
-    const msg = (data && (data.error || data.detail))
-      ? `${data.error || "error"} ${data.detail || ""}`.trim()
-      : txt.slice(0,140);
+    const msg = (data && (data.error || data.detail)) ? `${data.error || "error"} ${data.detail || ""}` : txt.slice(0,140);
     throw new Error(`HTTP ${res.status}: ${msg}`);
   }
   return data;
@@ -231,7 +216,7 @@ function getSelectedText(selectId){
 }
 
 function getSelectedMuniName(){
-  return getSelectedText("muniSelect").replace(/^★\s*/,"").trim();
+  return getSelectedText("muniSelect");
 }
 
 function getSelectedZoneLabel(){
@@ -252,7 +237,6 @@ function setHeaderPlace(){
   }
 }
 
-// ---------- render ----------
 function renderHourly(hourly){
   const wrap = $("hourlyWrap");
   if (!wrap) return;
@@ -381,99 +365,30 @@ function renderDaily(daily){
   `;
 }
 
-// ---------- zones helpers ----------
-function muniKeyForZone(label){
-  return `${LS_MUNI_BY_ZONE_PREFIX}${label}`;
-}
-
-function idProvincia(id){
-  const s = String(id || "");
-  if (s.startsWith("43")) return "Tarragona";
-  if (s.startsWith("08")) return "Barcelona";
-  if (s.startsWith("17")) return "Girona";
-  if (s.startsWith("25")) return "Lleida";
-  return "";
-}
-
-function cleanLabel(x){
-  return String(x || "").trim();
-}
-
-function normGroupsToZones(rawGroups){
-  const groups = Array.isArray(rawGroups) ? rawGroups : [];
-
-  // Cas nou: ja venen les 5 zones “província”
-  const hasNew = groups.some(g => ZONES_WANTED.includes(cleanLabel(g?.label)));
-  if (hasNew) {
-    return groups
-      .map(g => ({
-        label: cleanLabel(g.label),
-        items: (Array.isArray(g.items) ? g.items : []).map(it => ({
-          id: String(it.id),
-          name: String(it.name),
-        })),
-      }))
-      .filter(g => g.label && g.items.length);
-  }
-
-  // Cas antic: "Alt Camp" + "Capitals de comarca"
-  const findByLabelLoose = (want) =>
-    groups.find(g => cleanLabel(g?.label).toLowerCase() === String(want).toLowerCase()) || null;
-
-  const altCamp = findByLabelLoose("Alt Camp");
-  const caps = findByLabelLoose("Capitals de comarca");
-
-  const altItems = (Array.isArray(altCamp?.items) ? altCamp.items : []).map(it => ({
-    id: String(it.id),
-    name: String(it.name),
-  }));
-
-  const capItems = (Array.isArray(caps?.items) ? caps.items : []).map(it => ({
-    id: String(it.id),
-    name: String(it.name),
-  }));
-
-  const capsT = capItems.filter(x => idProvincia(x.id) === "Tarragona");
-  const capsB = capItems.filter(x => idProvincia(x.id) === "Barcelona");
-  const capsG = capItems.filter(x => idProvincia(x.id) === "Girona");
-  const capsL = capItems.filter(x => idProvincia(x.id) === "Lleida");
-
-  const sortByName = (a,b) => a.name.localeCompare(b.name, "ca");
-
-  return [
-    { label: "Municipis Alt Camp", items: altItems.sort(sortByName) },
-    { label: "Capitals província Tarragona", items: capsT.sort(sortByName) },
-    { label: "Capitals província Barcelona", items: capsB.sort(sortByName) },
-    { label: "Capitals província Girona", items: capsG.sort(sortByName) },
-    { label: "Capitals província Lleida", items: capsL.sort(sortByName) },
-  ].filter(g => g.items.length);
-}
-
-// -------------------- INIT --------------------
 export function initPrevisio() {
-  const api = getApi?.() || {};
-  const ORIGIN = window.location.origin;
-
-  // Fallbacks CRÍTICS (això és el que et faltava)
-  const FORECAST_URL = api.FORECAST_URL || "/api/forecast";
-  const MUNICIPIS_URL = api.MUNICIPIS_URL || "/api/municipis";
+  const { FORECAST_URL, MUNICIPIS_URL } = getApi();
 
   const y = $("year");
   if (y) y.textContent = String(new Date().getFullYear());
 
   const zoneSel = document.getElementById("zoneSelect");
   const muniSel = document.getElementById("muniSelect");
+  const btnValls = document.getElementById("btnValls");
 
-  let zones = [];
+  let cfgGroups = []; // [{label, items:[{id,name}]}]
+
+  function muniKeyForZone(label){
+    return `${LS_MUNI_BY_ZONE_PREFIX}${label}`;
+  }
 
   function groupByLabel(label){
-    return zones.find(g => cleanLabel(g?.label) === cleanLabel(label)) || null;
+    return cfgGroups.find(g => String(g?.label) === String(label)) || null;
   }
 
   function findZoneContainingMuni(muniId){
     const id = String(muniId || "");
     if (!id) return null;
-    for (const g of zones) {
+    for (const g of cfgGroups) {
       const items = Array.isArray(g?.items) ? g.items : [];
       if (items.some(it => String(it?.id) === id)) return String(g.label || "");
     }
@@ -483,21 +398,15 @@ export function initPrevisio() {
   function populateZoneSelect(startLabel){
     if (!zoneSel) return;
 
-    zoneSel.innerHTML = zones
+    zoneSel.innerHTML = cfgGroups
       .map(g => `<option value="${String(g.label)}">${String(g.label)}</option>`)
       .join("");
 
-    if (startLabel && zones.some(g => cleanLabel(g.label) === cleanLabel(startLabel))) {
+    if (startLabel && cfgGroups.some(g => String(g.label) === String(startLabel))) {
       zoneSel.value = String(startLabel);
-    } else if (zones.length) {
-      zoneSel.value = String(zones[0].label);
+    } else if (cfgGroups.length) {
+      zoneSel.value = String(cfgGroups[0].label);
     }
-  }
-
-  function optionLabel(id, name){
-    const n = String(name || "");
-    if (String(id) === VALLS_ID) return n.startsWith("★") ? n : `★ ${n}`;
-    return n;
   }
 
   function populateMuniSelect(zoneLabel, muniIdToSelect){
@@ -507,7 +416,7 @@ export function initPrevisio() {
     const items = Array.isArray(g?.items) ? g.items : [];
 
     muniSel.innerHTML = items
-      .map(m => `<option value="${String(m.id)}">${optionLabel(m.id, m.name)}</option>`)
+      .map(m => `<option value="${String(m.id)}">${String(m.name)}</option>`)
       .join("");
 
     const desired = String(muniIdToSelect || "");
@@ -516,12 +425,14 @@ export function initPrevisio() {
       return;
     }
 
+    // fallback: default per zona
     const def = DEFAULT_BY_ZONE_LABEL[String(zoneLabel)] || null;
     if (def && items.some(m => String(m.id) === String(def))) {
       muniSel.value = String(def);
       return;
     }
 
+    // fallback: primer
     if (items.length) muniSel.value = String(items[0].id);
   }
 
@@ -530,7 +441,7 @@ export function initPrevisio() {
     const meta = $("fxMeta");
 
     try{
-      const url = new URL(FORECAST_URL, ORIGIN);
+      const url = new URL(FORECAST_URL, window.location.origin);
       if (muniId) url.searchParams.set("m", String(muniId));
       url.searchParams.set("t", String(Date.now()));
 
@@ -555,30 +466,26 @@ export function initPrevisio() {
       renderDaily(rotateDailyToToday(fx.daily));
     } catch(e){
       console.error(e);
-      if (status) status.textContent = `Error carregant /api/forecast: ${e?.message || e}`;
+      if (status) status.textContent = "No es pot carregar la previsió (/api/forecast).";
       const hw = $("hourlyWrap"); if (hw) hw.innerHTML = `<p class="muted-line">Error carregant previsió.</p>`;
       const dw = $("dailyWrap");  if (dw) dw.innerHTML = `<p class="muted-line">Error carregant previsió.</p>`;
     }
   }
 
   async function initSelectors(){
-    const status = $("fxStatus");
+    // 1) carrega config municipis/zones del Worker
+    const cfg = await fetchJson(`${MUNICIPIS_URL}?t=${Date.now()}`);
+    cfgGroups = Array.isArray(cfg?.groups) ? cfg.groups : [];
 
-    // 1) carrega municipis
-    const muniUrl = new URL(MUNICIPIS_URL, ORIGIN);
-    muniUrl.searchParams.set("t", String(Date.now()));
-
-    const cfg = await fetchJson(muniUrl.toString());
-    const rawGroups = Array.isArray(cfg?.groups) ? cfg.groups : [];
-
-    zones = normGroupsToZones(rawGroups);
-
-    if (!zones.length) {
-      throw new Error("Config municipis buida (cfg.groups buit o format inesperat).");
+    if (!cfgGroups.length) {
+      // fallback mínim
+      cfgGroups = [{ label: "Municipis Alt Camp", items: [{ id: "43161", name: "Valls" }] }];
     }
 
-    // 2) zona inicial
+    // 2) decideix zona inicial
     const savedZone = localStorage.getItem(LS_ZONE);
+
+    // intent: si tens un muni guardat “vell”, intenta deduir zona
     const savedGlobalMuni = localStorage.getItem(LS_MUNI_GLOBAL);
     const inferredZoneFromGlobal = findZoneContainingMuni(savedGlobalMuni);
 
@@ -589,20 +496,15 @@ export function initPrevisio() {
 
     populateZoneSelect(zoneLabel);
 
-    // 3) municipi inicial per zona
+    // 3) decideix municipi inicial per aquella zona
     const currentZone = zoneSel ? String(zoneSel.value || zoneLabel) : zoneLabel;
     const savedMuniForZone = localStorage.getItem(muniKeyForZone(currentZone));
 
-    populateMuniSelect(
-      currentZone,
-      savedMuniForZone || (currentZone === inferredZoneFromGlobal ? savedGlobalMuni : null)
-    );
+    populateMuniSelect(currentZone, savedMuniForZone || (currentZone === inferredZoneFromGlobal ? savedGlobalMuni : null));
 
     // 4) render inicial
     setHeaderPlace();
-    await loadAndRender(muniSel ? muniSel.value : VALLS_ID);
-
-    if (status) status.textContent = `Previsió: ${getSelectedMuniName()} · AEMET · Carregat.`;
+    await loadAndRender(muniSel ? muniSel.value : "43161");
 
     // 5) listeners
     if (zoneSel) {
@@ -637,22 +539,34 @@ export function initPrevisio() {
         await loadAndRender(id);
       });
     }
+
+    if (btnValls) {
+      btnValls.addEventListener("click", async () => {
+        const vallsId = "43161";
+        const targetZone = findZoneContainingMuni(vallsId) || "Municipis Alt Camp";
+
+        if (zoneSel) zoneSel.value = targetZone;
+        localStorage.setItem(LS_ZONE, targetZone);
+
+        populateMuniSelect(targetZone, vallsId);
+
+        localStorage.setItem(LS_MUNI_GLOBAL, vallsId);
+        localStorage.setItem(muniKeyForZone(targetZone), vallsId);
+
+        setHeaderPlace();
+        await loadAndRender(vallsId);
+      });
+    }
   }
 
   initSelectors().catch(async (e) => {
     console.error(e);
-    const status = $("fxStatus");
-    if (status) status.textContent = `Error inicialitzant selectors: ${e?.message || e}`;
-
+    // fallback: prova Valls
     if (muniSel) {
-      muniSel.innerHTML = `<option value="${VALLS_ID}">★ Valls</option>`;
-      muniSel.value = VALLS_ID;
-    }
-    if (zoneSel) {
-      zoneSel.innerHTML = `<option value="Municipis Alt Camp">Municipis Alt Camp</option>`;
-      zoneSel.value = "Municipis Alt Camp";
+      muniSel.innerHTML = `<option value="43161">Valls</option>`;
+      muniSel.value = "43161";
     }
     setHeaderPlace();
-    await loadAndRender(VALLS_ID);
+    await loadAndRender("43161");
   });
-}
+  }
