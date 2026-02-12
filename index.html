@@ -160,26 +160,52 @@
     <!-- ACTUAL -->
     <section class="card" id="cardCurrent">
       <div class="card-head">
-        <h2>Actual</h2>
-        <div id="currentIcon" class="now-icon" aria-hidden="true"></div>
-      </div>
+  <h2>Actual</h2>
+  <div class="now-icon" aria-hidden="true">🌙</div>
+</div>
 
-      <div id="sourceLine" class="source">—</div>
+<div class="now-source">
+  <span class="pill">Font: dades en temps real</span>
+</div>
 
-      <div class="kpis">
-        <div class="kpi"><div class="kpi__v" id="temp">—</div><div class="kpi__l">Temperatura (°C)</div></div>
-        <div class="kpi"><div class="kpi__v" id="hum">—</div><div class="kpi__l">Humitat (%)</div></div>
-        <div class="kpi"><div class="kpi__v" id="wind">—</div><div class="kpi__l">Vent (km/h)</div></div>
-        <div class="kpi"><div class="kpi__v" id="rainDay">—</div><div class="kpi__l">Pluja dia (mm)</div></div>
-      </div>
+<!-- KPIs -->
+<div class="kpi-grid">
+  <div class="kpi">
+    <div class="kpi-val" id="kpiTemp">—</div>
+    <div class="kpi-lab">Temperatura (°C)</div>
+  </div>
 
-      <div class="subs">
-        <div id="tempSub">—</div>
-        <div id="tempMinMax">—</div>
-        <div id="gustSub">—</div>
-        <div id="rainRateSub">—</div>
-        <div id="sunSub">—</div>
-      </div>
+  <div class="kpi">
+    <div class="kpi-val" id="kpiHum">—</div>
+    <div class="kpi-lab">Humitat (%)</div>
+  </div>
+
+  <div class="kpi">
+    <div class="kpi-val" id="kpiWind">—</div>
+    <div class="kpi-lab">Vent mitjà (km/h)</div>
+  </div>
+
+  <div class="kpi">
+    <div class="kpi-val" id="kpiRainDay">—</div>
+    <div class="kpi-lab">Pluja dia (mm)</div>
+  </div>
+
+  <!-- EXTRA KPI: ratxa màxima avui -->
+  <div class="kpi kpi--wide">
+    <div class="kpi-val" id="kpiGustMaxDay">—</div>
+    <div class="kpi-lab">Ratxa màxima avui (km/h)</div>
+  </div>
+</div>
+
+<!-- Detall compacte -->
+<div class="chips-grid">
+  <div class="chip"><span>💧 Punt de rosada</span><strong id="chipDew">—</strong></div>
+  <div class="chip"><span>🧭 Direcció</span><strong id="chipDir">—</strong></div>
+  <div class="chip"><span>🌡️ Mín/Max avui</span><strong id="chipMinMax">—</strong></div>
+  <div class="chip"><span>🌧️ Intensitat pluja</span><strong id="chipRainRate">—</strong></div>
+  <div class="chip"><span>🌅 Sol</span><strong id="chipSun">—</strong></div>
+  <div class="chip"><span>⏱️ Actualitzat</span><strong id="chipUpdated">—</strong></div>
+</div>
     </section>
 
     <!-- SELECTOR DE DIA (NECESSARI pel JS) -->
