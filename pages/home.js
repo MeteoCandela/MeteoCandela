@@ -58,6 +58,9 @@ function renderCurrent(current, historyRows) {
   if ($("kpiWind")) $("kpiWind").textContent = current.wind_kmh == null ? "—" : fmt1(current.wind_kmh);
   if ($("kpiRainDay")) $("kpiRainDay").textContent = current.rain_day_mm == null ? "—" : fmt1(current.rain_day_mm);
 
+  // KPI GRAN: intensitat pluja (mm/h)
+  if ($("kpiRainRate")) $("kpiRainRate").textContent = current.rain_rate_mmh == null ? "—" : fmt1(current.rain_rate_mmh);
+
   // Chip: rosada
   if ($("chipDew")) $("chipDew").textContent = current.dew_c == null ? "—" : `${fmt1(current.dew_c)} °C`;
 
@@ -69,15 +72,10 @@ function renderCurrent(current, historyRows) {
   }
   if ($("chipDir")) $("chipDir").textContent = dirTxt;
 
-  // Chip: intensitat pluja
-  if ($("chipRainRate")) {
-    $("chipRainRate").textContent = current.rain_rate_mmh == null ? "—" : `${fmt1(current.rain_rate_mmh)} mm/h`;
-  }
-
   // Chip: actualitzat
   if ($("chipUpdated")) $("chipUpdated").textContent = fmtDate(current.ts);
 
-  // Sol (escriu a #chipSun via lib/sun.js modificat)
+  // Sol (escriu a #chipSun via lib/sun.js)
   renderSunSub();
 
   // Min/Max i gust màxim (del dia d'avui)
