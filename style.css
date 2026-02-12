@@ -1038,85 +1038,104 @@ h2{
   box-shadow: 0 0 0 3px rgba(255,255,255,.12), 0 8px 22px rgba(0,0,0,.32);
 }
 /* =========================
-   ACTUAL: KPIs + Chips polish
-   (sense tocar estructura)
+   #cardCurrent — KPIs + Chips (forçat, sense wrap)
    ========================= */
 
-/* KPI cards: una mica més compactes */
-.kpi-grid { gap: 12px; }
+#cardCurrent .kpi-grid{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
 
-.kpi{
-  padding: 14px 16px;           /* abans segurament més */
+#cardCurrent .kpi{
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.03);
   border-radius: 18px;
+  padding: 14px 16px;
+  min-width: 0;
 }
 
-.kpi-val{
-  font-size: 44px;              /* baixa una mica (prova 42–46) */
+/* el 5è KPI (wide) ocupa tota l'amplada */
+#cardCurrent .kpi--wide{ grid-column: 1 / -1; }
+
+#cardCurrent .kpi-val{
+  font-size: 40px;           /* més petit que el que tens ara */
   line-height: 1.05;
+  font-weight: 900;
   letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
 }
 
-.kpi-lab{
-  font-size: 14px;              /* una mica més petit */
-  opacity: .85;
+#cardCurrent .kpi-lab{
   margin-top: 6px;
+  font-size: 13px;
+  color: rgba(255,255,255,.78);
 }
 
-/* Chips: forcem 1 línia, label esquerra + valor dreta */
-.chips-grid{
+/* Chips grid */
+#cardCurrent .chips-grid{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   margin-top: 14px;
 }
 
-.chip{
+/* Chip: 1 línia, sense wraps */
+#cardCurrent .chip{
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
 
-  padding: 12px 14px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.18);
   border-radius: 16px;
+  padding: 12px 14px;
+
+  min-width: 0;
 }
 
-/* label */
-.chip > span{
+/* Label: NO pot saltar línia */
+#cardCurrent .chip > span{
+  flex: 1 1 auto;
+  min-width: 0;
+
   display: inline-flex;
   align-items: center;
   gap: 8px;
 
-  font-size: 14px;
-  opacity: .85;
+  font-size: 13px;
+  color: rgba(255,255,255,.78);
 
-  min-width: 0;                /* clau per ellipsis */
-  white-space: nowrap;
+  white-space: nowrap !important;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* valor */
-.chip > strong{
-  font-size: 15px;             /* una mica més petit */
-  font-weight: 700;
+/* Valor: compacte i alineat dreta */
+#cardCurrent .chip > strong{
+  flex: 0 0 auto;
+  max-width: 52%;
   text-align: right;
 
-  margin-left: auto;
-  min-width: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: rgba(255,255,255,.92);
 
-  white-space: nowrap;
+  white-space: nowrap !important;
   overflow: hidden;
   text-overflow: ellipsis;
 
-  /* ajuda molt amb números */
   font-variant-numeric: tabular-nums;
 }
 
-/* En mòbil estret: encara més compacte */
+/* mòbil estret: encara una mica més petit */
 @media (max-width: 420px){
-  .kpi{ padding: 12px 14px; }
-  .kpi-val{ font-size: 40px; }
-  .kpi-lab{ font-size: 13px; }
+  #cardCurrent .kpi{ padding: 12px 14px; }
+  #cardCurrent .kpi-val{ font-size: 36px; }
+  #cardCurrent .kpi-lab{ font-size: 12.5px; }
 
-  .chip{ padding: 11px 12px; }
-  .chip > span{ font-size: 13px; }
-  .chip > strong{ font-size: 14px; }
+  #cardCurrent .chip{ padding: 11px 12px; }
+  #cardCurrent .chip > span{ font-size: 12.5px; }
+  #cardCurrent .chip > strong{ font-size: 13.5px; max-width: 56%; }
 }
