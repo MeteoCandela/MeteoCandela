@@ -1,30 +1,35 @@
 // sw.js — MeteoValls
 // Objectiu:
-// - PWA "shell offline" robusta: totes les pàgines (index/previsio/historic/sobre) amb CSS/JS offline
-// - /api/* sempre xarxa (no cache) per evitar dades velles
+// - Offline shell robust: html + css + app + mòduls (/pages, /lib) disponibles offline
+// - /api/*: network-only
 // - Assets: stale-while-revalidate
-//   ✅ PERÒ: per .js/.css conservem ?v= per bustar cache quan puges versions
-// - Navegació HTML: network-first; offline -> cache; si no -> home
+//   ✅ .js/.css: mantenim ?v= (busting real)
+// - HTML: network-first, fallback cache, si no home
 
-const VERSION = "2026-02-12-101"; // 🔁 PUJA AIXÒ QUAN TOQUIS SW/ASSETS
+const VERSION = "2026-02-12-201"; // 🔁 PUJA AIXÒ
 const CACHE_PREFIX = "meteovalls-";
 const CACHE_NAME = `${CACHE_PREFIX}${VERSION}`;
 
-// Precache: pàgines + assets essencials
 const PRECACHE_URLS = [
   "/",
   "/index.html",
   "/previsio.html",
   "/historic.html",
   "/sobre.html",
-
   "/site.webmanifest",
 
-  // IMPORTANT:
-  // Si carregues CSS/JS amb ?v=, el SW ara els cachejarà amb la query.
-  // Al precache deixem la versió "neta" perquè sempre existeixi un fallback.
+  // entry + css base (sense query, per existir sempre)
   "/style.css",
   "/app.js",
+
+  // ✅ mòduls ESM (aquí és on et quedava enganxat)
+  "/pages/home.js",
+  "/pages/previsio.js",
+  "/pages/historic.js",
+  "/pages/sobre.js",
+  "/lib/env.js",
+  "/lib/dom.js",
+  "/lib/install.js",
 
   "/vendor/chart.umd.min.js",
   "/vendor/suncalc.min.js",
@@ -65,9 +70,9 @@ function isStaticAsset(url) {
   );
 }
 
-// ✅ Clau de cache:
-// - HTML i la majoria d'assets: ignorem query (?v=) i cachegem per pathname
-// - PER .js i .css: CONSERVEM query per poder bustar cache (app.js?v=..., style.css?v=...)
+// Cache key:
+// - HTML i la majoria d'assets: ignorem query
+// - .js/.css: conservem query (busting)
 function cleanKeyRequest(originalRequest, urlObj) {
   const isJsOrCss = urlObj.pathname.endsWith(".js") || urlObj.pathname.endsWith(".css");
   const key = isJsOrCss ? (urlObj.pathname + urlObj.search) : urlObj.pathname;
@@ -87,15 +92,12 @@ function cleanKeyRequest(originalRequest, urlObj) {
 
 async function precacheAll() {
   const cache = await caches.open(CACHE_NAME);
-
   await Promise.allSettled(
     PRECACHE_URLS.map(async (path) => {
       try {
         const res = await fetch(new Request(path, { cache: "reload" }));
         if (res && res.ok) await cache.put(path, res.clone());
-      } catch {
-        // ignorem errors individuals
-      }
+      } catch {}
     })
   );
 }
@@ -119,28 +121,20 @@ self.addEventListener("activate", (event) => {
   })());
 });
 
-self.addEventListener("message", (event) => {
-  if (event?.data?.type === "SKIP_WAITING") self.skipWaiting();
-});
-
 self.addEventListener("fetch", (event) => {
   const req = event.request;
-
-  // Només GET
   if (req.method !== "GET") return;
 
   const url = new URL(req.url);
-
-  // Només same-origin (no cachegem CDNs)
   if (url.origin !== self.location.origin) return;
 
-  // 1) API: network-only
+  // API: network-only
   if (isApiRequest(url)) {
     event.respondWith(fetch(req));
     return;
   }
 
-  // 2) HTML: network-first -> cache; offline -> cache; si no -> home
+  // HTML: network-first
   if (isHtmlRequest(req)) {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
@@ -149,9 +143,7 @@ self.addEventListener("fetch", (event) => {
       try {
         const res = await fetch(req);
         if (res && res.ok) {
-          // Guardem amb clau neta (sense query) per HTML
           cache.put(cleanReq, res.clone()).catch(() => {});
-          // I també la request real per si s'accedeix amb query
           cache.put(req, res.clone()).catch(() => {});
         }
         return res;
@@ -163,16 +155,7 @@ self.addEventListener("fetch", (event) => {
 
         if (cached) return cached;
 
-        // Fallback explícit per /sobre o /sobre/
-        if (url.pathname === "/sobre" || url.pathname === "/sobre/") {
-          const about = await cache.match("/sobre.html");
-          if (about) return about;
-        }
-
-        const home =
-          (await cache.match("/")) ||
-          (await cache.match("/index.html"));
-
+        const home = (await cache.match("/")) || (await cache.match("/index.html"));
         return home || new Response("Offline", {
           status: 503,
           headers: { "content-type": "text/plain; charset=utf-8" },
@@ -182,8 +165,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 3) Assets: stale-while-revalidate amb clau neta
-  // ✅ Ara .js/.css es cachegen amb ?v= si ve amb query -> busting real
+  // Assets: stale-while-revalidate
   if (isStaticAsset(url)) {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
@@ -212,11 +194,10 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 4) Resta: network-first amb fallback cache
+  // Resta: network-first fallback cache
   event.respondWith((async () => {
-    try {
-      return await fetch(req);
-    } catch {
+    try { return await fetch(req); }
+    catch {
       const cached = await caches.match(req);
       return cached || new Response("", { status: 504 });
     }
