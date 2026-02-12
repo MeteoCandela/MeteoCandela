@@ -1,13 +1,21 @@
 // pages/home.js
 import { $ } from "../lib/dom.js";
 import { getApi } from "../lib/env.js";
-import { fmt1, fmtDate, dayKeyFromTs, startEndMsFromDayKey, minMax, degToWindCatalan } from "../lib/format.js";
+import {
+  fmt1,
+  fmtDate,
+  dayKeyFromTs,
+  startEndMsFromDayKey,
+  minMax,
+  degToWindCatalan
+} from "../lib/format.js";
 import { loadHistoryOnce, loadCurrentAndHeartbeat } from "../lib/api.js";
 import { renderHomeIcon, renderSunSub } from "../lib/sun.js";
 import { buildChartsForDay } from "../lib/charts_day.js";
+import { initChartFullscreen } from "../lib/fullscreen_chart.js";
 
-const REFRESH_CURRENT_MS = 60 * 1000;
-const REFRESH_HISTORY_MS = 60 * 60 * 1000;
+const REFRESH_CURRENT_MS = 60 * 1000;       // 1 min
+const REFRESH_HISTORY_MS = 60 * 60 * 1000;  // 60 min
 const REFRESH_ON_VISIBLE = true;
 
 function setSourceLine(txt) {
@@ -54,7 +62,7 @@ function computeTodayRows(historyRows, current) {
 function renderCurrent(current, historyRows) {
   // KPIs
   if ($("kpiTemp")) $("kpiTemp").textContent = current.temp_c == null ? "—" : fmt1(current.temp_c);
-  if ($("kpiHum"))  $("kpiHum").textContent  = current.hum_pct == null ? "—" : String(Math.round(current.hum_pct));
+  if ($("kpiHum")) $("kpiHum").textContent = current.hum_pct == null ? "—" : String(Math.round(current.hum_pct));
   if ($("kpiWind")) $("kpiWind").textContent = current.wind_kmh == null ? "—" : fmt1(current.wind_kmh);
   if ($("kpiRainDay")) $("kpiRainDay").textContent = current.rain_day_mm == null ? "—" : fmt1(current.rain_day_mm);
 
@@ -105,7 +113,9 @@ function getUrlDayParam() {
     const u = new URL(location.href);
     const v = u.searchParams.get("day");
     return v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 function setUrlDayParam(dayKey) {
@@ -177,6 +187,10 @@ function setupDaySelector(dayKeys, initialKey, onChange) {
   return sel.value;
 }
 
+function safeClearInterval(id) {
+  try { if (id) clearInterval(id); } catch {}
+}
+
 export function initHome() {
   const { HISTORY_URL, CURRENT_URL, HEARTBEAT_URL } = getApi();
 
@@ -185,54 +199,96 @@ export function initHome() {
     current: null,
     hb: null,
     selectedDay: null,
-    timers: { cur: null, hist: null }
+    timers: { cur: null, hist: null },
+    fsInited: false
   };
 
-  function renderAll() {
+  function pickActualRow() {
     const historyRows = state.historyRows || [];
-    const current = state.current;
-    const hb = state.hb;
+    if (state.current) return { row: state.current, tag: "dades en temps real" };
+    if (historyRows.length) return { row: historyRows[historyRows.length - 1], tag: "últim registre històric" };
+    return { row: null, tag: "sense dades carregades" };
+  }
 
-    let actualRow = null;
-    let sourceTag = "històric";
+  function renderAll() {
+    const { row, tag } = pickActualRow();
 
-    if (current) { actualRow = current; sourceTag = "dades en temps real"; }
-    else if (historyRows.length) { actualRow = historyRows[historyRows.length - 1]; sourceTag = "últim registre històric"; }
-
-    if (!actualRow) {
+    if (!row) {
       setSourceLine("Font: sense dades carregades");
       if ($("statusLine")) $("statusLine").textContent = "No es pot mostrar informació: falta history/current.";
       return null;
     }
 
-    setSourceLine(`Font: ${sourceTag}`);
-    renderCurrent(actualRow, historyRows);
-    renderStatus(actualRow.ts, hb);
-    return actualRow;
+    setSourceLine(`Font: ${tag}`);
+    renderCurrent(row, state.historyRows || []);
+    renderStatus(row.ts, state.hb);
+    return row;
   }
 
   function renderChartsIfNeeded() {
     if (!state.selectedDay) return;
+
     const todayKey = dayKeyFromTs(Date.now());
     const currentMaybe = (state.selectedDay === todayKey) ? state.current : null;
+
     buildChartsForDay(state.historyRows || [], state.selectedDay, currentMaybe);
+
+    // Fullscreen: inicialitza 1 cop (després que els canvas existeixin)
+    if (!state.fsInited) {
+      initChartFullscreen(["chartTemp", "chartHum", "chartWind", "chartRain"]);
+      state.fsInited = true;
+    }
+  }
+
+  async function refreshCurrent() {
+    await loadCurrentAndHeartbeat(CURRENT_URL, HEARTBEAT_URL, state);
+    renderAll();
+    renderChartsIfNeeded();
+  }
+
+  async function refreshHistory() {
+    await loadHistoryOnce(HISTORY_URL, state);
+
+    const dayKeys = buildDayListFromRows(state.historyRows, state.current);
+    const keepWanted = state.selectedDay || getUrlDayParam() || dayKeyFromTs(Date.now());
+    const keep = dayKeys.includes(keepWanted) ? keepWanted : (dayKeys[dayKeys.length - 1] || keepWanted);
+
+    const sel = setupDaySelector(dayKeys, keep, (k) => {
+      state.selectedDay = k;
+      renderChartsIfNeeded();
+    });
+
+    state.selectedDay = sel || keep;
+
+    renderAll();
+    renderChartsIfNeeded();
   }
 
   async function main() {
     try {
       if ($("year")) $("year").textContent = String(new Date().getFullYear());
 
+      // 1) Carrega dades
       await loadHistoryOnce(HISTORY_URL, state);
       await loadCurrentAndHeartbeat(CURRENT_URL, HEARTBEAT_URL, state);
 
+      // 2) Determina dia inicial
       const historyRows = state.historyRows || [];
       const initialActual = state.current || (historyRows.length ? historyRows[historyRows.length - 1] : null);
-      if (!initialActual) { renderAll(); return; }
+
+      renderAll();
+
+      if (!initialActual) {
+        // No hi ha res per graficar, però deixa la pàgina viva
+        renderChartsIfNeeded();
+        return;
+      }
 
       const dayKeys = buildDayListFromRows(historyRows, state.current);
       const wanted = getUrlDayParam();
       const initial = (wanted && dayKeys.includes(wanted)) ? wanted : dayKeyFromTs(initialActual.ts);
 
+      // 3) Selector de dia
       const selected = setupDaySelector(dayKeys, initial, (k) => {
         state.selectedDay = k;
         renderChartsIfNeeded();
@@ -240,39 +296,21 @@ export function initHome() {
 
       state.selectedDay = selected || initial;
 
-      renderAll();
+      // 4) Render inicial
       renderChartsIfNeeded();
 
-      state.timers.cur = setInterval(async () => {
-        await loadCurrentAndHeartbeat(CURRENT_URL, HEARTBEAT_URL, state);
-        renderAll();
-        renderChartsIfNeeded();
-      }, REFRESH_CURRENT_MS);
+      // 5) Timers
+      safeClearInterval(state.timers.cur);
+      safeClearInterval(state.timers.hist);
 
-      state.timers.hist = setInterval(async () => {
-        await loadHistoryOnce(HISTORY_URL, state);
+      state.timers.cur = setInterval(refreshCurrent, REFRESH_CURRENT_MS);
+      state.timers.hist = setInterval(refreshHistory, REFRESH_HISTORY_MS);
 
-        const dayKeys2 = buildDayListFromRows(state.historyRows, state.current);
-        const keepWanted = state.selectedDay || getUrlDayParam() || dayKeyFromTs(Date.now());
-        const keep = dayKeys2.includes(keepWanted) ? keepWanted : (dayKeys2[dayKeys2.length - 1] || keepWanted);
-
-        const sel = setupDaySelector(dayKeys2, keep, (k) => {
-          state.selectedDay = k;
-          renderChartsIfNeeded();
-        });
-
-        state.selectedDay = sel || keep;
-
-        renderAll();
-        renderChartsIfNeeded();
-      }, REFRESH_HISTORY_MS);
-
+      // 6) Refresh quan tornes a la pestanya
       if (REFRESH_ON_VISIBLE) {
         document.addEventListener("visibilitychange", async () => {
           if (document.visibilityState !== "visible") return;
-          await loadCurrentAndHeartbeat(CURRENT_URL, HEARTBEAT_URL, state);
-          renderAll();
-          renderChartsIfNeeded();
+          await refreshCurrent();
         });
       }
     } catch (e) {
