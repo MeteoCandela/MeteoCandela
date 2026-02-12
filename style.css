@@ -1336,3 +1336,7 @@ html.fs-lock, body.fs-lock {
 .fs-zoom-btn:active{
   transform: scale(0.98);
 }
+/* Amaga botons ⛶ mentre hi ha modal fullscreen */
+.fs-lock .fs-zoom-btn {
+  display: none !important;
+}
