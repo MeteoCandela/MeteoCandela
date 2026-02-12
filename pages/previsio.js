@@ -128,14 +128,11 @@ function fmtHourLabelFromDate(dt){
 function skyToCA(s){
   if (!s) return s;
 
-  // normalitza
   let t = String(s).trim().toLowerCase().replace(/\s+/g, " ");
-
-  // IMPORTANT: “nubes altas” pot venir amb coma o “con…”
   t = t.replace(/\bnubes\s+altas\b/g, "núvols alts");
   t = t.replace(/\bnubes\s+medias\b/g, "núvols mitjans");
   t = t.replace(/\bnubes\s+bajas\b/g, "núvols baixos");
-  t = t.replace(/\bnubes\b/g, "núvols"); // fallback
+  t = t.replace(/\bnubes\b/g, "núvols");
 
   t = t.replace(/\bintervalos\s+nubosos\b/g, "intervals ennuvolats");
   t = t.replace(/\bpoco\s+nuboso\b/g, "poc ennuvolat");
@@ -152,7 +149,6 @@ function skyToCA(s){
   t = t.replace(/\bniebla\b/g, "boira");
   t = t.replace(/\bbruma\b/g, "broma");
 
-  // “con” -> “amb”
   t = t.replace(/\bcon\b/g, "amb");
 
   return t.charAt(0).toUpperCase() + t.slice(1);
@@ -216,14 +212,12 @@ async function fetchForecast(FORECAST_URL, muniId){
   return fetchJson(url.toString());
 }
 
-// ✅ nom sempre del selector (això evita “(Alt Camp)”)
 function getSelectedMuniName(){
   const sel = document.getElementById("muniSelect");
   const opt = sel?.selectedOptions?.[0];
   return opt ? String(opt.textContent || "").trim() : "";
 }
 
-// ✅ títol sempre net + cas especial Valls
 function setHeaderPlace(){
   let name = getSelectedMuniName() || "Valls";
   if (name.toLowerCase() === "valls") name = "Ciutat de Valls";
@@ -379,10 +373,8 @@ export function initPrevisio() {
       const provider = fx.provider || "—";
       const updated = fx.updated_ts ? timeAgo(fx.updated_ts) : "—";
 
-      // ✅ títol sempre des del selector (sense Alt Camp) + cas Valls
       setHeaderPlace();
 
-      // ✅ status també consistent (del selector)
       const placeForStatus = getSelectedMuniName() || "Valls";
       if (status) status.textContent = `Previsió: ${placeForStatus} · ${provider} · Actualitzat ${updated}.`;
 
@@ -403,36 +395,61 @@ export function initPrevisio() {
     }
   }
 
+  function flattenIdsFromGroups(groups){
+    const ids = new Set();
+    for (const g of groups || []) {
+      const items = Array.isArray(g?.items) ? g.items : [];
+      for (const it of items) ids.add(String(it?.id || ""));
+    }
+    ids.delete("");
+    return ids;
+  }
+
   async function initSelect(){
     if (!sel) return;
 
     try{
       const cfg = await fetchMunicipis(MUNICIPIS_URL);
-      const municipis = Array.isArray(cfg?.municipis) ? cfg.municipis : [];
       const defId = String(cfg?.default_id || "43161");
 
-      sel.innerHTML = municipis
-        .slice()
-        .sort((a,b) => String(a.name).localeCompare(String(b.name), "ca"))
-        .map(m => `<option value="${String(m.id)}">${String(m.name)}</option>`)
-        .join("");
+      // ✅ Nou format amb optgroups
+      if (Array.isArray(cfg?.groups)) {
+        sel.innerHTML = cfg.groups.map(g => {
+          const label = String(g?.label || "Altres");
+          const items = Array.isArray(g?.items) ? g.items : [];
+          const opts = items.map(m => `<option value="${String(m.id)}">${String(m.name)}</option>`).join("");
+          return `<optgroup label="${label}">${opts}</optgroup>`;
+        }).join("");
 
-      const saved = localStorage.getItem(LS_KEY);
-      const startId = (saved && municipis.some(m => String(m.id) === String(saved))) ? String(saved) : defId;
-      sel.value = startId;
+        const allowedIds = flattenIdsFromGroups(cfg.groups);
+        const saved = localStorage.getItem(LS_KEY);
+        const startId = (saved && allowedIds.has(String(saved))) ? String(saved) : defId;
+        sel.value = startId;
 
-      // ✅ títol correcte abans de carregar API (instant)
+      } else {
+        // fallback antic (per si algun dia canvies)
+        const municipis = Array.isArray(cfg?.municipis) ? cfg.municipis : [];
+        sel.innerHTML = municipis
+          .slice()
+          .sort((a,b) => String(a.name).localeCompare(String(b.name), "ca"))
+          .map(m => `<option value="${String(m.id)}">${String(m.name)}</option>`)
+          .join("");
+
+        const saved = localStorage.getItem(LS_KEY);
+        const startId = (saved && municipis.some(m => String(m.id) === String(saved))) ? String(saved) : defId;
+        sel.value = startId;
+      }
+
       setHeaderPlace();
 
       sel.addEventListener("change", () => {
         const id = String(sel.value || defId);
         localStorage.setItem(LS_KEY, id);
-        // actualitza títol immediatament en canviar
         setHeaderPlace();
         loadAndRender(id);
       });
 
-      await loadAndRender(startId);
+      await loadAndRender(String(sel.value || defId));
     } catch(e){
       console.error(e);
       await loadAndRender(null);
