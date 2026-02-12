@@ -22,7 +22,10 @@ function renderStatus(lastTsMs, hb) {
   const now = Date.now();
   const hbTs = hb?.run_ts ? Number(hb.run_ts) : null;
 
-  if (!lastTsMs) { el.textContent = "Sense dades (history/current no carregat)."; return; }
+  if (!lastTsMs) {
+    el.textContent = "Sense dades (history/current no carregat).";
+    return;
+  }
 
   const dataAgeMin = (now - lastTsMs) / 60000;
   const hbAgeMin = hbTs ? (now - hbTs) / 60000 : null;
@@ -33,20 +36,32 @@ function renderStatus(lastTsMs, hb) {
   el.textContent = msg;
 }
 
+function computeTodayRows(historyRows, current) {
+  const todayKey = dayKeyFromTs(Date.now());
+  const { start, end } = startEndMsFromDayKey(todayKey);
+
+  const rows = (Array.isArray(historyRows) ? historyRows : [])
+    .filter(r => Number.isFinite(r.ts) && r.ts >= start && r.ts <= end)
+    .slice();
+
+  if (current && Number.isFinite(current.ts) && current.ts >= start && current.ts <= end) {
+    const lastHistTs = rows.length ? rows[rows.length - 1].ts : null;
+    if (!lastHistTs || current.ts > lastHistTs) rows.push(current);
+  }
+  return rows;
+}
+
 function renderCurrent(current, historyRows) {
-function renderCurrent(current, historyRows) {
-  // --- KPIs (nous IDs) ---
+  // KPIs
   if ($("kpiTemp")) $("kpiTemp").textContent = current.temp_c == null ? "—" : fmt1(current.temp_c);
   if ($("kpiHum"))  $("kpiHum").textContent  = current.hum_pct == null ? "—" : String(Math.round(current.hum_pct));
   if ($("kpiWind")) $("kpiWind").textContent = current.wind_kmh == null ? "—" : fmt1(current.wind_kmh);
   if ($("kpiRainDay")) $("kpiRainDay").textContent = current.rain_day_mm == null ? "—" : fmt1(current.rain_day_mm);
 
-  // --- Chips ---
-  if ($("chipDew")) {
-    $("chipDew").textContent = current.dew_c == null ? "—" : `${fmt1(current.dew_c)} °C`;
-  }
+  // Chip: rosada
+  if ($("chipDew")) $("chipDew").textContent = current.dew_c == null ? "—" : `${fmt1(current.dew_c)} °C`;
 
-  // Direcció (graus + nom català)
+  // Chip: direcció
   let dirTxt = "—";
   if (current.wind_dir != null && current.wind_dir !== "") {
     const deg = Number(current.wind_dir);
@@ -54,61 +69,36 @@ function renderCurrent(current, historyRows) {
   }
   if ($("chipDir")) $("chipDir").textContent = dirTxt;
 
-  // Intensitat de pluja
+  // Chip: intensitat pluja
   if ($("chipRainRate")) {
     $("chipRainRate").textContent = current.rain_rate_mmh == null ? "—" : `${fmt1(current.rain_rate_mmh)} mm/h`;
   }
 
-  // Actualitzat
+  // Chip: actualitzat
   if ($("chipUpdated")) $("chipUpdated").textContent = fmtDate(current.ts);
 
-  // Sol (això ja ho tens amb renderSunSub, però ara ho mostrem al chipSun)
-  renderSunSub(); // assegura que calcula la info
-  // 👇 IMPORTANT: has de fer que renderSunSub escrigui a #chipSun (ho fem al Pas 2)
+  // Sol (escriu a #chipSun via lib/sun.js modificat)
+  renderSunSub();
 
-  // --- Mín/Max temperatura avui (per chipMinMax) ---
+  // Min/Max i gust màxim (del dia d'avui)
+  const todayRows = computeTodayRows(historyRows, current);
+
   const elMinMax = $("chipMinMax");
-  if (elMinMax && Array.isArray(historyRows) && historyRows.length) {
-    const todayKey = dayKeyFromTs(Date.now());
-    const { start, end } = startEndMsFromDayKey(todayKey);
-
-    const todayRows = historyRows.filter(r => r.ts >= start && r.ts <= end).slice();
-
-    if (current && Number.isFinite(current.ts) && current.ts >= start && current.ts <= end) {
-      const lastHistTs = todayRows.length ? todayRows[todayRows.length - 1].ts : null;
-      if (!lastHistTs || current.ts > lastHistTs) todayRows.push(current);
-    }
-
+  if (elMinMax) {
     const { min, max } = minMax(todayRows.map(r => r.temp_c));
-    elMinMax.textContent =
-      (min == null || max == null) ? "—" : `${fmt1(min)}–${fmt1(max)} °C`;
-  } else if (elMinMax) {
-    elMinMax.textContent = "—";
+    elMinMax.textContent = (min == null || max == null) ? "—" : `${fmt1(min)}–${fmt1(max)} °C`;
   }
 
-  // --- ✅ Ratxa màxima avui (kpiGustMaxDay) ---
   const elGustMaxDay = $("kpiGustMaxDay");
-  if (elGustMaxDay && Array.isArray(historyRows) && historyRows.length) {
-    const todayKey = dayKeyFromTs(Date.now());
-    const { start, end } = startEndMsFromDayKey(todayKey);
-
-    const todayRows = historyRows.filter(r => r.ts >= start && r.ts <= end).slice();
-
-    if (current && Number.isFinite(current.ts) && current.ts >= start && current.ts <= end) {
-      const lastHistTs = todayRows.length ? todayRows[todayRows.length - 1].ts : null;
-      if (!lastHistTs || current.ts > lastHistTs) todayRows.push(current);
-    }
-
+  if (elGustMaxDay) {
     const gusts = todayRows.map(r => Number(r.gust_kmh)).filter(Number.isFinite);
     elGustMaxDay.textContent = gusts.length ? fmt1(Math.max(...gusts)) : "—";
-  } else if (elGustMaxDay) {
-    elGustMaxDay.textContent = current.gust_kmh == null ? "—" : fmt1(current.gust_kmh);
   }
 
-  // --- Icona (si la gestiones aquí o amb renderHomeIcon) ---
+  // Icona actual (lluna/sol/pluja) a #currentIcon
   renderHomeIcon(current);
-}
 
+  // Capçalera
   if ($("lastUpdated")) $("lastUpdated").textContent = `Actualitzat: ${fmtDate(current.ts)}`;
 }
 
@@ -130,7 +120,7 @@ function setUrlDayParam(dayKey) {
 
 function buildDayListFromRows(rows, current) {
   const set = new Set();
-  for (const r of rows) set.add(dayKeyFromTs(r.ts));
+  for (const r of (rows || [])) set.add(dayKeyFromTs(r.ts));
   set.add(dayKeyFromTs(Date.now()));
   if (current && Number.isFinite(current.ts)) set.add(dayKeyFromTs(current.ts));
   return Array.from(set).sort();
@@ -212,7 +202,7 @@ export function initHome() {
     else if (historyRows.length) { actualRow = historyRows[historyRows.length - 1]; sourceTag = "últim registre històric"; }
 
     if (!actualRow) {
-      setSourceLine("Sense dades carregades.");
+      setSourceLine("Font: sense dades carregades");
       if ($("statusLine")) $("statusLine").textContent = "No es pot mostrar informació: falta history/current.";
       return null;
     }
@@ -220,8 +210,6 @@ export function initHome() {
     setSourceLine(`Font: ${sourceTag}`);
     renderCurrent(actualRow, historyRows);
     renderStatus(actualRow.ts, hb);
-    renderHomeIcon(actualRow);
-    renderSunSub();
     return actualRow;
   }
 
@@ -297,4 +285,4 @@ export function initHome() {
   }
 
   main();
-    }
+}
