@@ -2,10 +2,11 @@
 // Objectiu:
 // - PWA "shell offline" robusta: totes les pàgines (index/previsio/historic/sobre) amb CSS/JS offline
 // - /api/* sempre xarxa (no cache) per evitar dades velles
-// - Assets: stale-while-revalidate amb clau neta (ignora ?v=)
-// - Navegació HTML: network-first; offline -> cache; si no -> home (evita blanc)
+// - Assets: stale-while-revalidate
+//   ✅ PERÒ: per .js/.css conservem ?v= per bustar cache quan puges versions
+// - Navegació HTML: network-first; offline -> cache; si no -> home
 
-const VERSION = "2026-02-12-100";
+const VERSION = "2026-02-12-101"; // 🔁 PUJA AIXÒ QUAN TOQUIS SW/ASSETS
 const CACHE_PREFIX = "meteovalls-";
 const CACHE_NAME = `${CACHE_PREFIX}${VERSION}`;
 
@@ -18,6 +19,10 @@ const PRECACHE_URLS = [
   "/sobre.html",
 
   "/site.webmanifest",
+
+  // IMPORTANT:
+  // Si carregues CSS/JS amb ?v=, el SW ara els cachejarà amb la query.
+  // Al precache deixem la versió "neta" perquè sempre existeixi un fallback.
   "/style.css",
   "/app.js",
 
@@ -60,12 +65,11 @@ function isStaticAsset(url) {
   );
 }
 
-// Clau neta: guardem al cache per pathname (ignorem ?v=)
-function cleanKeyRequest(originalRequest, urlObj) {
+// ✅ Clau de cache:
+// - HTML i la majoria d'assets: ignorem query (?v=) i cachegem per pathname
+// - PER .js i .css: CONSERVEM query per poder bustar cache (app.js?v=..., style.css?v=...)
 function cleanKeyRequest(originalRequest, urlObj) {
   const isJsOrCss = urlObj.pathname.endsWith(".js") || urlObj.pathname.endsWith(".css");
-
-  // ✅ Per JS/CSS: conserva ?v= per poder bustar cache
   const key = isJsOrCss ? (urlObj.pathname + urlObj.search) : urlObj.pathname;
 
   return new Request(key, {
@@ -145,8 +149,9 @@ self.addEventListener("fetch", (event) => {
       try {
         const res = await fetch(req);
         if (res && res.ok) {
-          // Guardem amb clau neta i també amb la request real (per si hi ha query)
+          // Guardem amb clau neta (sense query) per HTML
           cache.put(cleanReq, res.clone()).catch(() => {});
+          // I també la request real per si s'accedeix amb query
           cache.put(req, res.clone()).catch(() => {});
         }
         return res;
@@ -177,7 +182,8 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 3) Assets: stale-while-revalidate amb clau neta (ignorem ?v=)
+  // 3) Assets: stale-while-revalidate amb clau neta
+  // ✅ Ara .js/.css es cachegen amb ?v= si ve amb query -> busting real
   if (isStaticAsset(url)) {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
