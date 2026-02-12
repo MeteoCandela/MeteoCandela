@@ -197,10 +197,7 @@ async function fetchJson(url){
   return data;
 }
 
-function deriveMunicipisUrl(forecastUrl){
-  return String(forecastUrl || "").replace(/\/forecast(\?.*)?$/i, "/municipis");
-}
-
+// ✅ ja no “derivem” res: usem getApi().MUNICIPIS_URL directament
 async function fetchMunicipis(MUNICIPIS_URL){
   return fetchJson(`${MUNICIPIS_URL}?t=${Date.now()}`);
 }
@@ -355,8 +352,8 @@ function renderDaily(daily){
 }
 
 export function initPrevisio() {
-  const { FORECAST_URL } = getApi();
-  const MUNICIPIS_URL = deriveMunicipisUrl(FORECAST_URL);
+  // ✅ ara agafem MUNICIPIS_URL directament de env.js
+  const { FORECAST_URL, MUNICIPIS_URL } = getApi();
 
   const y = $("year");
   if (y) y.textContent = String(new Date().getFullYear());
