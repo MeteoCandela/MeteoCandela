@@ -198,14 +198,32 @@ function fmtWind(h){
 }
 
 async function fetchJson(url){
-  const res = await fetch(url, { cache: "no-store" });
+  const res = await fetch(url, {
+    cache: "no-store",
+    headers: { "accept": "application/json" }
+  });
+
   const txt = await res.text();
-  let data = null;
-  try { data = txt ? JSON.parse(txt) : null; } catch { data = null; }
+
+  let data;
+  try {
+    data = txt ? JSON.parse(txt) : null;
+  } catch {
+    data = null;
+  }
+
   if (!res.ok) {
-    const msg = (data && (data.error || data.detail)) ? `${data.error || "error"} ${data.detail || ""}` : txt.slice(0,140);
+    const msg = (data && (data.error || data.detail))
+      ? `${data.error || "error"} ${data.detail || ""}`.trim()
+      : txt.slice(0,200);
     throw new Error(`HTTP ${res.status}: ${msg}`);
   }
+
+  // ✅ CLAU: si no és JSON, això és un error (i així NO vas a fallback “Valls”)
+  if (data === null) {
+    throw new Error(`Resposta no-JSON a ${url}: ${txt.slice(0,200)}`);
+  }
+
   return data;
 }
 
