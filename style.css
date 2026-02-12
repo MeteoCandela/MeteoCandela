@@ -1226,3 +1226,14 @@ h2{
   line-height: 1.05 !important;
   letter-spacing: -0.02em !important;
 }
+.muni-picker--double{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  justify-content:center;
+  flex-wrap:wrap;
+}
+
+.muni-picker--double select{
+  min-width: 220px;
+}
