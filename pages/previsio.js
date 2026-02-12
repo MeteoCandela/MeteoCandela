@@ -157,6 +157,7 @@ function iconFromSky(s, hourStr){
   if (t.includes("cobert") || t.includes("cubierto")) return "☁️";
   if (t.includes("intervals") || t.includes("intervalos")) return isNight ? "☁️🌙" : "🌤️";
   if (t.includes("ennuvolat") || t.includes("nuboso") || t.includes("núvols")) return isNight ? "☁️" : "⛅";
+  if (t.includes("molt ennuvolat") || t.includes("muy nuboso")) return "☁️";
   if (t.includes("serè") || t.includes("despejado")) return isNight ? "🌙" : "☀️";
   return isNight ? "🌙" : "🌤️";
 }
