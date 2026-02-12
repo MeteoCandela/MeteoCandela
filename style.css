@@ -1037,80 +1037,6 @@ h2{
   border-color: rgba(255,255,255,.55);
   box-shadow: 0 0 0 3px rgba(255,255,255,.12), 0 8px 22px rgba(0,0,0,.32);
 }
-/* =========================
-   #cardCurrent — KPIs + Chips (forçat, sense wrap)
-   ========================= */
-
-#cardCurrent .kpi-grid{
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-#cardCurrent .kpi{
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,.03);
-  border-radius: 18px;
-  padding: 14px 16px;
-  min-width: 0;
-}
-
-/* el 5è KPI (wide) ocupa tota l'amplada */
-#cardCurrent .kpi--wide{ grid-column: 1 / -1; }
-
-#cardCurrent .kpi-val{
-  font-size: 40px;           /* més petit que el que tens ara */
-  line-height: 1.05;
-  font-weight: 900;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-}
-
-#cardCurrent .kpi-lab{
-  margin-top: 6px;
-  font-size: 13px;
-  color: rgba(255,255,255,.78);
-}
-
-/* Chips grid */
-#cardCurrent .chips-grid{
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 14px;
-}
-
-/* Chip: 1 línia, sense wraps */
-#cardCurrent .chip{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-
-  border: 1px solid rgba(255,255,255,.10);
-  background: rgba(0,0,0,.18);
-  border-radius: 16px;
-  padding: 12px 14px;
-
-  min-width: 0;
-}
-
-/* Label: NO pot saltar línia */
-#cardCurrent .chip > span{
-  flex: 1 1 auto;
-  min-width: 0;
-
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-
-  font-size: 13px;
-  color: rgba(255,255,255,.78);
-
-  white-space: nowrap !important;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 
 /* Valor: compacte i alineat dreta */
 #cardCurrent .chip > strong{
@@ -1177,16 +1103,59 @@ h2{
 @media (max-width: 380px){
   .kpi--wide-left, .kpi--wide-right{ grid-column: 1 / -1; }
 }
+/* =========================================================
+   HOME "ACTUAL" — Layout final:
+   - KPIs: 2x2 + 2 grans (intensitat esquerra, ratxa dreta)
+   - Chips: 1 per fila (full width) i sense talls
+   - Tipografia KPIs una mica més petita
+   ========================================================= */
 
-/* ===== Chips: 1 per fila, full width (no es talla) ===== */
-.chips-grid{
+#cardCurrent .kpi-grid{
   display: grid;
-  grid-template-columns: 1fr; /* <- clau */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+#cardCurrent .kpi{
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+  border-radius: 18px;
+  padding: 12px 14px;
+  min-width: 0;
+}
+
+#cardCurrent .kpi-val{
+  font-size: 38px;         /* <- abans massa gran */
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+#cardCurrent .kpi-lab{
+  margin-top: 6px;
+  font-size: 13px;
+  opacity: .82;
+}
+
+/* 2 KPIs grans a la fila inferior */
+#cardCurrent .kpi--wide-left{ grid-column: 1; }
+#cardCurrent .kpi--wide-right{ grid-column: 2; }
+
+/* si el mòbil és molt estret, els apilem */
+@media (max-width: 380px){
+  #cardCurrent .kpi--wide-left,
+  #cardCurrent .kpi--wide-right{ grid-column: 1 / -1; }
+}
+
+/* Chips: 1 columna */
+#cardCurrent .chips-grid{
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 10px;
   margin-top: 14px;
 }
 
-.chip{
+#cardCurrent .chip{
   display:flex;
   align-items:center;
   justify-content:space-between;
@@ -1196,24 +1165,27 @@ h2{
   border-radius: 16px;
   border: 1px solid rgba(255,255,255,.10);
   background: rgba(255,255,255,.04);
+
+  min-width: 0;
 }
 
-.chip > span{
+#cardCurrent .chip > span{
   font-size: 13.5px;
   opacity: .82;
+
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.chip > strong{
+#cardCurrent .chip > strong{
   font-size: 14px;
   font-weight: 700;
   text-align: right;
   font-variant-numeric: tabular-nums;
 
-  /* IMPORTANT: ara NO tallem el valor */
+  /* IMPORTANT: no tallar */
   white-space: normal;
   line-height: 1.15;
   max-width: 65%;
