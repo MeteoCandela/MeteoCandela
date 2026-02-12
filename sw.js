@@ -1,10 +1,11 @@
-// sw.js — MeteoValls
+// sw.js — MeteoValls (anti-stale ESM)
+// Objectiu:
 // - /api/* network-only
-// - HTML network-first fallback cache
-// - Assets stale-while-revalidate
-// - ✅ precache mòduls versionats (?v=) perquè no quedi enganxat amb JS vell
+// - HTML: network-first (fallback cache)
+// - ESM JS (app.js, /pages, /lib): network-first (fallback cache) => evita quedar-se enganxat a versions velles
+// - Assets estàtics (icons, vendor, css): stale-while-revalidate
 
-const VERSION = "2026-02-12-301"; // 🔁 HA DE COINCIDIR AMB app.js V
+const VERSION = "2026-02-12-200"; // PUJA AIXÒ SEMPRE
 const CACHE_PREFIX = "meteovalls-";
 const CACHE_NAME = `${CACHE_PREFIX}${VERSION}`;
 
@@ -14,44 +15,40 @@ const PRECACHE_URLS = [
   "/previsio.html",
   "/historic.html",
   "/sobre.html",
+
   "/site.webmanifest",
+  "/style.css",
 
-  // css/js versionats
-  `/style.css?v=${VERSION}`,
-  `/app.js?v=${VERSION}`,
-
-  // ✅ mòduls versionats
-  `/lib/install.js?v=${VERSION}`,
-  `/pages/home.js?v=${VERSION}`,
-  `/pages/previsio.js?v=${VERSION}`,
-  `/pages/historic.js?v=${VERSION}`,
-  `/pages/sobre.js?v=${VERSION}`,
-
-  // vendor (si no els versionaves, deixa'ls així)
+  // Vendor i icones (això sí que ho volem offline)
   "/vendor/chart.umd.min.js",
   "/vendor/suncalc.min.js",
-
   "/favicon.png",
   "/apple-touch-icon.png",
   "/android-chrome-192.png",
   "/android-chrome-512.png",
 ];
 
-function isApiRequest(url) {
+function isApi(url) {
   return url.pathname.startsWith("/api/");
 }
 
-function isHtmlRequest(request) {
+function isHtml(request) {
+  return request.mode === "navigate" || (request.headers.get("accept") || "").includes("text/html");
+}
+
+// IMPORTANT: els mòduls ESM que et poden quedar enganxats
+function isEsmModule(url) {
+  if (!url.pathname.endsWith(".js")) return false;
   return (
-    request.mode === "navigate" ||
-    (request.headers.get("accept") || "").includes("text/html")
+    url.pathname === "/app.js" ||
+    url.pathname.startsWith("/pages/") ||
+    url.pathname.startsWith("/lib/")
   );
 }
 
 function isStaticAsset(url) {
   return (
     url.pathname.endsWith(".css") ||
-    url.pathname.endsWith(".js") ||
     url.pathname.endsWith(".png") ||
     url.pathname.endsWith(".jpg") ||
     url.pathname.endsWith(".jpeg") ||
@@ -63,44 +60,75 @@ function isStaticAsset(url) {
     url.pathname.endsWith(".ttf") ||
     url.pathname.endsWith(".otf") ||
     url.pathname.endsWith(".json") ||
-    url.pathname.endsWith(".webmanifest")
+    url.pathname.endsWith(".webmanifest") ||
+    // Vendor sí que el considerem “asset”
+    url.pathname.startsWith("/vendor/")
   );
 }
 
-// ✅ Per .js/.css: mantenim query (busting real)
-// Per la resta: ignorem query
-function cacheKeyFor(urlObj) {
-  const isJsOrCss = urlObj.pathname.endsWith(".js") || urlObj.pathname.endsWith(".css");
-  return isJsOrCss ? (urlObj.pathname + urlObj.search) : urlObj.pathname;
-}
-
-async function precacheAll() {
+async function precache() {
   const cache = await caches.open(CACHE_NAME);
   await Promise.allSettled(
     PRECACHE_URLS.map(async (path) => {
       try {
-        const res = await fetch(new Request(path, { cache: "reload" }));
+        const res = await fetch(path, { cache: "reload" });
         if (res && res.ok) await cache.put(path, res.clone());
       } catch {}
     })
   );
 }
 
-async function cleanupOldCaches() {
+async function cleanup() {
   const keys = await caches.keys();
-  await Promise.all(
-    keys.map((k) => (k.startsWith(CACHE_PREFIX) && k !== CACHE_NAME ? caches.delete(k) : null))
-  );
+  await Promise.all(keys.map(k => (k.startsWith(CACHE_PREFIX) && k !== CACHE_NAME) ? caches.delete(k) : null));
+}
+
+// network-first genèric amb fallback cache
+async function networkFirst(req, cacheKey) {
+  const cache = await caches.open(CACHE_NAME);
+  try {
+    const res = await fetch(req);
+    if (res && res.ok) cache.put(cacheKey || req, res.clone()).catch(()=>{});
+    return res;
+  } catch {
+    const cached =
+      (await cache.match(cacheKey || req)) ||
+      (await cache.match(req, { ignoreSearch: true })) ||
+      (await caches.match(req, { ignoreSearch: true }));
+    return cached || new Response("Offline", { status: 503, headers: { "content-type": "text/plain; charset=utf-8" } });
+  }
+}
+
+// stale-while-revalidate per assets
+async function staleWhileRevalidate(req, cacheKey) {
+  const cache = await caches.open(CACHE_NAME);
+  const cached = await cache.match(cacheKey || req, { ignoreSearch: true });
+
+  const update = fetch(req)
+    .then(res => {
+      if (res && res.ok) cache.put(cacheKey || req, res.clone()).catch(()=>{});
+      return res;
+    })
+    .catch(() => null);
+
+  if (cached) {
+    // actualitza en background
+    update && self.registration && self.waitUntil?.(update);
+    return cached;
+  }
+
+  const net = await update;
+  return net || new Response("", { status: 504 });
 }
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
-  event.waitUntil(precacheAll());
+  event.waitUntil(precache());
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
-    await cleanupOldCaches();
+    await cleanup();
     await self.clients.claim();
   })());
 });
@@ -112,66 +140,30 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // 1) API: network-only
-  if (isApiRequest(url)) {
+  // 1) API: network-only (mai cache)
+  if (isApi(url)) {
     event.respondWith(fetch(req));
     return;
   }
 
-  // 2) HTML: network-first -> cache fallback
-  if (isHtmlRequest(req)) {
-    event.respondWith((async () => {
-      const cache = await caches.open(CACHE_NAME);
-      const key = cacheKeyFor(url);
-
-      try {
-        const res = await fetch(req);
-        if (res && res.ok) {
-          cache.put(key, res.clone()).catch(() => {});
-        }
-        return res;
-      } catch {
-        const cached =
-          (await cache.match(req)) ||
-          (await cache.match(key)) ||
-          (await cache.match(url.pathname)) ||
-          (await cache.match("/index.html"));
-
-        return cached || new Response("Offline", {
-          status: 503,
-          headers: { "content-type": "text/plain; charset=utf-8" },
-        });
-      }
-    })());
+  // 2) HTML: network-first
+  if (isHtml(req)) {
+    event.respondWith(networkFirst(req, url.pathname));
     return;
   }
 
-  // 3) Assets: stale-while-revalidate
+  // 3) ESM modules (app.js, /pages, /lib): network-first (aquí hi havia el “enganxament”)
+  if (isEsmModule(url)) {
+    event.respondWith(networkFirst(req, url.pathname));
+    return;
+  }
+
+  // 4) Assets estàtics: stale-while-revalidate
   if (isStaticAsset(url)) {
-    event.respondWith((async () => {
-      const cache = await caches.open(CACHE_NAME);
-      const key = cacheKeyFor(url);
-
-      const cached = await cache.match(key);
-
-      const update = fetch(req)
-        .then((res) => {
-          if (res && res.ok) cache.put(key, res.clone()).catch(() => {});
-          return res;
-        })
-        .catch(() => null);
-
-      if (cached) {
-        event.waitUntil(update);
-        return cached;
-      }
-
-      const net = await update;
-      return net || new Response("", { status: 504 });
-    })());
+    event.respondWith(staleWhileRevalidate(req, url.pathname));
     return;
   }
 
-  // 4) default
-  event.respondWith(fetch(req).catch(() => caches.match(req)));
+  // 5) Resta: network-first
+  event.respondWith(networkFirst(req, url.pathname));
 });
