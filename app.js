@@ -1,5 +1,5 @@
 // app.js — entrypoint únic (ESM)
-export const V = "2026-02-12-100"; // PUJA AQUEST NÚMERO QUAN TOQUIS JS
+export const V = "2026-02-12-201"; // PUJA AQUEST NÚMERO QUAN TOQUIS JS
 
 // Service Worker (PWA)
 if ("serviceWorker" in navigator) {
