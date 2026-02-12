@@ -34,19 +34,40 @@ function renderStatus(lastTsMs, hb) {
 }
 
 function renderCurrent(current, historyRows) {
-  if ($("temp")) $("temp").textContent = current.temp_c == null ? "—" : fmt1(current.temp_c);
-  if ($("hum")) $("hum").textContent  = current.hum_pct == null ? "—" : String(Math.round(current.hum_pct));
-  if ($("wind")) $("wind").textContent = current.wind_kmh == null ? "—" : fmt1(current.wind_kmh);
-  if ($("rainDay")) $("rainDay").textContent = current.rain_day_mm == null ? "—" : fmt1(current.rain_day_mm);
+function renderCurrent(current, historyRows) {
+  // --- KPIs (nous IDs) ---
+  if ($("kpiTemp")) $("kpiTemp").textContent = current.temp_c == null ? "—" : fmt1(current.temp_c);
+  if ($("kpiHum"))  $("kpiHum").textContent  = current.hum_pct == null ? "—" : String(Math.round(current.hum_pct));
+  if ($("kpiWind")) $("kpiWind").textContent = current.wind_kmh == null ? "—" : fmt1(current.wind_kmh);
+  if ($("kpiRainDay")) $("kpiRainDay").textContent = current.rain_day_mm == null ? "—" : fmt1(current.rain_day_mm);
 
-  if ($("tempSub")) {
-    $("tempSub").textContent =
-      current.dew_c == null ? "Punt de rosada: —" : `Punt de rosada: ${fmt1(current.dew_c)} °C`;
+  // --- Chips ---
+  if ($("chipDew")) {
+    $("chipDew").textContent = current.dew_c == null ? "—" : `${fmt1(current.dew_c)} °C`;
   }
 
-  renderSunSub();
+  // Direcció (graus + nom català)
+  let dirTxt = "—";
+  if (current.wind_dir != null && current.wind_dir !== "") {
+    const deg = Number(current.wind_dir);
+    if (!Number.isNaN(deg)) dirTxt = `${deg.toFixed(0)}° (${degToWindCatalan(deg)})`;
+  }
+  if ($("chipDir")) $("chipDir").textContent = dirTxt;
 
-  const elMinMax = $("tempMinMax");
+  // Intensitat de pluja
+  if ($("chipRainRate")) {
+    $("chipRainRate").textContent = current.rain_rate_mmh == null ? "—" : `${fmt1(current.rain_rate_mmh)} mm/h`;
+  }
+
+  // Actualitzat
+  if ($("chipUpdated")) $("chipUpdated").textContent = fmtDate(current.ts);
+
+  // Sol (això ja ho tens amb renderSunSub, però ara ho mostrem al chipSun)
+  renderSunSub(); // assegura que calcula la info
+  // 👇 IMPORTANT: has de fer que renderSunSub escrigui a #chipSun (ho fem al Pas 2)
+
+  // --- Mín/Max temperatura avui (per chipMinMax) ---
+  const elMinMax = $("chipMinMax");
   if (elMinMax && Array.isArray(historyRows) && historyRows.length) {
     const todayKey = dayKeyFromTs(Date.now());
     const { start, end } = startEndMsFromDayKey(todayKey);
@@ -60,30 +81,33 @@ function renderCurrent(current, historyRows) {
 
     const { min, max } = minMax(todayRows.map(r => r.temp_c));
     elMinMax.textContent =
-      (min == null || max == null)
-        ? "Temperatura avui: mín — · màx —"
-        : `Temperatura avui: mín ${fmt1(min)} °C · màx ${fmt1(max)} °C`;
+      (min == null || max == null) ? "—" : `${fmt1(min)}–${fmt1(max)} °C`;
+  } else if (elMinMax) {
+    elMinMax.textContent = "—";
   }
 
-  let dirTxt = "—";
-  if (current.wind_dir != null && current.wind_dir !== "") {
-    const deg = Number(current.wind_dir);
-    if (!Number.isNaN(deg)) dirTxt = `${deg.toFixed(0)}° (${degToWindCatalan(deg)})`;
+  // --- ✅ Ratxa màxima avui (kpiGustMaxDay) ---
+  const elGustMaxDay = $("kpiGustMaxDay");
+  if (elGustMaxDay && Array.isArray(historyRows) && historyRows.length) {
+    const todayKey = dayKeyFromTs(Date.now());
+    const { start, end } = startEndMsFromDayKey(todayKey);
+
+    const todayRows = historyRows.filter(r => r.ts >= start && r.ts <= end).slice();
+
+    if (current && Number.isFinite(current.ts) && current.ts >= start && current.ts <= end) {
+      const lastHistTs = todayRows.length ? todayRows[todayRows.length - 1].ts : null;
+      if (!lastHistTs || current.ts > lastHistTs) todayRows.push(current);
+    }
+
+    const gusts = todayRows.map(r => Number(r.gust_kmh)).filter(Number.isFinite);
+    elGustMaxDay.textContent = gusts.length ? fmt1(Math.max(...gusts)) : "—";
+  } else if (elGustMaxDay) {
+    elGustMaxDay.textContent = current.gust_kmh == null ? "—" : fmt1(current.gust_kmh);
   }
 
-  if ($("gustSub")) {
-    $("gustSub").textContent =
-      current.gust_kmh == null
-        ? `Ratxa: — · Dir: ${dirTxt}`
-        : `Ratxa: ${fmt1(current.gust_kmh)} km/h · Dir: ${dirTxt}`;
-  }
-
-  if ($("rainRateSub")) {
-    $("rainRateSub").textContent =
-      current.rain_rate_mmh == null
-        ? "Intensitat de pluja: —"
-        : `Intensitat de pluja: ${fmt1(current.rain_rate_mmh)} mm/h`;
-  }
+  // --- Icona (si la gestiones aquí o amb renderHomeIcon) ---
+  renderHomeIcon(current);
+}
 
   if ($("lastUpdated")) $("lastUpdated").textContent = `Actualitzat: ${fmtDate(current.ts)}`;
 }
