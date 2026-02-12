@@ -578,13 +578,8 @@ export function initPrevisio() {
   }
 
   initSelectors().catch(async (e) => {
-    console.error(e);
-    // fallback: prova Valls
-    if (muniSel) {
-      muniSel.innerHTML = `<option value="43161">Valls</option>`;
-      muniSel.value = "43161";
-    }
-    setHeaderPlace();
-    await loadAndRender("43161");
-  });
+  console.error(e);
+  const status = $("fxStatus");
+  if (status) status.textContent = `ERROR municipis: ${e?.message || e}`;
+});
   }
