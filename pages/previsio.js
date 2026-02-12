@@ -4,12 +4,13 @@ import { getApi } from "../lib/env.js";
 
 // LocalStorage
 const LS_ZONE = "meteovalls:fx_zone";
-const LS_MUNI_GLOBAL = "meteovalls:muni_id";
+const LS_MUNI_GLOBAL = "meteovalls:muni_id"; // compat vell
 const LS_MUNI_BY_ZONE_PREFIX = "meteovalls:muni_id:";
 
-// Constants
+// IDs
 const VALLS_ID = "43161";
 
+// Labels finals UI (han de ser EXACTES)
 const ZONES_WANTED = [
   "Municipis Alt Camp",
   "Capitals província Tarragona",
@@ -18,6 +19,7 @@ const ZONES_WANTED = [
   "Capitals província Lleida",
 ];
 
+// Defaults per zona
 const DEFAULT_BY_ZONE_LABEL = {
   "Municipis Alt Camp": VALLS_ID,
   "Capitals província Tarragona": "43148", // Tarragona
@@ -26,87 +28,49 @@ const DEFAULT_BY_ZONE_LABEL = {
   "Capitals província Lleida": "25120",    // Lleida
 };
 
-// -------------------- utils --------------------
-function cleanLabel(x){ return String(x || "").trim(); }
-
-function muniKeyForZone(label){
-  return `${LS_MUNI_BY_ZONE_PREFIX}${label}`;
-}
-
-function idProvincia(id){
-  const s = String(id || "");
-  if (s.startsWith("43")) return "Tarragona";
-  if (s.startsWith("08")) return "Barcelona";
-  if (s.startsWith("17")) return "Girona";
-  if (s.startsWith("25")) return "Lleida";
-  return "";
-}
-
+// -------------------- util format --------------------
 function hourNum(hourStr){
   const m = String(hourStr ?? "").match(/^\s*(\d{1,2})/);
   return m ? Number(m[1]) : NaN;
 }
-
 function fmt1(x){
-  if (x === null || x === undefined) return "—";
-  const s = String(x).trim();
-  if (s === "") return "—";
-  const n = Number(s);
+  const n = Number(String(x ?? "").trim());
   return Number.isFinite(n) ? n.toFixed(1) : "—";
 }
-
 function fmtInt(x){
-  if (x === null || x === undefined) return "—";
-  const s = String(x).trim();
-  if (s === "") return "—";
-  const n = Number(s);
+  const n = Number(String(x ?? "").trim());
   return Number.isFinite(n) ? String(Math.round(n)) : "—";
 }
-
 function fmt0orDash(x){
-  if (x === null || x === undefined) return "—";
-  const s = String(x).trim();
-  if (s === "") return "—";
-  const n = Number(s);
+  const n = Number(String(x ?? "").trim());
   return Number.isFinite(n) ? String(Math.round(n)) : "—";
 }
-
 function ymdTodayLocal(){
   const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
-
 function rotateDailyToToday(daily){
   if (!Array.isArray(daily) || !daily.length) return daily;
   const today = ymdTodayLocal();
   const idx = daily.findIndex(d => String(d?.date).slice(0,10) === today);
-  if (idx <= 0) return daily;
-  return daily.slice(idx).concat(daily.slice(0, idx));
+  return idx > 0 ? daily.slice(idx).concat(daily.slice(0, idx)) : daily;
 }
-
 function fmtDateCA(ymd){
   try{
     const [y,m,d] = String(ymd).slice(0,10).split("-").map(Number);
     const dt = new Date(y, m-1, d);
-    return new Intl.DateTimeFormat("ca-ES", {
-      weekday:"short", day:"2-digit", month:"2-digit"
-    }).format(dt);
+    return new Intl.DateTimeFormat("ca-ES", { weekday:"short", day:"2-digit", month:"2-digit" }).format(dt);
   }catch{
     return String(ymd || "—");
   }
 }
-
 function timeAgo(ts){
   const n = Number(ts);
   if (!Number.isFinite(n)) return "—";
   const mins = Math.round((Date.now() - n) / 60000);
   if (mins < 1) return "fa <1 min";
   if (mins < 60) return `fa ${mins} min`;
-  const h = Math.round(mins / 60);
-  return `fa ${h} h`;
+  return `fa ${Math.round(mins/60)} h`;
 }
 
 function parseHourMin(hourStr){
@@ -114,52 +78,38 @@ function parseHourMin(hourStr){
   if (!m) return { h: NaN, min: 0 };
   return { h: Number(m[1]), min: m[2] ? Number(m[2]) : 0 };
 }
-
 function parseLocalDateTime(ymd, hourStr){
   const s = String(ymd || "").slice(0,10);
   const [Y,M,D] = s.split("-").map(Number);
-  if (!Number.isFinite(Y) || !Number.isFinite(M) || !Number.isFinite(D)) return null;
-
+  if (![Y,M,D].every(Number.isFinite)) return null;
   const { h, min } = parseHourMin(hourStr);
   if (!Number.isFinite(h)) return null;
-
   return new Date(Y, M-1, D, h, Number.isFinite(min) ? min : 0, 0, 0);
 }
-
 function rowToDate(row, todayYMD){
   const s = String(row?.ts_local ?? "").trim();
   if (s) {
     const m = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/);
     if (m) {
-      const Y  = Number(m[1]), Mo = Number(m[2]), D  = Number(m[3]);
-      const H  = Number(m[4]), Mi = Number(m[5]), S  = Number(m[6] ?? 0);
-      const d = new Date(Y, Mo - 1, D, H, Mi, S, 0);
+      const d = new Date(Number(m[1]), Number(m[2])-1, Number(m[3]), Number(m[4]), Number(m[5]), Number(m[6] ?? 0));
       if (!isNaN(d.getTime())) return d;
     }
   }
-
   const ts = Number(row?.ts);
   if (Number.isFinite(ts)) {
     const d = new Date(ts);
     if (!isNaN(d.getTime())) return d;
   }
-
   if (row?.date) {
     const d = parseLocalDateTime(row.date, row.hour);
     if (d && !isNaN(d.getTime())) return d;
   }
-
   const d = parseLocalDateTime(todayYMD, row?.hour);
-  if (d && !isNaN(d.getTime())) return d;
-
-  return null;
+  return d && !isNaN(d.getTime()) ? d : null;
 }
-
 function fmtHourLabelFromDate(dt){
   try{
-    return new Intl.DateTimeFormat("ca-ES", {
-      weekday: "short", hour: "2-digit", minute: "2-digit"
-    }).format(dt);
+    return new Intl.DateTimeFormat("ca-ES", { weekday: "short", hour: "2-digit", minute: "2-digit" }).format(dt);
   }catch{
     return `${String(dt.getHours()).padStart(2,"0")}:00`;
   }
@@ -167,39 +117,31 @@ function fmtHourLabelFromDate(dt){
 
 function skyToCA(s){
   if (!s) return s;
-
-  let t = String(s).trim().toLowerCase().replace(/\s+/g, " ");
-  t = t.replace(/\bnubes\s+altas\b/g, "núvols alts");
-  t = t.replace(/\bnubes\s+medias\b/g, "núvols mitjans");
-  t = t.replace(/\bnubes\s+bajas\b/g, "núvols baixos");
-  t = t.replace(/\bnubes\b/g, "núvols");
-
-  t = t.replace(/\bintervalos\s+nubosos\b/g, "intervals ennuvolats");
-  t = t.replace(/\bpoco\s+nuboso\b/g, "poc ennuvolat");
-  t = t.replace(/\bmuy\s+nuboso\b/g, "molt ennuvolat");
-  t = t.replace(/\bnuboso\b/g, "ennuvolat");
-  t = t.replace(/\bcubierto\b/g, "cobert");
-  t = t.replace(/\bdespejado\b/g, "cel serè");
-
-  t = t.replace(/\blluvia\s+escasa\b/g, "pluja feble");
-  t = t.replace(/\blluvia\b/g, "pluja");
-  t = t.replace(/\btormentas\b/g, "tempestes");
-  t = t.replace(/\btormenta\b/g, "tempesta");
-  t = t.replace(/\bnieve\b/g, "neu");
-  t = t.replace(/\bniebla\b/g, "boira");
-  t = t.replace(/\bbruma\b/g, "broma");
-
-  t = t.replace(/\bcon\b/g, "amb");
-
+  let t = String(s).trim().toLowerCase().replace(/\s+/g," ");
+  t = t.replace(/\bnubes\s+altas\b/g, "núvols alts")
+       .replace(/\bnubes\s+medias\b/g, "núvols mitjans")
+       .replace(/\bnubes\s+bajas\b/g, "núvols baixos")
+       .replace(/\bnubes\b/g, "núvols")
+       .replace(/\bintervalos\s+nubosos\b/g, "intervals ennuvolats")
+       .replace(/\bpoco\s+nuboso\b/g, "poc ennuvolat")
+       .replace(/\bmuy\s+nuboso\b/g, "molt ennuvolat")
+       .replace(/\bnuboso\b/g, "ennuvolat")
+       .replace(/\bcubierto\b/g, "cobert")
+       .replace(/\bdespejado\b/g, "cel serè")
+       .replace(/\blluvia\s+escasa\b/g, "pluja feble")
+       .replace(/\blluvia\b/g, "pluja")
+       .replace(/\btormentas\b/g, "tempestes")
+       .replace(/\btormenta\b/g, "tempesta")
+       .replace(/\bnieve\b/g, "neu")
+       .replace(/\bniebla\b/g, "boira")
+       .replace(/\bbruma\b/g, "broma")
+       .replace(/\bcon\b/g, "amb");
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
-
 function iconFromSky(s, hourStr){
   const h = hourNum(hourStr);
   const isNight = Number.isFinite(h) ? (h >= 20 || h < 7) : false;
-
   const t = String(s || "").toLowerCase();
-
   if (t.includes("torment") || t.includes("tempest")) return "⛈️";
   if (t.includes("nieve") || t.includes("neu")) return "🌨️";
   if (t.includes("niebla") || t.includes("boira") || t.includes("bruma") || t.includes("broma")) return "🌫️";
@@ -209,46 +151,29 @@ function iconFromSky(s, hourStr){
   if (t.includes("intervals") || t.includes("intervalos")) return isNight ? "☁️🌙" : "🌤️";
   if (t.includes("ennuvolat") || t.includes("nuboso") || t.includes("núvols")) return isNight ? "☁️" : "⛅";
   if (t.includes("serè") || t.includes("despejado")) return isNight ? "🌙" : "☀️";
-
   return isNight ? "🌙" : "🌤️";
 }
-
 function fmtWind(h){
   const v = Number(h.wind_kmh);
   const g = Number(h.gust_kmh);
   const dir = h.wind_dir ? String(h.wind_dir) : "";
-
   const vTxt = Number.isFinite(v) ? `${Math.round(v)} km/h` : "—";
   const dTxt = dir ? ` ${dir}` : "";
   const gust = Number.isFinite(g) ? `<div class="fx-gust">ratxa ${Math.round(g)} km/h</div>` : "";
-
   return `<div class="fx-wind-main">${vTxt}${dTxt}</div>${gust}`;
 }
 
-// -------------------- fetchJson (estricte) --------------------
 async function fetchJson(url){
-  const res = await fetch(url, {
-    cache: "no-store",
-    headers: { "accept": "application/json" }
-  });
-
+  const res = await fetch(url, { cache: "no-store" });
   const txt = await res.text();
-
   let data = null;
-  try { data = txt ? JSON.parse(txt) : null; } catch { data = null; }
-
+  try { data = txt ? JSON.parse(txt) : null; } catch {}
   if (!res.ok) {
     const msg = (data && (data.error || data.detail))
       ? `${data.error || "error"} ${data.detail || ""}`.trim()
-      : txt.slice(0,200);
+      : txt.slice(0,140);
     throw new Error(`HTTP ${res.status}: ${msg}`);
   }
-
-  // ✅ clau: si no és JSON, NO continuem “en silenci”
-  if (data === null) {
-    throw new Error(`Resposta no-JSON a ${url}: ${txt.slice(0,200)}`);
-  }
-
   return data;
 }
 
@@ -257,15 +182,12 @@ function getSelectedText(selectId){
   const opt = sel?.selectedOptions?.[0];
   return opt ? String(opt.textContent || "").trim() : "";
 }
-
 function getSelectedMuniName(){
   return getSelectedText("muniSelect").replace(/^★\s*/,"").trim();
 }
-
 function getSelectedZoneLabel(){
   return getSelectedText("zoneSelect");
 }
-
 function setHeaderPlace(){
   let name = getSelectedMuniName() || "Valls";
   if (name.toLowerCase() === "valls") name = "Ciutat de Valls";
@@ -280,7 +202,7 @@ function setHeaderPlace(){
   }
 }
 
-// -------------------- render --------------------
+// ---------- render ----------
 function renderHourly(hourly){
   const wrap = $("hourlyWrap");
   if (!wrap) return;
@@ -308,6 +230,7 @@ function renderHourly(hourly){
     .filter(h => h._ms >= startMs && h._ms < endMs)
     .sort((a,b) => a._ms - b._ms);
 
+  // 1 punt per hora
   const seen = new Set();
   list = list.filter(h => {
     const bucket = Math.floor(h._ms / 3600000);
@@ -327,10 +250,7 @@ function renderHourly(hourly){
       <div class="fx-rail" role="list" aria-label="Previsió properes 24 hores">
         ${list.map(h => {
           const dt = h._dt;
-          const hourStrForIcon = dt
-            ? `${String(dt.getHours()).padStart(2,"0")}:00`
-            : (h.hour || "12:00");
-
+          const hourStrForIcon = dt ? `${String(dt.getHours()).padStart(2,"0")}:00` : (h.hour || "12:00");
           const skyCA = skyToCA(h.sky);
 
           return `
@@ -409,40 +329,46 @@ function renderDaily(daily){
   `;
 }
 
-// -------------------- groups -> zones --------------------
+// ---------- zones ----------
+function muniKeyForZone(label){
+  return `${LS_MUNI_BY_ZONE_PREFIX}${label}`;
+}
+function cleanLabel(x){
+  return String(x || "").trim();
+}
+function idProvincia(id){
+  const s = String(id || "");
+  if (s.startsWith("43")) return "Tarragona";
+  if (s.startsWith("08")) return "Barcelona";
+  if (s.startsWith("17")) return "Girona";
+  if (s.startsWith("25")) return "Lleida";
+  return "";
+}
+
+// Converteix qualsevol format del Worker a 5 zones fixes
 function normGroupsToZones(rawGroups){
   const groups = Array.isArray(rawGroups) ? rawGroups : [];
 
-  // Cas nou: ja venen les 5 zones finals
+  // Format nou: ja porta les 5 zones
   const hasNew = groups.some(g => ZONES_WANTED.includes(cleanLabel(g?.label)));
   if (hasNew) {
     return groups
       .map(g => ({
         label: cleanLabel(g.label),
-        items: (Array.isArray(g.items) ? g.items : []).map(it => ({
-          id: String(it.id),
-          name: String(it.name),
-        })),
+        items: (Array.isArray(g.items) ? g.items : []).map(it => ({ id: String(it.id), name: String(it.name) })),
       }))
-      .filter(g => g.label && g.items.length);
+      .filter(g => ZONES_WANTED.includes(g.label) && g.items.length);
   }
 
-  // Cas antic: "Alt Camp" + "Capitals de comarca"
-  const findByLabelLoose = (want) =>
+  // Format antic: "Alt Camp" + "Capitals de comarca"
+  const byLabelLoose = (want) =>
     groups.find(g => cleanLabel(g?.label).toLowerCase() === String(want).toLowerCase()) || null;
 
-  const altCamp = findByLabelLoose("Alt Camp");
-  const caps = findByLabelLoose("Capitals de comarca");
+  const altCamp = byLabelLoose("Alt Camp");
+  const caps = byLabelLoose("Capitals de comarca");
 
-  const altItems = (Array.isArray(altCamp?.items) ? altCamp.items : []).map(it => ({
-    id: String(it.id),
-    name: String(it.name),
-  }));
-
-  const capItems = (Array.isArray(caps?.items) ? caps.items : []).map(it => ({
-    id: String(it.id),
-    name: String(it.name),
-  }));
+  const altItems = (Array.isArray(altCamp?.items) ? altCamp.items : []).map(it => ({ id: String(it.id), name: String(it.name) }));
+  const capItems = (Array.isArray(caps?.items) ? caps.items : []).map(it => ({ id: String(it.id), name: String(it.name) }));
 
   const capsT = capItems.filter(x => idProvincia(x.id) === "Tarragona");
   const capsB = capItems.filter(x => idProvincia(x.id) === "Barcelona");
@@ -451,36 +377,43 @@ function normGroupsToZones(rawGroups){
 
   const sortByName = (a,b) => a.name.localeCompare(b.name, "ca");
 
-  return [
+  const zones = [
     { label: "Municipis Alt Camp", items: altItems.sort(sortByName) },
     { label: "Capitals província Tarragona", items: capsT.sort(sortByName) },
     { label: "Capitals província Barcelona", items: capsB.sort(sortByName) },
     { label: "Capitals província Girona", items: capsG.sort(sortByName) },
     { label: "Capitals província Lleida", items: capsL.sort(sortByName) },
-  ].filter(g => g.items.length);
+  ].filter(z => z.items.length);
+
+  return zones;
 }
 
-// -------------------- init --------------------
+function optionLabel(id, name){
+  const n = String(name || "");
+  if (String(id) === VALLS_ID) return n.startsWith("★") ? n : `★ ${n}`;
+  return n;
+}
+
+// -------------------- INIT --------------------
 export function initPrevisio() {
-  const api = (typeof getApi === "function" ? getApi() : {}) || {};
+  const api = getApi?.() || {};
   const ORIGIN = window.location.origin;
 
-  const FORECAST_URL  = api.FORECAST_URL  || "/api/forecast";
+  const FORECAST_URL = api.FORECAST_URL || "/api/forecast";
   const MUNICIPIS_URL = api.MUNICIPIS_URL || "/api/municipis";
 
+  const status = $("fxStatus");
   const y = $("year");
   if (y) y.textContent = String(new Date().getFullYear());
 
   const zoneSel = document.getElementById("zoneSelect");
   const muniSel = document.getElementById("muniSelect");
 
-  let zones = [];
+  let zones = []; // [{label, items:[{id,name}]}]
 
   function groupByLabel(label){
-    const L = cleanLabel(label);
-    return zones.find(g => cleanLabel(g?.label) === L) || null;
+    return zones.find(g => cleanLabel(g?.label) === cleanLabel(label)) || null;
   }
-
   function findZoneContainingMuni(muniId){
     const id = String(muniId || "");
     if (!id) return null;
@@ -493,6 +426,7 @@ export function initPrevisio() {
 
   function populateZoneSelect(startLabel){
     if (!zoneSel) return;
+
     zoneSel.innerHTML = zones
       .map(g => `<option value="${String(g.label)}">${String(g.label)}</option>`)
       .join("");
@@ -502,12 +436,6 @@ export function initPrevisio() {
     } else if (zones.length) {
       zoneSel.value = String(zones[0].label);
     }
-  }
-
-  function optionLabel(id, name){
-    const n = String(name || "");
-    if (String(id) === VALLS_ID) return n.startsWith("★") ? n : `★ ${n}`;
-    return n;
   }
 
   function populateMuniSelect(zoneLabel, muniIdToSelect){
@@ -536,7 +464,6 @@ export function initPrevisio() {
   }
 
   async function loadAndRender(muniId){
-    const status = $("fxStatus");
     const meta = $("fxMeta");
 
     try{
@@ -565,36 +492,34 @@ export function initPrevisio() {
       renderDaily(rotateDailyToToday(fx.daily));
     } catch(e){
       console.error(e);
-      if (status) status.textContent = `Error /api/forecast: ${e?.message || e}`;
+      if (status) status.textContent = `Error carregant previsió (/api/forecast): ${e?.message || e}`;
       const hw = $("hourlyWrap"); if (hw) hw.innerHTML = `<p class="muted-line">Error carregant previsió.</p>`;
       const dw = $("dailyWrap");  if (dw) dw.innerHTML = `<p class="muted-line">Error carregant previsió.</p>`;
     }
   }
 
   async function initSelectors(){
-    const status = $("fxStatus");
-    if (status) status.textContent = "Carregant llista de municipis…";
+    if (status) status.textContent = "Carregant municipis…";
 
+    // 1) carrega municipis del Worker
     const muniUrl = new URL(MUNICIPIS_URL, ORIGIN);
     muniUrl.searchParams.set("t", String(Date.now()));
 
     const cfg = await fetchJson(muniUrl.toString());
-    const rawGroups = Array.isArray(cfg?.groups) ? cfg.groups : [];
+    const rawGroups = Array.isArray(cfg?.groups) ? cfg.groups : null;
+
+    if (!rawGroups || !rawGroups.length) {
+      throw new Error("Resposta /api/municipis sense groups (buit o format inesperat).");
+    }
 
     zones = normGroupsToZones(rawGroups);
 
-    // Debug útil: quantes zones i quants municipis
-    const totalItems = zones.reduce((acc,g) => acc + (g.items?.length || 0), 0);
-    if (status) status.textContent = `Municipis carregats: ${zones.length} zones · ${totalItems} elements.`;
-
-    if (!zones.length) throw new Error("cfg.groups buit o format inesperat.");
-
-    // IMPORTANT: si abans tenies guardat "Alt Camp" o "Capitals de comarca", ho netegem
-    const savedZone = localStorage.getItem(LS_ZONE);
-    if (savedZone && !zones.some(z => cleanLabel(z.label) === cleanLabel(savedZone))) {
-      localStorage.removeItem(LS_ZONE);
+    if (!zones.length) {
+      throw new Error(`No he pogut normalitzar zones. Labels rebuts: ${rawGroups.map(g=>g?.label).join(", ")}`);
     }
 
+    // 2) decideix zona inicial
+    const savedZone = localStorage.getItem(LS_ZONE);
     const savedGlobalMuni = localStorage.getItem(LS_MUNI_GLOBAL);
     const inferredZoneFromGlobal = findZoneContainingMuni(savedGlobalMuni);
 
@@ -605,6 +530,7 @@ export function initPrevisio() {
 
     populateZoneSelect(zoneLabel);
 
+    // 3) municipi inicial per zona
     const currentZone = zoneSel ? String(zoneSel.value || zoneLabel) : zoneLabel;
     const savedMuniForZone = localStorage.getItem(muniKeyForZone(currentZone));
 
@@ -613,10 +539,11 @@ export function initPrevisio() {
       savedMuniForZone || (currentZone === inferredZoneFromGlobal ? savedGlobalMuni : null)
     );
 
+    // 4) render inicial
     setHeaderPlace();
     await loadAndRender(muniSel ? muniSel.value : VALLS_ID);
 
-    // Listeners
+    // 5) listeners
     if (zoneSel) {
       zoneSel.addEventListener("change", async () => {
         const z = String(zoneSel.value || "");
@@ -653,18 +580,18 @@ export function initPrevisio() {
 
   initSelectors().catch(async (e) => {
     console.error(e);
-    const status = $("fxStatus");
-    if (status) status.textContent = `ERROR municipis: ${e?.message || e}`;
+    if (status) status.textContent = `ERROR /api/municipis: ${e?.message || e}`;
 
-    // fallback dur (però amb missatge clar)
-    if (muniSel) {
-      muniSel.innerHTML = `<option value="${VALLS_ID}">★ Valls</option>`;
-      muniSel.value = VALLS_ID;
-    }
+    // fallback mínim (però ara TE'N ENTERES)
     if (zoneSel) {
       zoneSel.innerHTML = `<option value="Municipis Alt Camp">Municipis Alt Camp</option>`;
       zoneSel.value = "Municipis Alt Camp";
     }
+    if (muniSel) {
+      muniSel.innerHTML = `<option value="${VALLS_ID}">★ Valls</option>`;
+      muniSel.value = VALLS_ID;
+    }
+
     setHeaderPlace();
     await loadAndRender(VALLS_ID);
   });
