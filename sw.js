@@ -62,7 +62,13 @@ function isStaticAsset(url) {
 
 // Clau neta: guardem al cache per pathname (ignorem ?v=)
 function cleanKeyRequest(originalRequest, urlObj) {
-  return new Request(urlObj.pathname, {
+function cleanKeyRequest(originalRequest, urlObj) {
+  const isJsOrCss = urlObj.pathname.endsWith(".js") || urlObj.pathname.endsWith(".css");
+
+  // ✅ Per JS/CSS: conserva ?v= per poder bustar cache
+  const key = isJsOrCss ? (urlObj.pathname + urlObj.search) : urlObj.pathname;
+
+  return new Request(key, {
     method: "GET",
     headers: originalRequest.headers,
     credentials: originalRequest.credentials,
