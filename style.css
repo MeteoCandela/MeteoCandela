@@ -1237,3 +1237,80 @@ h2{
 .muni-picker--double select{
   min-width: 220px;
 }
+/* Fullscreen charts modal */
+.fs-overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  background: rgba(0,0,0,0.75);
+  z-index: 9999;
+}
+
+.fs-overlay.open { display: flex; }
+
+.fs-panel {
+  width: min(980px, 100%);
+  height: min(760px, 100%);
+  border-radius: 18px;
+  background: #0b1220;
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.fs-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.10);
+}
+
+.fs-title {
+  font-weight: 700;
+  font-size: 15px;
+  opacity: 0.95;
+}
+
+.fs-close {
+  appearance: none;
+  border: 0;
+  background: rgba(255,255,255,0.10);
+  color: inherit;
+  padding: 8px 10px;
+  border-radius: 12px;
+  font-size: 16px;
+}
+
+.fs-body {
+  flex: 1;
+  padding: 12px;
+  display: flex;
+}
+
+.fs-canvas-host {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Important: Chart.js amb maintainAspectRatio:false necessita alçada real */
+.fs-canvas-host canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* evita scroll quan el modal és obert */
+html.fs-lock, body.fs-lock {
+  overflow: hidden;
+}
+
+/* petit detall UX */
+.fs-clickable { cursor: zoom-in; }
+.fs-placeholder { width: 100%; }
