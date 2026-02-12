@@ -5,7 +5,7 @@
 // - ESM JS (app.js, /pages, /lib): network-first (fallback cache) => evita quedar-se enganxat a versions velles
 // - Assets estàtics (icons, vendor, css): stale-while-revalidate
 
-const VERSION = "2026-02-12-500"; // PUJA AIXÒ SEMPRE
+const VERSION = "2026-02-12-501"; // PUJA AIXÒ SEMPRE
 const CACHE_PREFIX = "meteovalls-";
 const CACHE_NAME = `${CACHE_PREFIX}${VERSION}`;
 
