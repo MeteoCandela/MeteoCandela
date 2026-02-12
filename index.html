@@ -52,10 +52,7 @@
       "addressRegion": "Tarragona",
       "addressCountry": "ES"
     },
-    "areaServed": {
-      "@type": "AdministrativeArea",
-      "name": "Alt Camp"
-    }
+    "areaServed": { "@type": "AdministrativeArea", "name": "Alt Camp" }
   }
   </script>
 
@@ -65,46 +62,11 @@
     "@context": "https://schema.org",
     "@type": "FAQPage",
     "mainEntity": [
-      {
-        "@type": "Question",
-        "name": "Cada quant s’actualitzen les dades?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Les dades s’actualitzen aproximadament cada 5 minuts, segons la recepció dels sensors i la connexió."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "On està situada l’estació MeteoValls?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "L’estació és a Valls (Alt Camp, Tarragona), en un entorn urbà representatiu de la zona."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Les dades són oficials?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "No. Són dades d’una estació meteorològica automàtica privada amb finalitat informativa i divulgativa."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Per què de vegades falten dades?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Pot ser per interrupcions temporals de connexió, manteniment o pèrdues puntuals de senyal."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Què és una ratxa de vent?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "És la velocitat màxima puntual del vent registrada en un interval curt, diferent del vent mitjà."
-        }
-      }
+      {"@type":"Question","name":"Cada quant s’actualitzen les dades?","acceptedAnswer":{"@type":"Answer","text":"Les dades s’actualitzen aproximadament cada 5 minuts, segons la recepció dels sensors i la connexió."}},
+      {"@type":"Question","name":"On està situada l’estació MeteoValls?","acceptedAnswer":{"@type":"Answer","text":"L’estació és a Valls (Alt Camp, Tarragona), en un entorn urbà representatiu de la zona."}},
+      {"@type":"Question","name":"Les dades són oficials?","acceptedAnswer":{"@type":"Answer","text":"No. Són dades d’una estació meteorològica automàtica privada amb finalitat informativa i divulgativa."}},
+      {"@type":"Question","name":"Per què de vegades falten dades?","acceptedAnswer":{"@type":"Answer","text":"Pot ser per interrupcions temporals de connexió, manteniment o pèrdues puntuals de senyal."}},
+      {"@type":"Question","name":"Què és una ratxa de vent?","acceptedAnswer":{"@type":"Answer","text":"És la velocitat màxima puntual del vent registrada en un interval curt, diferent del vent mitjà."}}
     ]
   }
   </script>
@@ -118,16 +80,14 @@
   <!-- PWA manifest -->
   <link rel="manifest" href="/site.webmanifest">
 
-  <!-- CSS / JS (PUJA el número quan facis canvis!) -->
+  <!-- CSS -->
   <link rel="stylesheet" href="/style.css?v=2026-02-01-81">
 
-<script defer src="/vendor/chart.umd.min.js"></script>
-<script defer src="/vendor/suncalc.min.js"></script>
-<script type="module" src="/app.js?v=2026-02-11-01"></script>
+  <!-- Vendors (defer) -->
+  <script defer src="/vendor/chart.umd.min.js"></script>
+  <script defer src="/vendor/suncalc.min.js"></script>
 </head>
 
-
-<body>
 <body data-page="home">
   <!-- Contingut semàntic accessible -->
   <section class="sr-only">
@@ -160,52 +120,53 @@
     <!-- ACTUAL -->
     <section class="card" id="cardCurrent">
       <div class="card-head">
-  <h2>Actual</h2>
-  <div class="now-icon" aria-hidden="true">🌙</div>
-</div>
+        <h2>Actual</h2>
+        <!-- IMPORTANT: aquest id és el que usa lib/sun.js -->
+        <div id="currentIcon" class="now-icon" aria-hidden="true"></div>
+      </div>
 
-<div class="now-source">
-  <span class="pill">Font: dades en temps real</span>
-</div>
+      <div class="now-source">
+        <!-- IMPORTANT: aquest id és el que usa home.js -->
+        <span class="pill" id="sourceLine">Font: —</span>
+      </div>
 
-<!-- KPIs -->
-<div class="kpi-grid">
-  <div class="kpi">
-    <div class="kpi-val" id="kpiTemp">—</div>
-    <div class="kpi-lab">Temperatura (°C)</div>
-  </div>
+      <!-- KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-val" id="kpiTemp">—</div>
+          <div class="kpi-lab">Temperatura (°C)</div>
+        </div>
 
-  <div class="kpi">
-    <div class="kpi-val" id="kpiHum">—</div>
-    <div class="kpi-lab">Humitat (%)</div>
-  </div>
+        <div class="kpi">
+          <div class="kpi-val" id="kpiHum">—</div>
+          <div class="kpi-lab">Humitat (%)</div>
+        </div>
 
-  <div class="kpi">
-    <div class="kpi-val" id="kpiWind">—</div>
-    <div class="kpi-lab">Vent mitjà (km/h)</div>
-  </div>
+        <div class="kpi">
+          <div class="kpi-val" id="kpiWind">—</div>
+          <div class="kpi-lab">Vent mitjà (km/h)</div>
+        </div>
 
-  <div class="kpi">
-    <div class="kpi-val" id="kpiRainDay">—</div>
-    <div class="kpi-lab">Pluja dia (mm)</div>
-  </div>
+        <div class="kpi">
+          <div class="kpi-val" id="kpiRainDay">—</div>
+          <div class="kpi-lab">Pluja dia (mm)</div>
+        </div>
 
-  <!-- EXTRA KPI: ratxa màxima avui -->
-  <div class="kpi kpi--wide">
-    <div class="kpi-val" id="kpiGustMaxDay">—</div>
-    <div class="kpi-lab">Ratxa màxima avui (km/h)</div>
-  </div>
-</div>
+        <div class="kpi kpi--wide">
+          <div class="kpi-val" id="kpiGustMaxDay">—</div>
+          <div class="kpi-lab">Ratxa màxima avui (km/h)</div>
+        </div>
+      </div>
 
-<!-- Detall compacte -->
-<div class="chips-grid">
-  <div class="chip"><span>💧 Punt de rosada</span><strong id="chipDew">—</strong></div>
-  <div class="chip"><span>🧭 Direcció</span><strong id="chipDir">—</strong></div>
-  <div class="chip"><span>🌡️ Mín/Max avui</span><strong id="chipMinMax">—</strong></div>
-  <div class="chip"><span>🌧️ Intensitat pluja</span><strong id="chipRainRate">—</strong></div>
-  <div class="chip"><span>🌅 Sol</span><strong id="chipSun">—</strong></div>
-  <div class="chip"><span>⏱️ Actualitzat</span><strong id="chipUpdated">—</strong></div>
-</div>
+      <!-- Detall compacte -->
+      <div class="chips-grid">
+        <div class="chip"><span>💧 Punt de rosada</span><strong id="chipDew">—</strong></div>
+        <div class="chip"><span>🧭 Direcció</span><strong id="chipDir">—</strong></div>
+        <div class="chip"><span>🌡️ Mín/Max avui</span><strong id="chipMinMax">—</strong></div>
+        <div class="chip"><span>🌧️ Intensitat pluja</span><strong id="chipRainRate">—</strong></div>
+        <div class="chip"><span>🌅 Sol</span><strong id="chipSun">—</strong></div>
+        <div class="chip"><span>⏱️ Actualitzat</span><strong id="chipUpdated">—</strong></div>
+      </div>
     </section>
 
     <!-- SELECTOR DE DIA (NECESSARI pel JS) -->
@@ -251,51 +212,38 @@
       <p id="rainMsg" class="muted-line" style="display:none;"></p>
     </section>
 
-    <!-- FAQ (visible per usuaris, col·lapsable) -->
+    <!-- FAQ -->
     <section class="card span2" id="faq">
       <h2>Preguntes freqüents</h2>
 
       <details class="faq-item">
         <summary>Què és MeteoValls?</summary>
-        <p>
-          MeteoValls és una estació meteorològica automàtica situada a <strong>Valls</strong>, (Alt Camp),
-          que mostra dades reals de temperatura, humitat, vent, ratxes i pluja.
-        </p>
+        <p>MeteoValls és una estació meteorològica automàtica situada a <strong>Valls</strong>, (Alt Camp), que mostra dades reals de temperatura, humitat, vent, ratxes i pluja.</p>
       </details>
 
       <details class="faq-item">
         <summary>Cada quant s’actualitzen les dades?</summary>
-        <p>
-          Les dades s’actualitzen aproximadament cada 5 minuts, segons la recepció dels sensors i la connexió.
-        </p>
+        <p>Les dades s’actualitzen aproximadament cada 5 minuts, segons la recepció dels sensors i la connexió.</p>
       </details>
 
       <details class="faq-item">
         <summary>D’on surten les dades?</summary>
-        <p>
-          Les dades provenen directament dels sensors físics de l’estació. No s’utilitzen prediccions ni fonts externes.
-        </p>
+        <p>Les dades provenen directament dels sensors físics de l’estació. No s’utilitzen prediccions ni fonts externes.</p>
       </details>
 
       <details class="faq-item">
         <summary>Les dades són oficials?</summary>
-        <p>
-          No. Són dades d’una estació privada amb finalitat informativa i divulgativa.
-        </p>
+        <p>No. Són dades d’una estació privada amb finalitat informativa i divulgativa.</p>
       </details>
 
       <details class="faq-item">
         <summary>Per què de vegades falten dades?</summary>
-        <p>
-          Pot ser per interrupcions temporals de connexió, manteniment o pèrdues puntuals de senyal.
-        </p>
+        <p>Pot ser per interrupcions temporals de connexió, manteniment o pèrdues puntuals de senyal.</p>
       </details>
 
       <details class="faq-item">
         <summary>Què és una ratxa de vent?</summary>
-        <p>
-          És la velocitat màxima puntual del vent registrada en un interval curt, diferent del vent mitjà.
-        </p>
+        <p>És la velocitat màxima puntual del vent registrada en un interval curt, diferent del vent mitjà.</p>
       </details>
     </section>
 
@@ -318,15 +266,11 @@
       items.forEach((d) => {
         d.addEventListener("toggle", () => {
           if (!d.open) return;
-          items.forEach((other) => {
-            if (other !== d) other.open = false;
-          });
+          items.forEach((other) => { if (other !== d) other.open = false; });
         });
       });
     })();
   </script>
-
-
 
   <button id="btnInstallFab" class="install-fab" type="button" style="display:none;" aria-label="Instal·la l'app">
     ⬇️ Instal·la l’app
@@ -343,5 +287,7 @@
     </div>
   </div>
 
+  <!-- App (module) -->
+  <script type="module" src="/app.js?v=2026-02-11-01"></script>
 </body>
 </html>
