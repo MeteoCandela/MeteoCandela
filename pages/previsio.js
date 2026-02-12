@@ -7,13 +7,13 @@ const LS_ZONE = "meteovalls:fx_zone";
 const LS_MUNI_GLOBAL = "meteovalls:muni_id"; // compat vell
 const LS_MUNI_BY_ZONE_PREFIX = "meteovalls:muni_id:";
 
-// Defaults per zona (labels han de coincidir amb el Worker)
+// Defaults per zona (labels han de coincidir EXACTE amb el Worker)
 const DEFAULT_BY_ZONE_LABEL = {
-  "Municipis Alt Camp": "43161",             // Valls
-  "Capitals província Tarragona": "43148",   // Tarragona
-  "Capitals província Barcelona": "08019",   // Barcelona
-  "Capitals província Girona": "17079",      // Girona
-  "Capitals província Lleida": "25120",      // Lleida
+  "Municipis Alt Camp": "43161",              // ★ Valls
+  "Capitals província Tarragona": "43148",    // Tarragona
+  "Capitals província Barcelona": "08019",    // Barcelona
+  "Capitals província Girona": "17079",       // Girona
+  "Capitals província Lleida": "25120",       // Lleida
 };
 
 function hourNum(hourStr){
@@ -209,6 +209,7 @@ async function fetchJson(url){
   return data;
 }
 
+// --- Selector helpers
 function getSelectedText(selectId){
   const sel = document.getElementById(selectId);
   const opt = sel?.selectedOptions?.[0];
@@ -216,7 +217,8 @@ function getSelectedText(selectId){
 }
 
 function getSelectedMuniName(){
-  return getSelectedText("muniSelect");
+  // ✅ treu "★ " per evitar que surti al títol/status
+  return (getSelectedText("muniSelect") || "").replace(/^★\s*/, "");
 }
 
 function getSelectedZoneLabel(){
@@ -373,7 +375,6 @@ export function initPrevisio() {
 
   const zoneSel = document.getElementById("zoneSelect");
   const muniSel = document.getElementById("muniSelect");
-  const btnValls = document.getElementById("btnValls");
 
   let cfgGroups = []; // [{label, items:[{id,name}]}]
 
@@ -409,14 +410,34 @@ export function initPrevisio() {
     }
   }
 
+  // ✅ estrella dins del selector (i Valls a dalt a Alt Camp)
   function populateMuniSelect(zoneLabel, muniIdToSelect){
     if (!muniSel) return;
 
     const g = groupByLabel(zoneLabel);
-    const items = Array.isArray(g?.items) ? g.items : [];
+    let items = Array.isArray(g?.items) ? g.items.slice() : [];
+
+    if (String(zoneLabel) === "Municipis Alt Camp") {
+      const vallsId = "43161";
+      items.sort((a,b) => {
+        const aIs = String(a?.id) === vallsId ? -1 : 0;
+        const bIs = String(b?.id) === vallsId ? -1 : 0;
+        if (aIs !== bIs) return aIs - bIs; // Valls primer
+        return String(a?.name || "").localeCompare(String(b?.name || ""), "ca");
+      });
+    } else {
+      items.sort((a,b) => String(a?.name || "").localeCompare(String(b?.name || ""), "ca"));
+    }
 
     muniSel.innerHTML = items
-      .map(m => `<option value="${String(m.id)}">${String(m.name)}</option>`)
+      .map(m => {
+        const id = String(m.id);
+        let name = String(m.name);
+        if (String(zoneLabel) === "Municipis Alt Camp" && id === "43161") {
+          name = `★ ${name}`;
+        }
+        return `<option value="${id}">${name}</option>`;
+      })
       .join("");
 
     const desired = String(muniIdToSelect || "");
@@ -425,14 +446,12 @@ export function initPrevisio() {
       return;
     }
 
-    // fallback: default per zona
     const def = DEFAULT_BY_ZONE_LABEL[String(zoneLabel)] || null;
     if (def && items.some(m => String(m.id) === String(def))) {
       muniSel.value = String(def);
       return;
     }
 
-    // fallback: primer
     if (items.length) muniSel.value = String(items[0].id);
   }
 
@@ -473,19 +492,17 @@ export function initPrevisio() {
   }
 
   async function initSelectors(){
-    // 1) carrega config municipis/zones del Worker
+    // 1) carrega zones del Worker
     const cfg = await fetchJson(`${MUNICIPIS_URL}?t=${Date.now()}`);
     cfgGroups = Array.isArray(cfg?.groups) ? cfg.groups : [];
 
     if (!cfgGroups.length) {
-      // fallback mínim
       cfgGroups = [{ label: "Municipis Alt Camp", items: [{ id: "43161", name: "Valls" }] }];
     }
 
-    // 2) decideix zona inicial
+    // 2) zona inicial
     const savedZone = localStorage.getItem(LS_ZONE);
 
-    // intent: si tens un muni guardat “vell”, intenta deduir zona
     const savedGlobalMuni = localStorage.getItem(LS_MUNI_GLOBAL);
     const inferredZoneFromGlobal = findZoneContainingMuni(savedGlobalMuni);
 
@@ -496,15 +513,18 @@ export function initPrevisio() {
 
     populateZoneSelect(zoneLabel);
 
-    // 3) decideix municipi inicial per aquella zona
+    // 3) municipi inicial per zona
     const currentZone = zoneSel ? String(zoneSel.value || zoneLabel) : zoneLabel;
     const savedMuniForZone = localStorage.getItem(muniKeyForZone(currentZone));
 
-    populateMuniSelect(currentZone, savedMuniForZone || (currentZone === inferredZoneFromGlobal ? savedGlobalMuni : null));
+    populateMuniSelect(
+      currentZone,
+      savedMuniForZone || (currentZone === inferredZoneFromGlobal ? savedGlobalMuni : null)
+    );
 
     // 4) render inicial
     setHeaderPlace();
-    await loadAndRender(muniSel ? muniSel.value : "43161");
+    await loadAndRender(muniSel ? String(muniSel.value || "43161") : "43161");
 
     // 5) listeners
     if (zoneSel) {
@@ -515,14 +535,14 @@ export function initPrevisio() {
         const lastMuni = localStorage.getItem(muniKeyForZone(z));
         populateMuniSelect(z, lastMuni);
 
-        setHeaderPlace();
-
         const muniId = muniSel ? String(muniSel.value || "") : "";
         if (muniId) {
           localStorage.setItem(LS_MUNI_GLOBAL, muniId);
           localStorage.setItem(muniKeyForZone(z), muniId);
-          await loadAndRender(muniId);
         }
+
+        setHeaderPlace();
+        if (muniId) await loadAndRender(muniId);
       });
     }
 
@@ -539,34 +559,16 @@ export function initPrevisio() {
         await loadAndRender(id);
       });
     }
-
-    if (btnValls) {
-      btnValls.addEventListener("click", async () => {
-        const vallsId = "43161";
-        const targetZone = findZoneContainingMuni(vallsId) || "Municipis Alt Camp";
-
-        if (zoneSel) zoneSel.value = targetZone;
-        localStorage.setItem(LS_ZONE, targetZone);
-
-        populateMuniSelect(targetZone, vallsId);
-
-        localStorage.setItem(LS_MUNI_GLOBAL, vallsId);
-        localStorage.setItem(muniKeyForZone(targetZone), vallsId);
-
-        setHeaderPlace();
-        await loadAndRender(vallsId);
-      });
-    }
   }
 
   initSelectors().catch(async (e) => {
     console.error(e);
-    // fallback: prova Valls
+    // fallback: Valls
     if (muniSel) {
-      muniSel.innerHTML = `<option value="43161">Valls</option>`;
+      muniSel.innerHTML = `<option value="43161">★ Valls</option>`;
       muniSel.value = "43161";
     }
     setHeaderPlace();
     await loadAndRender("43161");
   });
-      }
+                  }
