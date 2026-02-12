@@ -1222,7 +1222,7 @@ h2{
 }
 /* OVERRIDE FINAL: mida números KPIs (home/Actual) */
 #cardCurrent .kpi-grid .kpi .kpi-val{
-  font-size: 32px !important;  /* prova 31–34 */
+  font-size: 30px !important;  /* prova 31–34 */
   line-height: 1.05 !important;
   letter-spacing: -0.02em !important;
 }
