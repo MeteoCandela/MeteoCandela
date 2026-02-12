@@ -1037,3 +1037,67 @@ h2{
   border-color: rgba(255,255,255,.55);
   box-shadow: 0 0 0 3px rgba(255,255,255,.12), 0 8px 22px rgba(0,0,0,.32);
 }
+/* --- Card Actual: KPIs + chips --- */
+.now-source{ margin: 10px 0 14px; }
+.pill{
+  display:inline-block;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.10);
+  color: rgba(255,255,255,.85);
+  font-size: 13px;
+}
+
+.kpi-grid{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.kpi{
+  padding: 14px 14px 12px;
+  border-radius: 16px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.10);
+}
+
+.kpi--wide{
+  grid-column: 1 / -1;
+}
+
+.kpi-val{
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -.5px;
+}
+
+.kpi-lab{
+  margin-top: 6px;
+  font-size: 13px;
+  color: rgba(255,255,255,.75);
+}
+
+.chips-grid{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.chip{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(0,0,0,.18);
+  border: 1px solid rgba(255,255,255,.08);
+  color: rgba(255,255,255,.85);
+  font-size: 13px;
+}
+
+.chip span{ color: rgba(255,255,255,.70); }
+.chip strong{ font-weight: 700; }
