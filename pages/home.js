@@ -7,7 +7,7 @@ import {
   dayKeyFromTs,
   startEndMsFromDayKey,
   minMax,
-  degToWindCatalan
+  degToWindCatalan,
 } from "../lib/format.js";
 import { loadHistoryOnce, loadCurrentAndHeartbeat } from "../lib/api.js";
 import { renderHomeIcon, renderSunSub } from "../lib/sun.js";
@@ -49,7 +49,7 @@ function computeTodayRows(historyRows, current) {
   const { start, end } = startEndMsFromDayKey(todayKey);
 
   const rows = (Array.isArray(historyRows) ? historyRows : [])
-    .filter(r => Number.isFinite(r.ts) && r.ts >= start && r.ts <= end)
+    .filter((r) => Number.isFinite(r?.ts) && r.ts >= start && r.ts <= end)
     .slice();
 
   if (current && Number.isFinite(current.ts) && current.ts >= start && current.ts <= end) {
@@ -66,7 +66,7 @@ function renderCurrent(current, historyRows) {
   if ($("kpiWind")) $("kpiWind").textContent = current.wind_kmh == null ? "—" : fmt1(current.wind_kmh);
   if ($("kpiRainDay")) $("kpiRainDay").textContent = current.rain_day_mm == null ? "—" : fmt1(current.rain_day_mm);
 
-  // KPI GRAN: intensitat pluja (mm/h)
+  // KPI GRAN: intensitat pluja
   if ($("kpiRainRate")) $("kpiRainRate").textContent = current.rain_rate_mmh == null ? "—" : fmt1(current.rain_rate_mmh);
 
   // Chip: rosada
@@ -83,25 +83,25 @@ function renderCurrent(current, historyRows) {
   // Chip: actualitzat
   if ($("chipUpdated")) $("chipUpdated").textContent = fmtDate(current.ts);
 
-  // Sol (escriu a #chipSun via lib/sun.js)
-  renderSunSub();
+  // Sol
+  renderSunSub(); // escriu a #chipSun
 
-  // Min/Max i gust màxim (del dia d'avui)
+  // Min/Max i gust màxim del dia
   const todayRows = computeTodayRows(historyRows, current);
 
   const elMinMax = $("chipMinMax");
   if (elMinMax) {
-    const { min, max } = minMax(todayRows.map(r => r.temp_c));
+    const { min, max } = minMax(todayRows.map((r) => r.temp_c));
     elMinMax.textContent = (min == null || max == null) ? "—" : `${fmt1(min)}–${fmt1(max)} °C`;
   }
 
   const elGustMaxDay = $("kpiGustMaxDay");
   if (elGustMaxDay) {
-    const gusts = todayRows.map(r => Number(r.gust_kmh)).filter(Number.isFinite);
+    const gusts = todayRows.map((r) => Number(r.gust_kmh)).filter(Number.isFinite);
     elGustMaxDay.textContent = gusts.length ? fmt1(Math.max(...gusts)) : "—";
   }
 
-  // Icona actual (lluna/sol/pluja) a #currentIcon
+  // Icona actual
   renderHomeIcon(current);
 
   // Capçalera
@@ -128,7 +128,9 @@ function setUrlDayParam(dayKey) {
 
 function buildDayListFromRows(rows, current) {
   const set = new Set();
-  for (const r of (rows || [])) set.add(dayKeyFromTs(r.ts));
+  for (const r of (rows || [])) {
+    if (r && Number.isFinite(r.ts)) set.add(dayKeyFromTs(r.ts));
+  }
   set.add(dayKeyFromTs(Date.now()));
   if (current && Number.isFinite(current.ts)) set.add(dayKeyFromTs(current.ts));
   return Array.from(set).sort();
@@ -175,12 +177,18 @@ function setupDaySelector(dayKeys, initialKey, onChange) {
 
   prev.addEventListener("click", () => {
     const i = currentIndex();
-    if (i > 0) { sel.value = dayKeys[i - 1]; sel.dispatchEvent(new Event("change")); }
+    if (i > 0) {
+      sel.value = dayKeys[i - 1];
+      sel.dispatchEvent(new Event("change"));
+    }
   });
 
   next.addEventListener("click", () => {
     const i = currentIndex();
-    if (i >= 0 && i < dayKeys.length - 1) { sel.value = dayKeys[i + 1]; sel.dispatchEvent(new Event("change")); }
+    if (i >= 0 && i < dayKeys.length - 1) {
+      sel.value = dayKeys[i + 1];
+      sel.dispatchEvent(new Event("change"));
+    }
   });
 
   updateButtons();
@@ -200,13 +208,13 @@ export function initHome() {
     hb: null,
     selectedDay: null,
     timers: { cur: null, hist: null },
-    fsInited: false
+    fsInited: false,
   };
 
   function pickActualRow() {
-    const historyRows = state.historyRows || [];
+    const hist = state.historyRows || [];
     if (state.current) return { row: state.current, tag: "dades en temps real" };
-    if (historyRows.length) return { row: historyRows[historyRows.length - 1], tag: "últim registre històric" };
+    if (hist.length) return { row: hist[hist.length - 1], tag: "últim registre històric" };
     return { row: null, tag: "sense dades carregades" };
   }
 
@@ -233,7 +241,6 @@ export function initHome() {
 
     buildChartsForDay(state.historyRows || [], state.selectedDay, currentMaybe);
 
-    // Fullscreen: inicialitza 1 cop (després que els canvas existeixin)
     if (!state.fsInited) {
       initChartFullscreen(["chartTemp", "chartHum", "chartWind", "chartRain"]);
       state.fsInited = true;
@@ -272,23 +279,19 @@ export function initHome() {
       await loadHistoryOnce(HISTORY_URL, state);
       await loadCurrentAndHeartbeat(CURRENT_URL, HEARTBEAT_URL, state);
 
-      // 2) Determina dia inicial
-      const historyRows = state.historyRows || [];
-      const initialActual = state.current || (historyRows.length ? historyRows[historyRows.length - 1] : null);
+      // 2) Render base
+      const hist = state.historyRows || [];
+      const initialActual = state.current || (hist.length ? hist[hist.length - 1] : null);
 
       renderAll();
 
-      if (!initialActual) {
-        // No hi ha res per graficar, però deixa la pàgina viva
-        renderChartsIfNeeded();
-        return;
-      }
-
-      const dayKeys = buildDayListFromRows(historyRows, state.current);
-      const wanted = getUrlDayParam();
-      const initial = (wanted && dayKeys.includes(wanted)) ? wanted : dayKeyFromTs(initialActual.ts);
-
       // 3) Selector de dia
+      const dayKeys = buildDayListFromRows(hist, state.current);
+      const wanted = getUrlDayParam();
+      const initial = (wanted && dayKeys.includes(wanted))
+        ? wanted
+        : (initialActual ? dayKeyFromTs(initialActual.ts) : dayKeyFromTs(Date.now()));
+
       const selected = setupDaySelector(dayKeys, initial, (k) => {
         state.selectedDay = k;
         renderChartsIfNeeded();
@@ -296,7 +299,7 @@ export function initHome() {
 
       state.selectedDay = selected || initial;
 
-      // 4) Render inicial
+      // 4) Gràfiques
       renderChartsIfNeeded();
 
       // 5) Timers
@@ -306,7 +309,7 @@ export function initHome() {
       state.timers.cur = setInterval(refreshCurrent, REFRESH_CURRENT_MS);
       state.timers.hist = setInterval(refreshHistory, REFRESH_HISTORY_MS);
 
-      // 6) Refresh quan tornes a la pestanya
+      // 6) Quan tornes a la pestanya
       if (REFRESH_ON_VISIBLE) {
         document.addEventListener("visibilitychange", async () => {
           if (document.visibilityState !== "visible") return;
