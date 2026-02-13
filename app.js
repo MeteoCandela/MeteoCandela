@@ -1,5 +1,5 @@
 // app.js — entrypoint únic (ESM)
-export const V = "2026-02-12-502"; // 🔁 puja això quan canviïs JS
+export const V = "2026-02-12-503"; // 🔁 puja això quan canviïs JS
 
 // Service Worker (PWA)
 if ("serviceWorker" in navigator) {
@@ -11,7 +11,7 @@ if ("serviceWorker" in navigator) {
 async function boot() {
   const page = document.body?.dataset?.page || "home";
 
-  // initInstallFab (versionat també)
+  // 1) Install FAB (iOS/Android)
   try {
     const install = await import(`./lib/install.js?v=${V}`);
     install?.initInstallFab?.();
@@ -19,7 +19,7 @@ async function boot() {
     console.warn("install.js no carregat", e);
   }
 
-  // Pàgines (versionades)
+  // 2) Carrega la pàgina
   try {
     switch (page) {
       case "home": {
@@ -45,6 +45,7 @@ async function boot() {
       default: {
         const m = await import(`./pages/home.js?v=${V}`);
         m.initHome?.();
+        break;
       }
     }
   } catch (e) {
@@ -52,12 +53,14 @@ async function boot() {
     const s = document.getElementById("fxStatus");
     if (s) s.textContent = `Error JS: ${e?.message || e}`;
   }
+
+  // 3) Push bell (només si hi ha botó a la pàgina)
+  try {
+    const push = await import(`./lib/push.js?v=${V}`);
+    push?.initPushBell?.();
+  } catch (e) {
+    console.warn("push init fail", e);
+  }
 }
-// Push bell (només si hi ha botó)
-try {
-  const push = await import(`./lib/push.js?v=${V}`);
-  push?.initPushBell?.();
-} catch (e) {
-  console.warn("push init fail", e);
-}
+
 boot();
