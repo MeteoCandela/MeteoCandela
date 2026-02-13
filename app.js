@@ -53,5 +53,11 @@ async function boot() {
     if (s) s.textContent = `Error JS: ${e?.message || e}`;
   }
 }
-
+// Push bell (només si hi ha botó)
+try {
+  const push = await import(`./lib/push.js?v=${V}`);
+  push?.initPushBell?.();
+} catch (e) {
+  console.warn("push init fail", e);
+}
 boot();
