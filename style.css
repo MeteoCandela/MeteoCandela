@@ -1340,3 +1340,54 @@ html.fs-lock, body.fs-lock {
 .fs-lock .fs-zoom-btn {
   display: none !important;
 }
+/* iOS install banner */
+.ios-banner {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  top: 12px;
+  z-index: 10000;
+  border-radius: 16px;
+  background: rgba(11, 18, 32, 0.95);
+  border: 1px solid rgba(255,255,255,0.14);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+  padding: 10px 12px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.ios-banner__txt {
+  font-size: 13px;
+  line-height: 1.25;
+  opacity: 0.95;
+}
+
+.ios-banner__actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-left: auto;
+}
+
+.ios-banner__btn {
+  appearance: none;
+  border: 0;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.10);
+  color: inherit;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.ios-banner__close {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 18px;
+  line-height: 1;
+  padding: 6px 6px;
+  opacity: 0.85;
+}
