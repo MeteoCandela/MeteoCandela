@@ -187,27 +187,36 @@ self.addEventListener("fetch", (event) => {
 // =========================
 self.addEventListener("push", (event) => {
   let data = {};
-  try {
-    data = event.data ? event.data.json() : {};
-  } catch {
-    data = {};
-  }
+  try { data = event.data ? event.data.json() : {}; } catch { data = {}; }
 
   const title = data.title || "MeteoValls";
   const options = {
     body: data.body || "",
     tag: data.tag || "meteovalls",
     renotify: false,
-
-    // icons
     icon: "/android-chrome-192.png",
     badge: "/android-chrome-192.png",
-
-    // on clic
     data: { url: data.url || "/" },
+    requireInteraction: false,
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil(
+    Promise.allSettled([
+      self.registration.showNotification(title, options),
+
+      // ACK -> si això s'escriu a KV, vol dir que el mòbil HA rebut el push
+      fetch("/api/push/ack", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          gotPush: true,
+          title,
+          tag: options.tag,
+          hasData: !!event.data,
+        }),
+      }),
+    ])
+  );
 });
 
 self.addEventListener("notificationclick", (event) => {
