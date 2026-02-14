@@ -80,7 +80,9 @@ async function precache() {
 
 async function cleanup() {
   const keys = await caches.keys();
-  await Promise.all(keys.map(k => (k.startsWith(CACHE_PREFIX) && k !== CACHE_NAME) ? caches.delete(k) : null));
+  await Promise.all(
+    keys.map((k) => (k.startsWith(CACHE_PREFIX) && k !== CACHE_NAME ? caches.delete(k) : null))
+  );
 }
 
 // network-first genèric amb fallback cache
@@ -88,14 +90,20 @@ async function networkFirst(req, cacheKey) {
   const cache = await caches.open(CACHE_NAME);
   try {
     const res = await fetch(req);
-    if (res && res.ok) cache.put(cacheKey || req, res.clone()).catch(()=>{});
+    if (res && res.ok) cache.put(cacheKey || req, res.clone()).catch(() => {});
     return res;
   } catch {
     const cached =
       (await cache.match(cacheKey || req)) ||
       (await cache.match(req, { ignoreSearch: true })) ||
       (await caches.match(req, { ignoreSearch: true }));
-    return cached || new Response("Offline", { status: 503, headers: { "content-type": "text/plain; charset=utf-8" } });
+    return (
+      cached ||
+      new Response("Offline", {
+        status: 503,
+        headers: { "content-type": "text/plain; charset=utf-8" },
+      })
+    );
   }
 }
 
@@ -105,15 +113,15 @@ async function staleWhileRevalidate(req, cacheKey) {
   const cached = await cache.match(cacheKey || req, { ignoreSearch: true });
 
   const update = fetch(req)
-    .then(res => {
-      if (res && res.ok) cache.put(cacheKey || req, res.clone()).catch(()=>{});
+    .then((res) => {
+      if (res && res.ok) cache.put(cacheKey || req, res.clone()).catch(() => {});
       return res;
     })
     .catch(() => null);
 
   if (cached) {
     // actualitza en background
-    update && self.registration && self.waitUntil?.(update);
+    update && self.registration && self.waitUntil(update);
     return cached;
   }
 
@@ -127,10 +135,12 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil((async () => {
-    await cleanup();
-    await self.clients.claim();
-  })());
+  event.waitUntil(
+    (async () => {
+      await cleanup();
+      await self.clients.claim();
+    })()
+  );
 });
 
 self.addEventListener("fetch", (event) => {
@@ -167,3 +177,56 @@ self.addEventListener("fetch", (event) => {
   // 5) Resta: network-first
   event.respondWith(networkFirst(req, url.pathname));
 });
+
+// ==========================
+// PUSH NOTIFICATIONS
+// ==========================
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = {};
+  }
+
+  const title = data.title || "MeteoValls";
+  const body = data.body || "";
+  const tag = data.tag || "meteo";
+  const url = data.url || "/";
+
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      tag,
+      data: { url },
+      renotify: true,
+      // opcional però recomanat (usa icones que ja tens al precache)
+      icon: "/android-chrome-192.png",
+      badge: "/android-chrome-192.png",
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  const url = event.notification?.data?.url || "/";
+  event.notification.close();
+
+  event.waitUntil(
+    (async () => {
+      // Si ja hi ha una pestanya oberta del teu domini, millor enfocar-la i navegar-hi
+      const allClients = await clients.matchAll({ type: "window", includeUncontrolled: true });
+      for (const c of allClients) {
+        if ("focus" in c) {
+          await c.focus();
+          try {
+            c.navigate(url);
+          } catch {}
+          return;
+        }
+      }
+      // Si no n’hi ha, n’obrim una de nova
+      await clients.openWindow(url);
+    })()
+  );
+});
+
