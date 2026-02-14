@@ -1,4 +1,5 @@
 // sw.js — MeteoValls (anti-stale ESM)
+//
 // Objectiu:
 // - /api/* network-only
 // - HTML: network-first (fallback cache)
@@ -15,7 +16,6 @@ const PRECACHE_URLS = [
   "/previsio.html",
   "/historic.html",
   "/sobre.html",
-
   "/site.webmanifest",
   "/style.css",
 
@@ -33,7 +33,10 @@ function isApi(url) {
 }
 
 function isHtml(request) {
-  return request.mode === "navigate" || (request.headers.get("accept") || "").includes("text/html");
+  return (
+    request.mode === "navigate" ||
+    (request.headers.get("accept") || "").includes("text/html")
+  );
 }
 
 // IMPORTANT: els mòduls ESM que et poden quedar enganxats
@@ -81,7 +84,9 @@ async function precache() {
 async function cleanup() {
   const keys = await caches.keys();
   await Promise.all(
-    keys.map((k) => (k.startsWith(CACHE_PREFIX) && k !== CACHE_NAME ? caches.delete(k) : null))
+    keys.map((k) =>
+      k.startsWith(CACHE_PREFIX) && k !== CACHE_NAME ? caches.delete(k) : null
+    )
   );
 }
 
@@ -121,7 +126,7 @@ async function staleWhileRevalidate(req, cacheKey) {
 
   if (cached) {
     // actualitza en background
-    update && self.registration && self.waitUntil(update);
+    update && self.registration && self.waitUntil?.(update);
     return cached;
   }
 
@@ -177,56 +182,3 @@ self.addEventListener("fetch", (event) => {
   // 5) Resta: network-first
   event.respondWith(networkFirst(req, url.pathname));
 });
-
-// ==========================
-// PUSH NOTIFICATIONS
-// ==========================
-self.addEventListener("push", (event) => {
-  let data = {};
-  try {
-    data = event.data ? event.data.json() : {};
-  } catch {
-    data = {};
-  }
-
-  const title = data.title || "MeteoValls";
-  const body = data.body || "";
-  const tag = data.tag || "meteo";
-  const url = data.url || "/";
-
-  event.waitUntil(
-    self.registration.showNotification(title, {
-      body,
-      tag,
-      data: { url },
-      renotify: true,
-      // opcional però recomanat (usa icones que ja tens al precache)
-      icon: "/android-chrome-192.png",
-      badge: "/android-chrome-192.png",
-    })
-  );
-});
-
-self.addEventListener("notificationclick", (event) => {
-  const url = event.notification?.data?.url || "/";
-  event.notification.close();
-
-  event.waitUntil(
-    (async () => {
-      // Si ja hi ha una pestanya oberta del teu domini, millor enfocar-la i navegar-hi
-      const allClients = await clients.matchAll({ type: "window", includeUncontrolled: true });
-      for (const c of allClients) {
-        if ("focus" in c) {
-          await c.focus();
-          try {
-            c.navigate(url);
-          } catch {}
-          return;
-        }
-      }
-      // Si no n’hi ha, n’obrim una de nova
-      await clients.openWindow(url);
-    })()
-  );
-});
-
