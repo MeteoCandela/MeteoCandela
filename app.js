@@ -1,5 +1,5 @@
 // app.js — entrypoint únic (ESM)
-export const V = "2026-02-13-001"; // 🔁 puja això quan canviïs JS
+export const V = "2026-02-14-001"; // 🔁 puja això quan canviïs JS
 
 // Service Worker (PWA)
 if ("serviceWorker" in navigator) {
