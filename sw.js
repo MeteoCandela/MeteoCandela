@@ -6,7 +6,7 @@
 // - ESM JS (app.js, /pages, /lib): network-first (fallback cache) => evita quedar-se enganxat a versions velles
 // - Assets estàtics (icons, vendor, css): stale-while-revalidate
 
-const VERSION = "2026-02-12-502"; // PUJA AIXÒ SEMPRE
+const VERSION = "2026-02-14-001"; // PUJA AIXÒ SEMPRE
 const CACHE_PREFIX = "meteovalls-";
 const CACHE_NAME = `${CACHE_PREFIX}${VERSION}`;
 
@@ -181,4 +181,49 @@ self.addEventListener("fetch", (event) => {
 
   // 5) Resta: network-first
   event.respondWith(networkFirst(req, url.pathname));
+});
+
+// =========================
+// PUSH notifications
+// =========================
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = {};
+  }
+
+  const title = data.title || "MeteoValls";
+  const options = {
+    body: data.body || "",
+    tag: data.tag || "meteovalls",
+    renotify: false,
+    data: { url: data.url || "/" },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = event.notification?.data?.url || "/";
+
+  event.waitUntil(
+    (async () => {
+      const allClients = await clients.matchAll({ type: "window", includeUncontrolled: true });
+      for (const c of allClients) {
+        if ("focus" in c) {
+          c.focus();
+          if ("navigate" in c) c.navigate(url);
+          return;
+        }
+      }
+      await clients.openWindow(url);
+    })()
+  );
+});
+
+self.addEventListener("pushsubscriptionchange", (event) => {
+  event.waitUntil(Promise.resolve());
 });
