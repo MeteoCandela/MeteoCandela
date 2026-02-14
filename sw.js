@@ -1,12 +1,13 @@
-// sw.js — MeteoValls (anti-stale ESM)
+// sw.js — MeteoValls (anti-stale ESM + PUSH)
 //
 // Objectiu:
 // - /api/* network-only
 // - HTML: network-first (fallback cache)
 // - ESM JS (app.js, /pages, /lib): network-first (fallback cache) => evita quedar-se enganxat a versions velles
 // - Assets estàtics (icons, vendor, css): stale-while-revalidate
+// - PUSH: mostra notificacions i obre la web en clicar
 
-const VERSION = "2026-02-14-001"; // PUJA AIXÒ SEMPRE
+const VERSION = "2026-02-14-002"; // 🔁 PUJA AIXÒ SEMPRE quan modifiquis el SW
 const CACHE_PREFIX = "meteovalls-";
 const CACHE_NAME = `${CACHE_PREFIX}${VERSION}`;
 
@@ -19,7 +20,7 @@ const PRECACHE_URLS = [
   "/site.webmanifest",
   "/style.css",
 
-  // Vendor i icones (això sí que ho volem offline)
+  // Vendor i icones (offline-friendly)
   "/vendor/chart.umd.min.js",
   "/vendor/suncalc.min.js",
   "/favicon.png",
@@ -64,7 +65,6 @@ function isStaticAsset(url) {
     url.pathname.endsWith(".otf") ||
     url.pathname.endsWith(".json") ||
     url.pathname.endsWith(".webmanifest") ||
-    // Vendor sí que el considerem “asset”
     url.pathname.startsWith("/vendor/")
   );
 }
@@ -112,8 +112,8 @@ async function networkFirst(req, cacheKey) {
   }
 }
 
-// stale-while-revalidate per assets
-async function staleWhileRevalidate(req, cacheKey) {
+// stale-while-revalidate per assets (IMPORTANT: waitUntil és de l'event, NO de self)
+async function staleWhileRevalidate(req, cacheKey, event) {
   const cache = await caches.open(CACHE_NAME);
   const cached = await cache.match(cacheKey || req, { ignoreSearch: true });
 
@@ -125,8 +125,7 @@ async function staleWhileRevalidate(req, cacheKey) {
     .catch(() => null);
 
   if (cached) {
-    // actualitza en background
-    update && self.registration && self.waitUntil?.(update);
+    if (event) event.waitUntil(update);
     return cached;
   }
 
@@ -167,15 +166,15 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 3) ESM modules (app.js, /pages, /lib): network-first (aquí hi havia el “enganxament”)
+  // 3) ESM modules: network-first (evita versions velles)
   if (isEsmModule(url)) {
     event.respondWith(networkFirst(req, url.pathname));
     return;
   }
 
-  // 4) Assets estàtics: stale-while-revalidate
+  // 4) Assets: stale-while-revalidate
   if (isStaticAsset(url)) {
-    event.respondWith(staleWhileRevalidate(req, url.pathname));
+    event.respondWith(staleWhileRevalidate(req, url.pathname, event));
     return;
   }
 
@@ -199,6 +198,12 @@ self.addEventListener("push", (event) => {
     body: data.body || "",
     tag: data.tag || "meteovalls",
     renotify: false,
+
+    // icons
+    icon: "/android-chrome-192.png",
+    badge: "/android-chrome-192.png",
+
+    // on clic
     data: { url: data.url || "/" },
   };
 
@@ -207,23 +212,32 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = event.notification?.data?.url || "/";
+  const targetUrl = new URL(event.notification?.data?.url || "/", self.location.origin).toString();
 
   event.waitUntil(
     (async () => {
       const allClients = await clients.matchAll({ type: "window", includeUncontrolled: true });
+
+      // si ja hi ha una finestra oberta del site -> focus + navigate
       for (const c of allClients) {
-        if ("focus" in c) {
-          c.focus();
-          if ("navigate" in c) c.navigate(url);
-          return;
-        }
+        try {
+          const cUrl = new URL(c.url);
+          if (cUrl.origin === self.location.origin) {
+            await c.focus();
+            // navega a la ruta del push (si cal)
+            if ("navigate" in c) await c.navigate(targetUrl);
+            return;
+          }
+        } catch {}
       }
-      await clients.openWindow(url);
+
+      // sinó, obre nova finestra
+      await clients.openWindow(targetUrl);
     })()
   );
 });
 
+// opcional: no fem res automàtic (la re-subscripció la gestiones des de la UI)
 self.addEventListener("pushsubscriptionchange", (event) => {
   event.waitUntil(Promise.resolve());
 });
