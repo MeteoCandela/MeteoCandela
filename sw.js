@@ -7,7 +7,7 @@
 // - Assets estàtics (icons, vendor, css): stale-while-revalidate
 // - PUSH: mostra notificacions i obre la web en clicar
 
-const VERSION = "2026-02-14-002"; // 🔁 PUJA AIXÒ SEMPRE quan modifiquis el SW
+const VERSION = "2026-02-14-003"; // 🔁 PUJA AIXÒ SEMPRE quan modifiquis el SW
 const CACHE_PREFIX = "meteovalls-";
 const CACHE_NAME = `${CACHE_PREFIX}${VERSION}`;
 
