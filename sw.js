@@ -7,7 +7,7 @@
 // - Assets estàtics (icons, vendor, css): stale-while-revalidate
 // - PUSH: mostra notificacions i obre la web en clicar
 
-const VERSION = "2026-02-14-003"; // 🔁 PUJA AIXÒ SEMPRE quan modifiquis el SW
+const VERSION = "2026-02-14-004"; // 🔁 PUJA AIXÒ SEMPRE quan modifiquis el SW
 const CACHE_PREFIX = "meteovalls-";
 const CACHE_NAME = `${CACHE_PREFIX}${VERSION}`;
 
@@ -183,11 +183,16 @@ self.addEventListener("fetch", (event) => {
 });
 
 // =========================
+// =========================
 // PUSH notifications
 // =========================
 self.addEventListener("push", (event) => {
   let data = {};
-  try { data = event.data ? event.data.json() : {}; } catch { data = {}; }
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = {};
+  }
 
   const title = data.title || "MeteoValls";
   const options = {
@@ -200,21 +205,26 @@ self.addEventListener("push", (event) => {
     requireInteraction: false,
   };
 
+  const ackUrl = new URL("/api/push/ack", self.location.origin).toString();
+
   event.waitUntil(
     Promise.allSettled([
-      self.registration.showNotification(title, options),
-
-      // ACK -> si això s'escriu a KV, vol dir que el mòbil HA rebut el push
-      fetch("/api/push/ack", {
+      // 1) ACK: si això s'escriu a KV/D1, vol dir que el mòbil HA rebut el push
+      fetch(ackUrl, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
+          ts: Date.now(),
           gotPush: true,
           title,
           tag: options.tag,
           hasData: !!event.data,
+          ua: "sw", // opcional
         }),
-      }),
+      }).catch(() => {}),
+
+      // 2) Notificació
+      self.registration.showNotification(title, options),
     ])
   );
 });
