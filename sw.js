@@ -1,13 +1,6 @@
 // sw.js — MeteoValls (anti-stale ESM + PUSH)
-//
-// Objectiu:
-// - /api/* network-only
-// - HTML: network-first (fallback cache)
-// - ESM JS (app.js, /pages, /lib): network-first (fallback cache) => evita quedar-se enganxat a versions velles
-// - Assets estàtics (icons, vendor, css): stale-while-revalidate
-// - PUSH: mostra notificacions i obre la web en clicar
 
-const VERSION = "2026-02-14-005"; // 🔁 PUJA AIXÒ SEMPRE quan modifiquis el SW
+const VERSION = "2026-02-15-001"; // 🔁 PUJA AIXÒ SEMPRE quan modifiquis el SW
 const CACHE_PREFIX = "meteovalls-";
 const CACHE_NAME = `${CACHE_PREFIX}${VERSION}`;
 
@@ -19,8 +12,6 @@ const PRECACHE_URLS = [
   "/sobre.html",
   "/site.webmanifest",
   "/style.css",
-
-  // Vendor i icones (offline-friendly)
   "/vendor/chart.umd.min.js",
   "/vendor/suncalc.min.js",
   "/favicon.png",
@@ -34,20 +25,12 @@ function isApi(url) {
 }
 
 function isHtml(request) {
-  return (
-    request.mode === "navigate" ||
-    (request.headers.get("accept") || "").includes("text/html")
-  );
+  return request.mode === "navigate" || (request.headers.get("accept") || "").includes("text/html");
 }
 
-// IMPORTANT: els mòduls ESM que et poden quedar enganxats
 function isEsmModule(url) {
   if (!url.pathname.endsWith(".js")) return false;
-  return (
-    url.pathname === "/app.js" ||
-    url.pathname.startsWith("/pages/") ||
-    url.pathname.startsWith("/lib/")
-  );
+  return url.pathname === "/app.js" || url.pathname.startsWith("/pages/") || url.pathname.startsWith("/lib/");
 }
 
 function isStaticAsset(url) {
@@ -83,14 +66,9 @@ async function precache() {
 
 async function cleanup() {
   const keys = await caches.keys();
-  await Promise.all(
-    keys.map((k) =>
-      k.startsWith(CACHE_PREFIX) && k !== CACHE_NAME ? caches.delete(k) : null
-    )
-  );
+  await Promise.all(keys.map((k) => (k.startsWith(CACHE_PREFIX) && k !== CACHE_NAME ? caches.delete(k) : null)));
 }
 
-// network-first genèric amb fallback cache
 async function networkFirst(req, cacheKey) {
   const cache = await caches.open(CACHE_NAME);
   try {
@@ -112,7 +90,6 @@ async function networkFirst(req, cacheKey) {
   }
 }
 
-// stale-while-revalidate per assets (IMPORTANT: waitUntil és de l'event, NO de self)
 async function staleWhileRevalidate(req, cacheKey, event) {
   const cache = await caches.open(CACHE_NAME);
   const cached = await cache.match(cacheKey || req, { ignoreSearch: true });
@@ -154,77 +131,67 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // 1) API: network-only (mai cache)
   if (isApi(url)) {
     event.respondWith(fetch(req));
     return;
   }
 
-  // 2) HTML: network-first
   if (isHtml(req)) {
     event.respondWith(networkFirst(req, url.pathname));
     return;
   }
 
-  // 3) ESM modules: network-first (evita versions velles)
   if (isEsmModule(url)) {
     event.respondWith(networkFirst(req, url.pathname));
     return;
   }
 
-  // 4) Assets: stale-while-revalidate
   if (isStaticAsset(url)) {
     event.respondWith(staleWhileRevalidate(req, url.pathname, event));
     return;
   }
 
-  // 5) Resta: network-first
   event.respondWith(networkFirst(req, url.pathname));
 });
 
 // =========================
-// =========================
-// PUSH notifications
+// PUSH notifications (FIXED)
 // =========================
 self.addEventListener("push", (event) => {
-  let raw = null;
-  let data = {};
-  try { raw = event.data ? event.data.text() : null; } catch {}
-  try { data = event.data ? event.data.json() : {}; } catch { data = {}; }
-
-  const title = data.title || "MeteoValls (DEBUG)";
-  const options = {
-    body: data.body || (raw ? `RAW:${String(raw).slice(0,120)}` : "NO EVENT.DATA"),
-    tag: data.tag || "debug",
-    icon: "/android-chrome-192.png",
-    data: { url: data.url || "/" },
-  };
-
-  event.waitUntil(self.registration.showNotification(title, options));
-});
-
-
-  const ackUrl = new URL("/api/push/ack", self.location.origin).toString();
-
   event.waitUntil(
-    Promise.allSettled([
-      // 1) ACK: si això s'escriu a KV/D1, vol dir que el mòbil HA rebut el push
-      fetch(ackUrl, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          ts: Date.now(),
-          gotPush: true,
-          title,
-          tag: options.tag,
-          hasData: !!event.data,
-          ua: "sw", // opcional
-        }),
-      }).catch(() => {}),
+    (async () => {
+      let raw = null;
+      let data = {};
+      try { raw = event.data ? event.data.text() : null; } catch {}
+      try { data = event.data ? event.data.json() : {}; } catch { data = {}; }
+
+      const title = data.title || "MeteoValls";
+      const options = {
+        body: data.body || (raw ? `RAW:${String(raw).slice(0, 120)}` : "NO EVENT.DATA"),
+        tag: data.tag || "debug",
+        icon: "/android-chrome-192.png",
+        data: { url: data.url || "/" },
+      };
+
+      // 1) ACK al worker (opcional)
+      try {
+        const ackUrl = new URL("/api/push/ack", self.location.origin).toString();
+        await fetch(ackUrl, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            ts: Date.now(),
+            gotPush: true,
+            title,
+            tag: options.tag,
+            hasData: !!event.data,
+          }),
+        });
+      } catch {}
 
       // 2) Notificació
-      self.registration.showNotification(title, options),
-    ])
+      await self.registration.showNotification(title, options);
+    })()
   );
 });
 
@@ -235,27 +202,21 @@ self.addEventListener("notificationclick", (event) => {
   event.waitUntil(
     (async () => {
       const allClients = await clients.matchAll({ type: "window", includeUncontrolled: true });
-
-      // si ja hi ha una finestra oberta del site -> focus + navigate
       for (const c of allClients) {
         try {
           const cUrl = new URL(c.url);
           if (cUrl.origin === self.location.origin) {
             await c.focus();
-            // navega a la ruta del push (si cal)
             if ("navigate" in c) await c.navigate(targetUrl);
             return;
           }
         } catch {}
       }
-
-      // sinó, obre nova finestra
       await clients.openWindow(targetUrl);
     })()
   );
 });
 
-// opcional: no fem res automàtic (la re-subscripció la gestiones des de la UI)
 self.addEventListener("pushsubscriptionchange", (event) => {
   event.waitUntil(Promise.resolve());
 });
