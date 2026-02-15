@@ -1,6 +1,6 @@
 // sw.js — MeteoValls (anti-stale ESM + PUSH)
 
-const VERSION = "2026-02-15-001"; // 🔁 PUJA AIXÒ SEMPRE quan modifiquis el SW
+const VERSION = "2026-02-15-002"; // 🔁 PUJA AIXÒ SEMPRE quan modifiquis el SW
 const CACHE_PREFIX = "meteovalls-";
 const CACHE_NAME = `${CACHE_PREFIX}${VERSION}`;
 
@@ -158,41 +158,40 @@ self.addEventListener("fetch", (event) => {
 // PUSH notifications (FIXED)
 // =========================
 self.addEventListener("push", (event) => {
-  event.waitUntil(
-    (async () => {
-      let raw = null;
-      let data = {};
-      try { raw = event.data ? event.data.text() : null; } catch {}
-      try { data = event.data ? event.data.json() : {}; } catch { data = {}; }
+  event.waitUntil((async () => {
+    let raw = "";
+    let data = {};
 
-      const title = data.title || "MeteoValls";
-      const options = {
-        body: data.body || (raw ? `RAW:${String(raw).slice(0, 120)}` : "NO EVENT.DATA"),
-        tag: data.tag || "debug",
-        icon: "/android-chrome-192.png",
-        data: { url: data.url || "/" },
-      };
+    try { raw = event.data ? await event.data.text() : ""; } catch { raw = ""; }
+    try { data = raw ? JSON.parse(raw) : {}; } catch { data = {}; }
 
-      // 1) ACK al worker (opcional)
-      try {
-        const ackUrl = new URL("/api/push/ack", self.location.origin).toString();
-        await fetch(ackUrl, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            ts: Date.now(),
-            gotPush: true,
-            title,
-            tag: options.tag,
-            hasData: !!event.data,
-          }),
-        });
-      } catch {}
+    const title = data.title || "MeteoValls";
+    const options = {
+      body: data.body || (raw ? raw.slice(0, 120) : "Sense dades"),
+      tag: data.tag || "meteo",
+      icon: "/android-chrome-192.png",
+      badge: "/android-chrome-192.png",
+      data: { url: data.url || "/" },
+    };
 
-      // 2) Notificació
-      await self.registration.showNotification(title, options);
-    })()
-  );
+    // ACK (best-effort)
+    try {
+      const ackUrl = new URL("/api/push/ack", self.location.origin).toString();
+      await fetch(ackUrl, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          ts: Date.now(),
+          gotPush: true,
+          title,
+          tag: options.tag,
+          hasData: !!event.data,
+        }),
+      });
+    } catch {}
+
+    await self.registration.showNotification(title, options);
+  })());
 });
 
 self.addEventListener("notificationclick", (event) => {
