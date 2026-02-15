@@ -1,6 +1,6 @@
 // sw.js — MeteoValls (anti-stale ESM + PUSH)
 
-const VERSION = "2026-02-15-003"; // 🔁 PUJA AIXÒ SEMPRE quan modifiquis el SW
+const VERSION = "2026-02-15-005"; // 🔁 PUJA AIXÒ SEMPRE quan modifiquis el SW
 const CACHE_PREFIX = "meteovalls-";
 const CACHE_NAME = `${CACHE_PREFIX}${VERSION}`;
 
@@ -160,54 +160,42 @@ self.addEventListener("fetch", (event) => {
 self.addEventListener("push", (event) => {
   event.waitUntil((async () => {
     let raw = "";
-    let data = {};
+    let data = null;
 
-    // 1) Llegeix dades si n'hi ha (pot ser buit!)
-    try {
-      raw = event.data ? await event.data.text() : "";
-    } catch {
-      raw = "";
-    }
+    try { raw = event.data ? await event.data.text() : ""; } catch { raw = ""; }
+    try { data = raw ? JSON.parse(raw) : null; } catch { data = null; }
 
-    // 2) Intenta JSON però no ho assumeixis
-    if (raw) {
-      try { data = JSON.parse(raw); } catch { data = {}; }
-    }
-
-    // 3) Notificació "sempre"
     const title = (data && data.title) ? data.title : "MeteoValls";
     const body =
       (data && data.body) ? data.body :
-      raw ? raw.slice(0, 120) :
-      "Push rebut (sense payload)";
+      (raw ? raw.slice(0, 200) : "Push rebut (sense payload)");
 
-    const options = {
-      body,
-      tag: (data && data.tag) ? data.tag : "test",
-      icon: "/android-chrome-192.png",
-      badge: "/android-chrome-192.png",
-      data: { url: (data && data.url) ? data.url : "/" },
-    };
+    const tag = (data && data.tag) ? data.tag : "push";
+    const url = (data && data.url) ? data.url : "/";
 
-    // 4) ACK (best-effort): si això s'executa, el mòbil HA rebut el push
+    // ACK (best-effort) amb info diagnòstica
     try {
-      const ackUrl = new URL("/api/push/ack", self.location.origin).toString();
-      await fetch(ackUrl, {
+      await fetch("/api/push/ack", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           ts: Date.now(),
           gotPush: true,
-          title,
-          tag: options.tag,
           hasData: !!event.data,
           rawLen: raw.length,
+          title,
+          tag,
         }),
       });
     } catch {}
 
-    // 5) Mostra
-    await self.registration.showNotification(title, options);
+    await self.registration.showNotification(title, {
+      body,
+      tag,
+      icon: "/android-chrome-192.png",
+      badge: "/android-chrome-192.png",
+      data: { url },
+    });
   })());
 });
 
