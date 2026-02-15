@@ -1,6 +1,6 @@
 // sw.js — MeteoValls (anti-stale ESM + PUSH)
 
-const VERSION = "2026-02-15-002"; // 🔁 PUJA AIXÒ SEMPRE quan modifiquis el SW
+const VERSION = "2026-02-15-003"; // 🔁 PUJA AIXÒ SEMPRE quan modifiquis el SW
 const CACHE_PREFIX = "meteovalls-";
 const CACHE_NAME = `${CACHE_PREFIX}${VERSION}`;
 
@@ -162,19 +162,34 @@ self.addEventListener("push", (event) => {
     let raw = "";
     let data = {};
 
-    try { raw = event.data ? await event.data.text() : ""; } catch { raw = ""; }
-    try { data = raw ? JSON.parse(raw) : {}; } catch { data = {}; }
+    // 1) Llegeix dades si n'hi ha (pot ser buit!)
+    try {
+      raw = event.data ? await event.data.text() : "";
+    } catch {
+      raw = "";
+    }
 
-    const title = data.title || "MeteoValls";
+    // 2) Intenta JSON però no ho assumeixis
+    if (raw) {
+      try { data = JSON.parse(raw); } catch { data = {}; }
+    }
+
+    // 3) Notificació "sempre"
+    const title = (data && data.title) ? data.title : "MeteoValls";
+    const body =
+      (data && data.body) ? data.body :
+      raw ? raw.slice(0, 120) :
+      "Push rebut (sense payload)";
+
     const options = {
-      body: data.body || (raw ? raw.slice(0, 120) : "Sense dades"),
-      tag: data.tag || "meteo",
+      body,
+      tag: (data && data.tag) ? data.tag : "test",
       icon: "/android-chrome-192.png",
       badge: "/android-chrome-192.png",
-      data: { url: data.url || "/" },
+      data: { url: (data && data.url) ? data.url : "/" },
     };
 
-    // ACK (best-effort)
+    // 4) ACK (best-effort): si això s'executa, el mòbil HA rebut el push
     try {
       const ackUrl = new URL("/api/push/ack", self.location.origin).toString();
       await fetch(ackUrl, {
@@ -186,10 +201,12 @@ self.addEventListener("push", (event) => {
           title,
           tag: options.tag,
           hasData: !!event.data,
+          rawLen: raw.length,
         }),
       });
     } catch {}
 
+    // 5) Mostra
     await self.registration.showNotification(title, options);
   })());
 });
