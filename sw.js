@@ -7,7 +7,7 @@
 // - Assets estàtics (icons, vendor, css): stale-while-revalidate
 // - PUSH: mostra notificacions i obre la web en clicar
 
-const VERSION = "2026-02-14-004"; // 🔁 PUJA AIXÒ SEMPRE quan modifiquis el SW
+const VERSION = "2026-02-14-005"; // 🔁 PUJA AIXÒ SEMPRE quan modifiquis el SW
 const CACHE_PREFIX = "meteovalls-";
 const CACHE_NAME = `${CACHE_PREFIX}${VERSION}`;
 
@@ -187,23 +187,22 @@ self.addEventListener("fetch", (event) => {
 // PUSH notifications
 // =========================
 self.addEventListener("push", (event) => {
+  let raw = null;
   let data = {};
-  try {
-    data = event.data ? event.data.json() : {};
-  } catch {
-    data = {};
-  }
+  try { raw = event.data ? event.data.text() : null; } catch {}
+  try { data = event.data ? event.data.json() : {}; } catch { data = {}; }
 
-  const title = data.title || "MeteoValls";
+  const title = data.title || "MeteoValls (DEBUG)";
   const options = {
-    body: data.body || "",
-    tag: data.tag || "meteovalls",
-    renotify: false,
+    body: data.body || (raw ? `RAW:${String(raw).slice(0,120)}` : "NO EVENT.DATA"),
+    tag: data.tag || "debug",
     icon: "/android-chrome-192.png",
-    badge: "/android-chrome-192.png",
     data: { url: data.url || "/" },
-    requireInteraction: false,
   };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
 
   const ackUrl = new URL("/api/push/ack", self.location.origin).toString();
 
