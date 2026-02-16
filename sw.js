@@ -1,6 +1,6 @@
 // sw.js — MeteoValls (anti-stale ESM + PUSH)
 
-const VERSION = "2026-02-16-001"; // 🔁 PUJA AIXÒ SEMPRE quan modifiquis el SW
+const VERSION = "2026-02-16-002"; // 🔁 PUJA AIXÒ SEMPRE quan modifiquis el SW
 const CACHE_PREFIX = "meteovalls-";
 const CACHE_NAME = `${CACHE_PREFIX}${VERSION}`;
 
@@ -155,27 +155,44 @@ self.addEventListener("fetch", (event) => {
 });
 
 // =========================
-// PUSH notifications (FIXED)
+// PUSH notifications (ROBUST)
 // =========================
 self.addEventListener("push", (event) => {
   event.waitUntil((async () => {
+    const origin = self.location.origin;
+
+    // 1) Intentem obtenir payload (si n'hi ha)
     let raw = "";
     let data = null;
 
     try { raw = event.data ? await event.data.text() : ""; } catch { raw = ""; }
     try { data = raw ? JSON.parse(raw) : null; } catch { data = null; }
 
-    const title = (data && data.title) ? data.title : "MeteoValls";
+    // 2) Fallback opcional: si NO hi ha payload, prova a llegir "últim missatge" del worker
+    // (Si no tens aquest endpoint, no passa res: agafarà el fallback local)
+    if (!data && !raw) {
+      try {
+        const lastUrl = new URL("/api/push/last", origin).toString();
+        const r = await fetch(lastUrl, { cache: "no-store" });
+        if (r.ok) {
+          const t = await r.text();
+          try { data = JSON.parse(t); } catch { data = { body: t }; }
+        }
+      } catch {}
+    }
+
+    const title = (data && data.title) ? String(data.title) : "MeteoValls";
     const body =
-      (data && data.body) ? data.body :
+      (data && data.body) ? String(data.body) :
       (raw ? raw.slice(0, 200) : "Alerta Meteorològica");
 
-    const tag = (data && data.tag) ? data.tag : "push";
-    const url = (data && data.url) ? data.url : "/";
+    const tag = (data && data.tag) ? String(data.tag) : "push";
+    const url = (data && data.url) ? String(data.url) : "/";
 
-    // ACK (best-effort) amb info diagnòstica
+    // 3) ACK best-effort (sempre URL absoluta)
     try {
-      await fetch("/api/push/ack", {
+      const ackUrl = new URL("/api/push/ack", origin).toString();
+      await fetch(ackUrl, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -185,10 +202,12 @@ self.addEventListener("push", (event) => {
           rawLen: raw.length,
           title,
           tag,
+          url,
         }),
       });
     } catch {}
 
+    // 4) Notificació
     await self.registration.showNotification(title, {
       body,
       tag,
@@ -201,26 +220,31 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const targetUrl = new URL(event.notification?.data?.url || "/", self.location.origin).toString();
 
-  event.waitUntil(
-    (async () => {
-      const allClients = await clients.matchAll({ type: "window", includeUncontrolled: true });
-      for (const c of allClients) {
-        try {
-          const cUrl = new URL(c.url);
-          if (cUrl.origin === self.location.origin) {
-            await c.focus();
-            if ("navigate" in c) await c.navigate(targetUrl);
-            return;
-          }
-        } catch {}
-      }
-      await clients.openWindow(targetUrl);
-    })()
-  );
+  const origin = self.location.origin;
+  const targetUrl = new URL(event.notification?.data?.url || "/", origin).toString();
+
+  event.waitUntil((async () => {
+    const allClients = await clients.matchAll({ type: "window", includeUncontrolled: true });
+
+    // Si ja hi ha una finestra oberta -> focus + navigate
+    for (const c of allClients) {
+      try {
+        const cUrl = new URL(c.url);
+        if (cUrl.origin === origin) {
+          await c.focus();
+          if ("navigate" in c) await c.navigate(targetUrl);
+          return;
+        }
+      } catch {}
+    }
+
+    // Si no n'hi ha -> obre nova finestra
+    await clients.openWindow(targetUrl);
+  })());
 });
 
+// No fem res automàtic aquí; ho gestiona la UI (push.js)
 self.addEventListener("pushsubscriptionchange", (event) => {
   event.waitUntil(Promise.resolve());
 });
