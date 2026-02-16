@@ -1,27 +1,35 @@
-// sw.js — MeteoValls (anti-stale ESM + PUSH)
+// sw.js — MeteoValls (scope-safe + anti-stale ESM + PUSH)
 
-const VERSION = "2026-02-16-002"; // 🔁 PUJA AIXÒ SEMPRE quan modifiquis el SW
+const VERSION = "2026-02-16-010"; // 🔁 PUJA AIXÒ SEMPRE
 const CACHE_PREFIX = "meteovalls-";
 const CACHE_NAME = `${CACHE_PREFIX}${VERSION}`;
 
+// Scope real ("" a domini root, o "/MeteoCandela" a GitHub Pages)
+const SCOPE = new URL(self.registration.scope).pathname.replace(/\/$/, ""); // "" o "/MeteoCandela"
+
+// Helper per prefixar paths dins l'scope
+const inScope = (p) => `${SCOPE}${p.startsWith("/") ? p : `/${p}`}`;
+
+// Precache: IMPORTANT -> paths ABSOLUTS dins el mateix origin + scope
 const PRECACHE_URLS = [
-  "./",
-  "./index.html",
-  "./previsio.html",
-  "./historic.html",
-  "/sobre.html",
-  "./site.webmanifest",
-  "./style.css",
-  "./vendor/chart.umd.min.js",
-  "./vendor/suncalc.min.js",
-  "./favicon.png",
-  "./apple-touch-icon.png",
-  "./android-chrome-192.png",
-  "./android-chrome-512.png",
+  inScope("/"),
+  inScope("/index.html"),
+  inScope("/previsio.html"),
+  inScope("/historic.html"),
+  inScope("/sobre.html"),
+  inScope("/site.webmanifest"),
+  inScope("/style.css"),
+  inScope("/vendor/chart.umd.min.js"),
+  inScope("/vendor/suncalc.min.js"),
+  inScope("/favicon.png"),
+  inScope("/apple-touch-icon.png"),
+  inScope("/android-chrome-192.png"),
+  inScope("/android-chrome-512.png"),
 ];
 
 function isApi(url) {
-  return url.pathname.includes("/api/");
+  // API base sempre sota el mateix scope
+  return url.pathname.startsWith(inScope("/api/"));
 }
 
 function isHtml(request) {
@@ -30,7 +38,11 @@ function isHtml(request) {
 
 function isEsmModule(url) {
   if (!url.pathname.endsWith(".js")) return false;
-  return url.pathname === "/app.js" || url.pathname.startsWith("/pages/") || url.pathname.startsWith("/lib/");
+  return (
+    url.pathname === inScope("/app.js") ||
+    url.pathname.startsWith(inScope("/pages/")) ||
+    url.pathname.startsWith(inScope("/lib/"))
+  );
 }
 
 function isStaticAsset(url) {
@@ -48,17 +60,17 @@ function isStaticAsset(url) {
     url.pathname.endsWith(".otf") ||
     url.pathname.endsWith(".json") ||
     url.pathname.endsWith(".webmanifest") ||
-    url.pathname.startsWith("/vendor/")
+    url.pathname.startsWith(inScope("/vendor/"))
   );
 }
 
 async function precache() {
   const cache = await caches.open(CACHE_NAME);
   await Promise.allSettled(
-    PRECACHE_URLS.map(async (path) => {
+    PRECACHE_URLS.map(async (url) => {
       try {
-        const res = await fetch(path, { cache: "reload" });
-        if (res && res.ok) await cache.put(path, res.clone());
+        const res = await fetch(url, { cache: "reload" });
+        if (res && res.ok) await cache.put(url, res.clone());
       } catch {}
     })
   );
@@ -73,11 +85,11 @@ async function networkFirst(req, cacheKey) {
   const cache = await caches.open(CACHE_NAME);
   try {
     const res = await fetch(req);
-    if (res && res.ok) cache.put(cacheKey || req, res.clone()).catch(() => {});
+    if (res && res.ok) cache.put(cacheKey || req.url, res.clone()).catch(() => {});
     return res;
   } catch {
     const cached =
-      (await cache.match(cacheKey || req)) ||
+      (await cache.match(cacheKey || req.url)) ||
       (await cache.match(req, { ignoreSearch: true })) ||
       (await caches.match(req, { ignoreSearch: true }));
     return (
@@ -92,11 +104,11 @@ async function networkFirst(req, cacheKey) {
 
 async function staleWhileRevalidate(req, cacheKey, event) {
   const cache = await caches.open(CACHE_NAME);
-  const cached = await cache.match(cacheKey || req, { ignoreSearch: true });
+  const cached = await cache.match(cacheKey || req.url, { ignoreSearch: true });
 
   const update = fetch(req)
     .then((res) => {
-      if (res && res.ok) cache.put(cacheKey || req, res.clone()).catch(() => {});
+      if (res && res.ok) cache.put(cacheKey || req.url, res.clone()).catch(() => {});
       return res;
     })
     .catch(() => null);
@@ -131,11 +143,15 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
+  // Només interceptem dins l'scope
+  if (!url.pathname.startsWith(SCOPE || "/")) return;
+
   if (isApi(url)) {
-    event.respondWith(fetch(req));
+    event.respondWith(fetch(req)); // network-only
     return;
   }
 
+  // Per cacheKey usem url.pathname (ja inclou SCOPE)
   if (isHtml(req)) {
     event.respondWith(networkFirst(req, url.pathname));
     return;
@@ -161,18 +177,15 @@ self.addEventListener("push", (event) => {
   event.waitUntil((async () => {
     const origin = self.location.origin;
 
-    // 1) Intentem obtenir payload (si n'hi ha)
     let raw = "";
     let data = null;
 
     try { raw = event.data ? await event.data.text() : ""; } catch { raw = ""; }
     try { data = raw ? JSON.parse(raw) : null; } catch { data = null; }
 
-    // 2) Fallback opcional: si NO hi ha payload, prova a llegir "últim missatge" del worker
-    // (Si no tens aquest endpoint, no passa res: agafarà el fallback local)
     if (!data && !raw) {
       try {
-        const lastUrl = new URL("/api/push/last", origin).toString();
+        const lastUrl = new URL(inScope("/api/push/last"), origin).toString();
         const r = await fetch(lastUrl, { cache: "no-store" });
         if (r.ok) {
           const t = await r.text();
@@ -187,11 +200,12 @@ self.addEventListener("push", (event) => {
       (raw ? raw.slice(0, 200) : "Alerta Meteorològica");
 
     const tag = (data && data.tag) ? String(data.tag) : "push";
-    const url = (data && data.url) ? String(data.url) : "/";
+    const clickPath = (data && data.url) ? String(data.url) : "/";
 
-    // 3) ACK best-effort (sempre URL absoluta)
+    const clickUrl = new URL(inScope(clickPath), origin).toString();
+
     try {
-      const ackUrl = new URL("/api/push/ack", origin).toString();
+      const ackUrl = new URL(inScope("/api/push/ack"), origin).toString();
       await fetch(ackUrl, {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -202,19 +216,18 @@ self.addEventListener("push", (event) => {
           rawLen: raw.length,
           title,
           tag,
-          url,
+          url: clickUrl,
         }),
       });
     } catch {}
 
-    // 4) Notificació
     await self.registration.showNotification(title, {
       body,
       tag,
       renotify: true,
-      icon: "/android-chrome-192.png",
-      badge: "/android-chrome-192.png",
-      data: { url },
+      icon: inScope("/android-chrome-192.png"),
+      badge: inScope("/android-chrome-192.png"),
+      data: { url: clickUrl },
     });
   })());
 });
@@ -223,12 +236,11 @@ self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
   const origin = self.location.origin;
-  const targetUrl = new URL(event.notification?.data?.url || "/", origin).toString();
+  const targetUrl = event.notification?.data?.url || new URL(inScope("/"), origin).toString();
 
   event.waitUntil((async () => {
     const allClients = await clients.matchAll({ type: "window", includeUncontrolled: true });
 
-    // Si ja hi ha una finestra oberta -> focus + navigate
     for (const c of allClients) {
       try {
         const cUrl = new URL(c.url);
@@ -239,13 +251,10 @@ self.addEventListener("notificationclick", (event) => {
         }
       } catch {}
     }
-
-    // Si no n'hi ha -> obre nova finestra
     await clients.openWindow(targetUrl);
   })());
 });
 
-// No fem res automàtic aquí; ho gestiona la UI (push.js)
 self.addEventListener("pushsubscriptionchange", (event) => {
   event.waitUntil(Promise.resolve());
 });
