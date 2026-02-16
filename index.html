@@ -142,10 +142,9 @@
       
 <!-- Avisos (Push) -->
 <div class="push-row">
-  <button id="btnPush" class="push-btn" type="button" style="display:none;" aria-label="Activar avisos">
+  <button id="btnPush" class="push-btn" type="button" style="display:none;">
     🔔 Activar avisos
   </button>
-  <span id="pushStatus" class="push-status" aria-live="polite"></span>
 </div>
       <!-- KPIs -->
       <div class="kpi-grid">
@@ -268,6 +267,17 @@
         <summary>Què és una ratxa de vent?</summary>
         <p>És la velocitat màxima puntual del vent registrada en un interval curt, diferent del vent mitjà.</p>
       </details>
+
+      <div class="push-status-slot">
+  <div id="pushStatus" class="push-status"></div>
+
+  <button id="btnPushOff"
+          class="push-btn-off"
+          style="display:none;">
+    🔕 Desactivar avisos
+  </button>
+      </div>
+      
     </section>
 
   </main>
