@@ -13,7 +13,7 @@ import { loadHistoryOnce, loadCurrentAndHeartbeat } from "../lib/api.js";
 import { renderHomeIcon, renderSunSub } from "../lib/sun.js";
 import { buildChartsForDay } from "../lib/charts_day.js";
 import { initChartFullscreen } from "../lib/fullscreen_chart.js";
-import { initAlertsXL } from "../lib/alerts_ui.js";
+//import { initAlertsXL } from "../lib/alerts_ui.js";
 
 const REFRESH_CURRENT_MS = 60 * 1000;       // 1 min
 const REFRESH_HISTORY_MS = 60 * 60 * 1000;  // 60 min
@@ -287,7 +287,7 @@ export function initHome() {
       renderAll();
       
       // Avisos XL (últim avís registrat al worker)
-initAlertsXL({ pollMs: 60000 });
+//initAlertsXL({ pollMs: 60000 });
       
       // 3) Selector de dia
       const dayKeys = buildDayListFromRows(hist, state.current);
