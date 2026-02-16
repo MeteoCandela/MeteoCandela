@@ -287,8 +287,7 @@ export function initHome() {
       
       // Avisos XL (NO pot trencar la home)
 try {
-  const { BASE } = getApi(); // BASE = "" o "/MeteoCandela"
-  const m = await import(`${BASE}/lib/alerts_ui.js?v=${Date.now()}`);
+  const m = await import(`../lib/alerts_ui.js?v=${Date.now()}`);
   m?.initAlertsXL?.({ pollMs: 60000 });
 } catch (e) {
   console.warn("Alerts XL no disponible", e);
