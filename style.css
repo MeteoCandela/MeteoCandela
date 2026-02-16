@@ -1481,3 +1481,6 @@ html.fs-lock, body.fs-lock {
 .push-status {
   opacity:.9;
 }
+.push-row {
+  margin-bottom: 14px;
+}
