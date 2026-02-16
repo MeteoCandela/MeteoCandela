@@ -1,6 +1,6 @@
 // sw.js — MeteoValls (anti-stale ESM + PUSH)
 
-const VERSION = "2026-02-15-006"; // 🔁 PUJA AIXÒ SEMPRE quan modifiquis el SW
+const VERSION = "2026-02-16-001"; // 🔁 PUJA AIXÒ SEMPRE quan modifiquis el SW
 const CACHE_PREFIX = "meteovalls-";
 const CACHE_NAME = `${CACHE_PREFIX}${VERSION}`;
 
