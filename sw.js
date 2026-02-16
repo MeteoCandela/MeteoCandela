@@ -211,6 +211,7 @@ self.addEventListener("push", (event) => {
     await self.registration.showNotification(title, {
       body,
       tag,
+      renotify: true,
       icon: "/android-chrome-192.png",
       badge: "/android-chrome-192.png",
       data: { url },
