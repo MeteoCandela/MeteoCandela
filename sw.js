@@ -1,6 +1,6 @@
 // sw.js — MeteoValls (anti-stale ESM + PUSH)
 
-const VERSION = "2026-02-15-005"; // 🔁 PUJA AIXÒ SEMPRE quan modifiquis el SW
+const VERSION = "2026-02-15-006"; // 🔁 PUJA AIXÒ SEMPRE quan modifiquis el SW
 const CACHE_PREFIX = "meteovalls-";
 const CACHE_NAME = `${CACHE_PREFIX}${VERSION}`;
 
@@ -168,7 +168,7 @@ self.addEventListener("push", (event) => {
     const title = (data && data.title) ? data.title : "MeteoValls";
     const body =
       (data && data.body) ? data.body :
-      (raw ? raw.slice(0, 200) : "Push rebut (sense payload)");
+      (raw ? raw.slice(0, 200) : "Alerma Meteorològica (sense payload)");
 
     const tag = (data && data.tag) ? data.tag : "push";
     const url = (data && data.url) ? data.url : "/";
