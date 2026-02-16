@@ -1415,3 +1415,48 @@ html.fs-lock, body.fs-lock {
   font-size:.92rem;
   opacity:.75;
 }
+/* Avis XL (banner a Home) */
+.alert-xl{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px 14px;
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  margin: 10px 0 12px;
+  backdrop-filter: blur(6px);
+}
+
+.alert-xl__title{
+  font-weight:800;
+  font-size:18px;
+  line-height:1.15;
+  margin-bottom:4px;
+}
+
+.alert-xl__msg{
+  font-size:15px;
+  line-height:1.25;
+  opacity:.95;
+}
+
+.alert-xl__meta{
+  margin-top:6px;
+  font-size:12px;
+  opacity:.75;
+}
+
+.alert-xl__close{
+  border:0;
+  background: rgba(255,255,255,.10);
+  color: inherit;
+  padding:8px 10px;
+  border-radius:12px;
+  cursor:pointer;
+}
+
+.alert-xl__close:active{
+  transform: translateY(1px);
+}
