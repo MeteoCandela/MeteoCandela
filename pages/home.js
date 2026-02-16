@@ -285,7 +285,10 @@ export function initHome() {
       const initialActual = state.current || (hist.length ? hist[hist.length - 1] : null);
 
       renderAll();
-
+      
+      // Avisos XL (últim avís registrat al worker)
+initAlertsXL({ pollMs: 60000 });
+      
       // 3) Selector de dia
       const dayKeys = buildDayListFromRows(hist, state.current);
       const wanted = getUrlDayParam();
