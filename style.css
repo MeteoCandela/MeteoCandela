@@ -1460,3 +1460,24 @@ html.fs-lock, body.fs-lock {
 .alert-xl__close:active{
   transform: translateY(1px);
 }
+
+//boto notificacions
+.push-status-slot {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,.08);
+  text-align:center;
+}
+
+.push-btn-off {
+  margin-top:8px;
+  background:none;
+  border:1px solid rgba(255,255,255,.25);
+  color:#fff;
+  padding:6px 14px;
+  border-radius:14px;
+}
+
+.push-status {
+  opacity:.9;
+}
