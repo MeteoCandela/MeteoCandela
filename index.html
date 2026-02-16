@@ -129,6 +129,17 @@
         <!-- IMPORTANT: aquest id és el que usa home.js -->
         <span class="pill" id="sourceLine">Font: —</span>
       </div>
+      <!-- AVÍS XL (últim avís del sistema) -->
+<section id="alertXL" class="alert-xl" style="display:none;" role="status" aria-live="polite">
+  <div class="alert-xl__left">
+    <div class="alert-xl__title" id="alertXLTitle">—</div>
+    <div class="alert-xl__msg" id="alertXLMsg">—</div>
+    <div class="alert-xl__meta" id="alertXLMeta">—</div>
+  </div>
+
+  <button id="alertXLClose" class="alert-xl__close" type="button" aria-label="Tancar avís">✕</button>
+</section>
+      
 <!-- Avisos (Push) -->
 <div class="push-row">
   <button id="btnPush" class="push-btn" type="button" style="display:none;" aria-label="Activar avisos">
