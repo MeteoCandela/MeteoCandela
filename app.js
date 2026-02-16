@@ -1,10 +1,10 @@
 // app.js — entrypoint únic (ESM)
 export const V = "2026-02-16-003"; // 🔁 puja això quan canviïs JS
+export const V = "2026-02-16-004"; // puja versió
 
-// Service Worker (PWA)
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register(`sw.js?v=${V}`).catch(console.error);
+    navigator.serviceWorker.register(`./sw.js?v=${V}`).catch(console.error);
   });
 }
 
