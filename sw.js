@@ -5,23 +5,23 @@ const CACHE_PREFIX = "meteovalls-";
 const CACHE_NAME = `${CACHE_PREFIX}${VERSION}`;
 
 const PRECACHE_URLS = [
-  "/",
-  "/index.html",
-  "/previsio.html",
-  "/historic.html",
+  "./",
+  "./index.html",
+  "./previsio.html",
+  "./historic.html",
   "/sobre.html",
-  "/site.webmanifest",
-  "/style.css",
-  "/vendor/chart.umd.min.js",
-  "/vendor/suncalc.min.js",
-  "/favicon.png",
-  "/apple-touch-icon.png",
-  "/android-chrome-192.png",
-  "/android-chrome-512.png",
+  "./site.webmanifest",
+  "./style.css",
+  "./vendor/chart.umd.min.js",
+  "./vendor/suncalc.min.js",
+  "./favicon.png",
+  "./apple-touch-icon.png",
+  "./android-chrome-192.png",
+  "./android-chrome-512.png",
 ];
 
 function isApi(url) {
-  return url.pathname.startsWith("/api/");
+  return url.pathname.includes("/api/");
 }
 
 function isHtml(request) {
