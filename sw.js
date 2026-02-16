@@ -168,7 +168,7 @@ self.addEventListener("push", (event) => {
     const title = (data && data.title) ? data.title : "MeteoValls";
     const body =
       (data && data.body) ? data.body :
-      (raw ? raw.slice(0, 200) : "Alerma Meteorològica (sense payload)");
+      (raw ? raw.slice(0, 200) : "Alerta Meteorològica");
 
     const tag = (data && data.tag) ? data.tag : "push";
     const url = (data && data.url) ? data.url : "/";
