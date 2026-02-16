@@ -285,8 +285,14 @@ export function initHome() {
 
       renderAll();
       
-      // Avisos XL (últim avís registrat al worker)
-      //initAlertsXL({ pollMs: 60000 });
+      // Avisos XL (NO pot trencar la home)
+try {
+  const { BASE } = getApi(); // BASE = "" o "/MeteoCandela"
+  const m = await import(`${BASE}/lib/alerts_ui.js?v=${Date.now()}`);
+  m?.initAlertsXL?.({ pollMs: 60000 });
+} catch (e) {
+  console.warn("Alerts XL no disponible", e);
+}
       
       // 3) Selector de dia
       const dayKeys = buildDayListFromRows(hist, state.current);
