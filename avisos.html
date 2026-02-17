@@ -3,17 +3,34 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+
   <meta name="theme-color" content="#0b1220">
-  <title>Avisos Meteocat · MeteoValls</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MeteoValls">
+
+  <title>Avisos Meteocat · Alt Camp · MeteoValls</title>
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://meteocandela.cat/avisos.html">
+
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+  <link rel="manifest" href="./site.webmanifest">
 
   <link rel="stylesheet" href="./style.css?v=2026-02-17-003">
 </head>
 
 <body data-page="avisos">
-  <header class="topbar">
-    <a class="topbar__back" href="./index.html" aria-label="Tornar">←</a>
-    <div class="topbar__title">Avisos Meteocat (Alt Camp)</div>
+  <header class="hero">
+    <div class="hero__overlay"></div>
+    <div class="hero__content">
+      <h1>Avisos Meteocat (Alt Camp)</h1>
+      <p id="alertsSub" aria-live="polite">Carregant…</p>
+      <p id="alertsStatus" class="status" aria-live="polite">—</p>
+    </div>
   </header>
+
+  <main class="grid">
 
   <main class="grid">
     <!-- SITUACIÓ -->
