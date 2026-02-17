@@ -1576,38 +1576,42 @@ html.fs-lock, body.fs-lock {
 .alert-xl.cat-rain .alert-xl__title::before { content: "🌧️ "; }
 .alert-xl.cat-temp .alert-xl__title::before { content: "🌡️ "; }
 
-//METEOCAT BAGDE
-.mv-hidden { display: none !important; }
+//METEOCAT FAB
+.mv-fab.mv-hidden { display:none !important; }
 
-.mv-badge{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  margin-top: 10px;
-  padding:10px 12px;
-  border-radius:14px;
-  text-decoration:none;
+.mv-fab{
+  position: fixed;
+  right: 14px;
+  bottom: 86px; /* deixa marge pel nav del mòbil i pel teu install FAB si surt */
+  z-index: 9999;
 
-  border:1px solid rgba(255,255,255,.10);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 12px 14px;
+  border-radius: 999px;
+  text-decoration: none;
+
+  border: 1px solid rgba(255,255,255,.10);
   background: rgba(20,28,45,.92);
-  color:#fff;
+  color: #fff;
   backdrop-filter: blur(10px);
+
+  box-shadow: 0 10px 24px rgba(0,0,0,.35);
 }
 
-.mv-badge:hover{ transform: translateY(-1px); }
-
-.mv-dot{
+.mv-fab__dot{
   width:10px; height:10px; border-radius:999px;
   background: rgba(255,255,255,.35);
 }
 
-.mv-badge.is-warn{
-  border-left:10px solid rgba(255, 196, 0, .9);
+.mv-fab.is-warn{
+  border-left: 10px solid rgba(255,196,0,.9);
+}
+.mv-fab.is-danger{
+  border-left: 10px solid rgba(255,70,70,.95);
 }
 
-.mv-badge.is-danger{
-  border-left:10px solid rgba(255, 70, 70, .95);
-}
-
-.mv-badge.is-warn .mv-dot{ background: rgba(255, 196, 0, .95); }
-.mv-badge.is-danger .mv-dot{ background: rgba(255, 70, 70, .95); }
+.mv-fab.is-warn .mv-fab__dot{ background: rgba(255,196,0,.95); }
+.mv-fab.is-danger .mv-fab__dot{ background: rgba(255,70,70,.95); }
