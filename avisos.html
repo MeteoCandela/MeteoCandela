@@ -1,3 +1,4 @@
+<!-- avisos.html -->
 <!doctype html>
 <html lang="ca">
 <head>
@@ -21,29 +22,34 @@
 </head>
 
 <body data-page="avisos">
-  <header class="hero">
+  <!-- HERO compacte (pàgina secundària) -->
+  <header class="hero hero--sub">
     <div class="hero__overlay"></div>
     <div class="hero__content">
       <h1>Avisos Meteocat (Alt Camp)</h1>
-      <p id="alertsSub" aria-live="polite">Carregant…</p>
+      <p id="alertsSub" aria-live="polite">Carregant avisos…</p>
       <p id="alertsStatus" class="status" aria-live="polite">—</p>
     </div>
   </header>
-
-  <main class="grid">
 
   <main class="grid">
     <!-- SITUACIÓ -->
     <section class="card span2">
       <div class="card-head">
         <h2>Situació</h2>
-        <button id="btnAlertsRefresh" class="btn" type="button">🔄 Actualitza</button>
+        <button id="btnAlertsRefresh" class="btn" type="button" aria-label="Forçar actualització d’avisos">
+          🔄 Actualitza
+        </button>
       </div>
 
-      <p id="mvAlertsMeta" class="muted-line">Carregant…</p>
+      <p id="mvAlertsMeta" class="muted-line">—</p>
 
-      <!-- Hero/summary (només si hi ha avisos) -->
-      <div id="mvAlertsSummary" class="alert-xl" style="display:none;" role="status" aria-live="polite">
+      <!-- Resum (només si hi ha avisos) -->
+      <div id="mvAlertsSummary"
+           class="alert-xl"
+           style="display:none;"
+           role="status"
+           aria-live="polite">
         <div class="alert-xl__left">
           <div class="alert-xl__title" id="mvAlertsTitle">—</div>
           <div class="alert-xl__msg" id="mvAlertsMsg">—</div>
@@ -56,16 +62,17 @@
         <div class="notice__title">Sense avisos vigents</div>
         <div class="notice__text">Ara mateix Meteocat no indica cap avís vigent per a l’Alt Camp.</div>
       </div>
+
+      <p id="mvAlertsHint" class="muted-line" style="display:none; margin-top:10px;"></p>
     </section>
 
     <!-- DETALL -->
     <section class="card span2">
       <h2>Detall d’avisos</h2>
       <div id="mvAlertsList" class="mv-alerts-list"></div>
-      <p id="mvAlertsHint" class="muted-line" style="display:none; margin-top:10px;"></p>
     </section>
 
-    <!-- TORNADA (ja ho tens) -->
+    <!-- TORNADA -->
     <section class="card span2" style="text-align:center">
       <p>
         <a href="./index.html" class="back-link" aria-label="Tornar a la pàgina principal">
@@ -79,7 +86,7 @@
     <span>© <span id="year"></span> MeteoValls</span>
   </footer>
 
-  <!-- IMPORTANT: carrega l’entrypoint únic -->
+  <!-- IMPORTANT: entrypoint únic -->
   <script type="module" src="./app.js?v=2026-02-17-003"></script>
 </body>
 </html>
