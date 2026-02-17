@@ -33,10 +33,18 @@ async function boot() {
   try {
     switch (page) {
       case "home": {
-        const m = await import(`./pages/home.js?v=${V}`);
-        m.initHome?.();
-        break;
-      }
+  const m = await import(`./pages/home.js?v=${V}`);
+  m.initHome?.();
+
+  // Meteocat badge (només a home)
+  try {
+    const b = await import(`./lib/meteocat_badge.js?v=${V}`);
+    b?.initMeteocatBadge?.();
+  } catch (e) {
+    console.warn("meteocat badge fail", e);
+  }
+  break;
+}
       case "previsio": {
         const m = await import(`./pages/previsio.js?v=${V}`);
         m.initPrevisio?.();
