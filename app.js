@@ -50,6 +50,11 @@ async function boot() {
         m.initPrevisio?.();
         break;
       }
+     case "avisos": {
+       const m = await import(`./pages/avisos.js?v=${V}`);
+       m.initAvisos?.();
+       break;
+    }
       case "historic": {
         const m = await import(`./pages/historic.js?v=${V}`);
         m.initHistoric?.();
