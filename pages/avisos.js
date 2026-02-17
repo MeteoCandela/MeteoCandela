@@ -198,19 +198,4 @@ export function initAvisos(){
 
   // inicial
   loadAlerts();
-
-  // botó refresh (força /refresh)
-  const btn = $("btnAlertsRefresh");
-  if (btn) {
-    btn.addEventListener("click", async () => {
-      const original = btn.textContent;
-      btn.disabled = true;
-      btn.textContent = "⏳ Actualitzant…";
-      try { await loadAlerts({ forceRefresh: true }); }
-      finally {
-        btn.disabled = false;
-        btn.textContent = original || "🔄 Actualitza";
-      }
-    });
-  }
 }
