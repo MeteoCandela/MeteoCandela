@@ -1575,3 +1575,39 @@ html.fs-lock, body.fs-lock {
 .alert-xl.cat-wind .alert-xl__title::before { content: "💨 "; }
 .alert-xl.cat-rain .alert-xl__title::before { content: "🌧️ "; }
 .alert-xl.cat-temp .alert-xl__title::before { content: "🌡️ "; }
+
+//METEOCAT BAGDE
+.mv-hidden { display: none !important; }
+
+.mv-badge{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-top: 10px;
+  padding:10px 12px;
+  border-radius:14px;
+  text-decoration:none;
+
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(20,28,45,.92);
+  color:#fff;
+  backdrop-filter: blur(10px);
+}
+
+.mv-badge:hover{ transform: translateY(-1px); }
+
+.mv-dot{
+  width:10px; height:10px; border-radius:999px;
+  background: rgba(255,255,255,.35);
+}
+
+.mv-badge.is-warn{
+  border-left:10px solid rgba(255, 196, 0, .9);
+}
+
+.mv-badge.is-danger{
+  border-left:10px solid rgba(255, 70, 70, .95);
+}
+
+.mv-badge.is-warn .mv-dot{ background: rgba(255, 196, 0, .95); }
+.mv-badge.is-danger .mv-dot{ background: rgba(255, 70, 70, .95); }
