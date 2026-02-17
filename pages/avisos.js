@@ -23,7 +23,18 @@ function fmtTs(ts){
   return new Date(n).toLocaleString("ca-ES", { hour12:false });
 }
 
-async function loadAlerts(){
+async function fetchJson(url, opts){
+  const res = await fetch(url, opts);
+  let j = null;
+  try { j = await res.json(); } catch {}
+  if (!res.ok) {
+    const msg = j?.error || j?.message || `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+  return j;
+}
+
+async function loadAlerts({ forceRefresh = false } = {}){
   const { API_BASE } = getApi();
 
   const metaEl = $("mvAlertsMeta");
@@ -32,73 +43,118 @@ async function loadAlerts(){
   const msgEl = $("mvAlertsMsg");
   const whenEl = $("mvAlertsWhen");
   const listEl = $("mvAlertsList");
+  const emptyBox = $("mvAlertsEmpty");
+  const hintEl = $("mvAlertsHint");
 
-  metaEl.textContent = "Carregant…";
-  listEl.innerHTML = "";
-
-  const res = await fetch(`${API_BASE}/meteocat/alerts`, { cache:"no-store" });
-  const j = await res.json();
-
-  if (!j?.ok){
-    metaEl.textContent = "No s’han pogut carregar els avisos.";
-    return;
-  }
-
-  metaEl.textContent = `Actualitzat: ${fmtTs(j.updated_ts)} · Perill màxim: ${perillText(j.max_perill)} · Episodis: ${Array.isArray(j.items)? j.items.length : 0}`;
-
-  if (!j.has_alerts){
-    summaryBox.style.display = "block";
+  // guardes (no petar si falta algun node)
+  if (metaEl) metaEl.textContent = "Carregant…";
+  if (listEl) listEl.innerHTML = "";
+  if (summaryBox) {
+    summaryBox.style.display = "none";
     summaryBox.classList.remove("is-warn","is-danger");
-    titleEl.textContent = "Sense avisos vigents";
-    msgEl.textContent = "Ara mateix Meteocat no indica cap avís vigent per a l’Alt Camp.";
-    whenEl.textContent = "";
-    return;
   }
+  if (emptyBox) emptyBox.style.display = "none";
+  if (hintEl) hintEl.style.display = "none";
 
-  // Resum
-  summaryBox.style.display = "block";
-  const cls = levelToClass(j.max_perill);
-  summaryBox.classList.toggle("is-warn", cls==="is-warn");
-  summaryBox.classList.toggle("is-danger", cls==="is-danger");
-  titleEl.textContent = `Avisos vigents · Perill ${perillText(j.max_perill)}`;
-  msgEl.textContent = "Consulta el detall a continuació.";
-  whenEl.textContent = `Actualització: ${fmtTs(j.updated_ts)}`;
+  try {
+    // 1) opcional: refresh manual (només si cliques el botó)
+    if (forceRefresh) {
+      // aquest endpoint et torna {ok, note, data} o error
+      await fetchJson(`${API_BASE}/meteocat/alerts/refresh`, { method:"POST" });
+      if (hintEl) {
+        hintEl.textContent = "Actualització demanada (cache renovada).";
+        hintEl.style.display = "block";
+      }
+    }
 
-  // Llista detall
-  const items = Array.isArray(j.items) ? j.items : [];
-  for (const it of items){
-    const card = document.createElement("div");
-    const c = levelToClass(it.perill);
-    card.className = `mv-alert-item ${c}`;
+    // 2) carrega cache normal
+    const j = await fetchJson(`${API_BASE}/meteocat/alerts`, { cache:"no-store" });
 
-    const t = `${it.meteor || "Meteor"} · ${it.tipus || "Avís"}`;
-    const peri = it.periode ? ` · ${it.periode}` : "";
-    const dia = it.dia ? `Dia: ${it.dia}` : "";
-    const ll = it.llindar ? `Llindar: ${it.llindar}` : "";
-    const ini = it.inici ? `Inici: ${it.inici}` : "";
-    const fi = it.fi ? `Fi: ${it.fi}` : "";
+    if (!j?.ok) {
+      if (metaEl) metaEl.textContent = "No s’han pogut carregar els avisos.";
+      return;
+    }
 
-    card.innerHTML = `
-      <div class="mv-alert-item__head">
-        <div>
-          <div class="mv-alert-item__title">${t}</div>
-          <div class="mv-alert-item__meta">Perill: ${perillText(it.perill)}${peri}</div>
-        </div>
-        <div class="mv-alert-item__meta">${it.comarca || ""}</div>
-      </div>
-      <div class="mv-alert-item__txt">${(it.comentari || "").trim() || "—"}</div>
-      <div class="mv-alert-item__meta" style="margin-top:10px;">
-        ${[dia, ll, ini, fi].filter(Boolean).join(" · ")}
-      </div>
-    `;
-    listEl.appendChild(card);
+    const count = Array.isArray(j.items) ? j.items.length : 0;
+    if (metaEl) {
+      metaEl.textContent =
+        `Actualitzat: ${fmtTs(j.updated_ts)} · Perill màxim: ${perillText(j.max_perill)} · Episodis: ${count}`;
+    }
+
+    // SENSE AVISOS
+    if (!j.has_alerts || count === 0) {
+      if (emptyBox) {
+        emptyBox.style.display = "block";
+      } else if (summaryBox && titleEl && msgEl && whenEl) {
+        // fallback si no tens mvAlertsEmpty al HTML
+        summaryBox.style.display = "block";
+        titleEl.textContent = "Sense avisos vigents";
+        msgEl.textContent = "Ara mateix Meteocat no indica cap avís vigent per a l’Alt Camp.";
+        whenEl.textContent = "";
+      }
+      return;
+    }
+
+    // AMB AVISOS: resum
+    if (summaryBox && titleEl && msgEl && whenEl) {
+      summaryBox.style.display = "block";
+      const cls = levelToClass(j.max_perill);
+      summaryBox.classList.toggle("is-warn", cls === "is-warn");
+      summaryBox.classList.toggle("is-danger", cls === "is-danger");
+      titleEl.textContent = `Avisos vigents · Perill ${perillText(j.max_perill)}`;
+      msgEl.textContent = "Consulta el detall a continuació.";
+      whenEl.textContent = `Actualització: ${fmtTs(j.updated_ts)}`;
+    }
+
+    // Llista detall
+    if (listEl) {
+      for (const it of (j.items || [])) {
+        const card = document.createElement("div");
+        const c = levelToClass(it.perill);
+        card.className = `mv-alert-item ${c}`;
+
+        const t = `${it.meteor || "Meteor"} · ${it.tipus || "Avís"}`;
+        const peri = it.periode ? ` · ${it.periode}` : "";
+        const dia = it.dia ? `Dia: ${it.dia}` : "";
+        const ll = it.llindar ? `Llindar: ${it.llindar}` : "";
+        const ini = it.inici ? `Inici: ${it.inici}` : "";
+        const fi = it.fi ? `Fi: ${it.fi}` : "";
+
+        card.innerHTML = `
+          <div class="mv-alert-item__head">
+            <div>
+              <div class="mv-alert-item__title">${t}</div>
+              <div class="mv-alert-item__meta">Perill: ${perillText(it.perill)}${peri}</div>
+            </div>
+            <div class="mv-alert-item__meta">${it.comarca || ""}</div>
+          </div>
+          <div class="mv-alert-item__txt">${(it.comentari || "").trim() || "—"}</div>
+          <div class="mv-alert-item__meta" style="margin-top:10px;">
+            ${[dia, ll, ini, fi].filter(Boolean).join(" · ")}
+          </div>
+        `;
+        listEl.appendChild(card);
+      }
+    }
+
+  } catch (e) {
+    if (metaEl) metaEl.textContent = `Error carregant avisos: ${e?.message || e}`;
   }
 }
 
-(function main(){
+export function initAvisos(){
   if ($("year")) $("year").textContent = String(new Date().getFullYear());
-  loadAlerts().catch(() => {
-    const metaEl = $("mvAlertsMeta");
-    if (metaEl) metaEl.textContent = "Error carregant avisos.";
-  });
-})();
+
+  // Carrega inicial
+  loadAlerts();
+
+  // Botó refresh (si existeix)
+  const btn = $("btnAlertsRefresh");
+  if (btn) {
+    btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      try { await loadAlerts({ forceRefresh: true }); }
+      finally { btn.disabled = false; }
+    });
+  }
+}
