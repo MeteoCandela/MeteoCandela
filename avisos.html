@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0b1220">
+  <title>Avisos Meteocat · MeteoValls</title>
+  <link rel="stylesheet" href="./style.css?v=2026-02-17-001">
+</head>
+
+<body data-page="avisos">
+  <header class="topbar">
+    <a class="topbar__back" href="./index.html" aria-label="Tornar">←</a>
+    <div class="topbar__title">Avisos Meteocat (Alt Camp)</div>
+  </header>
+
+  <main class="grid">
+    <section class="card span2">
+      <h2>Situació</h2>
+      <p id="mvAlertsMeta" class="muted-line">Carregant…</p>
+      <div id="mvAlertsSummary" class="alert-xl" style="display:none;">
+        <div class="alert-xl__left">
+          <div class="alert-xl__title" id="mvAlertsTitle">—</div>
+          <div class="alert-xl__msg" id="mvAlertsMsg">—</div>
+          <div class="alert-xl__meta" id="mvAlertsWhen">—</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card span2">
+      <h2>Detall d’avisos</h2>
+      <div id="mvAlertsList" class="mv-alerts-list">
+        <!-- items -->
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>© <span id="year"></span> MeteoValls</span>
+  </footer>
+
+  <script type="module" src="./pages/avisos.js?v=2026-02-17-001"></script>
+</body>
+</html>
