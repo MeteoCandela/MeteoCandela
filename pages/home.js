@@ -284,6 +284,14 @@ export function initHome() {
       const initialActual = state.current || (hist.length ? hist[hist.length - 1] : null);
 
       renderAll();
+
+// Badge Meteocat (NO pot trencar la home)
+try {
+  const b = await import(`../lib/meteocat_badge.js?v=${Date.now()}`);
+  b?.initMeteocatBadge?.();
+} catch (e) {
+  console.warn("Badge Meteocat no disponible", e);
+}
       
       // Avisos XL (NO pot trencar la home)
 try {
