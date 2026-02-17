@@ -54,9 +54,9 @@ function resetUI(){
   const summaryBox = $("mvAlertsSummary");
   const listEl = $("mvAlertsList");
   const emptyBox = $("mvAlertsEmpty");
-  const hintEl = $("mvAlertsHint");
 
-  if (metaEl) metaEl.textContent = "Carregant…";
+  // Sense “Carregant…” permanent: només al header
+  if (metaEl) metaEl.textContent = "—";
   if (listEl) listEl.innerHTML = "";
 
   if (summaryBox) {
@@ -64,10 +64,6 @@ function resetUI(){
     summaryBox.classList.remove("is-warn","is-danger");
   }
   if (emptyBox) emptyBox.style.display = "none";
-  if (hintEl) {
-    hintEl.style.display = "none";
-    hintEl.textContent = "";
-  }
 
   setHeader({ updated_ts: null, message: "Carregant avisos…" });
 }
@@ -77,7 +73,9 @@ function renderNoAlerts(j){
   const emptyBox = $("mvAlertsEmpty");
   const listEl = $("mvAlertsList");
 
-  const count = Array.isArray(j?.items) ? j.items.length : 0;
+  const items = Array.isArray(j?.items) ? j.items : [];
+  const count = items.length;
+
   if (metaEl) {
     metaEl.textContent =
       `Actualitzat: ${fmtTs(j?.updated_ts)} · Perill màxim: ${perillText(j?.max_perill)} · Episodis: ${count}`;
@@ -148,23 +146,12 @@ function renderAlerts(j){
   }
 }
 
-async function loadAlerts({ forceRefresh = false } = {}){
+async function loadAlerts(){
   const { API_BASE } = getApi();
 
   resetUI();
 
   try {
-    // Refresh manual real
-    if (forceRefresh) {
-      const hintEl = $("mvAlertsHint");
-      if (hintEl) {
-        hintEl.textContent = "Actualitzant…";
-        hintEl.style.display = "block";
-      }
-      await fetchJson(`${API_BASE}/meteocat/alerts/refresh`, { method: "POST" });
-      if (hintEl) hintEl.textContent = "Actualització demanada (cache renovada).";
-    }
-
     const j = await fetchJson(`${API_BASE}/meteocat/alerts`, { cache: "no-store" });
 
     // capçalera
@@ -176,15 +163,15 @@ async function loadAlerts({ forceRefresh = false } = {}){
       return;
     }
 
-    const count = Array.isArray(j.items) ? j.items.length : 0;
-    const hasAlerts = (j.has_alerts === true) && count > 0;
+    const items = Array.isArray(j.items) ? j.items : [];
+    const hasAlerts = (j.has_alerts === true) && items.length > 0;
 
     if (!hasAlerts) {
-      renderNoAlerts(j);
+      renderNoAlerts({ ...j, items });
       return;
     }
 
-    renderAlerts(j);
+    renderAlerts({ ...j, items });
 
   } catch (e) {
     setHeader({ updated_ts: null, message: "Error carregant avisos" });
@@ -195,7 +182,5 @@ async function loadAlerts({ forceRefresh = false } = {}){
 
 export function initAvisos(){
   if ($("year")) $("year").textContent = String(new Date().getFullYear());
-
-  // inicial
   loadAlerts();
 }
