@@ -18,6 +18,8 @@ const REFRESH_CURRENT_MS = 60 * 1000;       // 1 min
 const REFRESH_HISTORY_MS = 60 * 60 * 1000;  // 60 min
 const REFRESH_ON_VISIBLE = true;
 
+const FS_CANVAS_IDS = ["chartTemp", "chartHum", "chartWind", "chartRain"];
+
 function setSourceLine(txt) {
   const el = $("sourceLine");
   if (el) el.textContent = txt;
@@ -208,7 +210,7 @@ export function initHome() {
     hb: null,
     selectedDay: null,
     timers: { cur: null, hist: null },
-    fsInited: false,
+    // ❌ fsInited eliminat: ara reinjectem (safe) després de cada render de gràfiques
   };
 
   function pickActualRow() {
@@ -239,12 +241,11 @@ export function initHome() {
     const todayKey = dayKeyFromTs(Date.now());
     const currentMaybe = (state.selectedDay === todayKey) ? state.current : null;
 
+    // 1) Re-crea charts (això destrueix i crea canvases/charts)
     buildChartsForDay(state.historyRows || [], state.selectedDay, currentMaybe);
 
-    if (!state.fsInited) {
-      initChartFullscreen(["chartTemp", "chartHum", "chartWind", "chartRain"]);
-      state.fsInited = true;
-    }
+    // 2) ✅ Re-injecta el botó ⛶ sempre (idempotent: evita duplicats)
+    initChartFullscreen(FS_CANVAS_IDS);
   }
 
   async function refreshCurrent() {
@@ -285,22 +286,22 @@ export function initHome() {
 
       renderAll();
 
-// Badge Meteocat (NO pot trencar la home)
-try {
-  const b = await import(`../lib/meteocat_badge.js?v=${Date.now()}`);
-  b?.initMeteocatBadge?.();
-} catch (e) {
-  console.warn("Badge Meteocat no disponible", e);
-}
-      
+      // Badge Meteocat (NO pot trencar la home)
+      try {
+        const b = await import(`../lib/meteocat_badge.js?v=${Date.now()}`);
+        b?.initMeteocatBadge?.();
+      } catch (e) {
+        console.warn("Badge Meteocat no disponible", e);
+      }
+
       // Avisos XL (NO pot trencar la home)
-try {
-  const m = await import(`../lib/alerts_ui.js?v=${Date.now()}`);
-  m?.initAlertsXL?.({ pollMs: 60000 });
-} catch (e) {
-  console.warn("Alerts XL no disponible", e);
-}
-      
+      try {
+        const m = await import(`../lib/alerts_ui.js?v=${Date.now()}`);
+        m?.initAlertsXL?.({ pollMs: 60000 });
+      } catch (e) {
+        console.warn("Alerts XL no disponible", e);
+      }
+
       // 3) Selector de dia
       const dayKeys = buildDayListFromRows(hist, state.current);
       const wanted = getUrlDayParam();
@@ -315,7 +316,7 @@ try {
 
       state.selectedDay = selected || initial;
 
-      // 4) Gràfiques
+      // 4) Gràfiques (+ botó ⛶)
       renderChartsIfNeeded();
 
       // 5) Timers
@@ -340,4 +341,4 @@ try {
   }
 
   main();
-}
+      }
