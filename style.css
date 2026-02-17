@@ -1646,3 +1646,47 @@ html.fs-lock, body.fs-lock {
   background:#ff3b3b;
   color:#fff;
 }
+//AVISOS.HTML
+.topbar{
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding: 12px 14px;
+  background: rgba(11,18,32,.92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.topbar__back{
+  width: 40px; height: 40px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius: 12px;
+  text-decoration:none;
+  color:#fff;
+  background: rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.10);
+}
+.topbar__title{ font-weight:700; }
+
+.mv-alerts-list{ display:flex; flex-direction:column; gap:12px; }
+
+.mv-alert-item{
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+}
+.mv-alert-item.is-warn{ border-left: 8px solid rgba(255,196,0,.95); }
+.mv-alert-item.is-danger{ border-left: 8px solid rgba(255,70,70,.95); }
+
+.mv-alert-item__head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+}
+.mv-alert-item__title{ font-weight:700; }
+.mv-alert-item__meta{ opacity:.85; font-size:.92rem; margin-top:6px; }
+.mv-alert-item__txt{ margin-top:10px; opacity:.95; line-height:1.35; }
