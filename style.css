@@ -1690,3 +1690,76 @@ html.fs-lock, body.fs-lock {
 .mv-alert-item__title{ font-weight:700; }
 .mv-alert-item__meta{ opacity:.85; font-size:.92rem; margin-top:6px; }
 .mv-alert-item__txt{ margin-top:10px; opacity:.95; line-height:1.35; }
+/* =========================
+   Meteocat floating icon
+   ========================= */
+
+.mv-icon {
+  position: fixed;
+  right: 14px;
+  bottom: 120px;
+  z-index: 40;
+
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #2b3448;
+  color: white;
+  font-size: 26px;
+
+  text-decoration: none;
+
+  box-shadow: 0 6px 20px rgba(0,0,0,.35);
+}
+
+/* comptador petit */
+.mv-icon__count {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: #ff3b30;
+  color: white;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+
+/* ocult */
+.mv-hidden {
+  display: none !important;
+}
+
+/* =====================
+   ALERTA ACTIVA
+   ===================== */
+
+.mv-icon.is-danger {
+  background: #b91c1c;
+  animation: mvPulse 1.2s infinite;
+}
+
+/* animació */
+@keyframes mvPulse {
+  0% {
+    box-shadow:
+      0 0 0 0 rgba(255,0,0,.6),
+      0 6px 20px rgba(0,0,0,.35);
+  }
+
+  70% {
+    box-shadow:
+      0 0 0 14px rgba(255,0,0,0),
+      0 6px 20px rgba(0,0,0,.35);
+  }
+
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(255,0,0,0),
+      0 6px 20px rgba(0,0,0,.35);
+  }
+}
