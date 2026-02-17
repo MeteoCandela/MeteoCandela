@@ -1577,41 +1577,72 @@ html.fs-lock, body.fs-lock {
 .alert-xl.cat-temp .alert-xl__title::before { content: "🌡️ "; }
 
 //METEOCAT FAB
-.mv-fab.mv-hidden { display:none !important; }
+.mv-hidden { display:none !important; }
 
-.mv-fab{
+.mv-icon{
   position: fixed;
-  right: 14px;
-  bottom: 86px; /* deixa marge pel nav del mòbil i pel teu install FAB si surt */
+  right: 16px;
+  bottom: 90px;
   z-index: 9999;
 
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
 
-  padding: 12px 14px;
-  border-radius: 999px;
-  text-decoration: none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 
-  border: 1px solid rgba(255,255,255,.10);
+  font-size: 22px;
+  text-decoration:none;
+  color:#fff;
+
   background: rgba(20,28,45,.92);
-  color: #fff;
+  border:1px solid rgba(255,255,255,.12);
   backdrop-filter: blur(10px);
 
   box-shadow: 0 10px 24px rgba(0,0,0,.35);
+  transition: transform .15s ease;
 }
 
-.mv-fab__dot{
-  width:10px; height:10px; border-radius:999px;
-  background: rgba(255,255,255,.35);
+.mv-icon:hover{
+  transform: scale(1.05);
 }
 
-.mv-fab.is-warn{
-  border-left: 10px solid rgba(255,196,0,.9);
-}
-.mv-fab.is-danger{
-  border-left: 10px solid rgba(255,70,70,.95);
+/* nivell perill */
+.mv-icon.is-warn{
+  border:2px solid rgba(255,196,0,.95);
 }
 
-.mv-fab.is-warn .mv-fab__dot{ background: rgba(255,196,0,.95); }
-.mv-fab.is-danger .mv-fab__dot{ background: rgba(255,70,70,.95); }
+.mv-icon.is-danger{
+  border:2px solid rgba(255,70,70,.95);
+  animation: pulseDanger 1.6s infinite;
+}
+
+@keyframes pulseDanger {
+  0%   { box-shadow: 0 0 0 0 rgba(255,70,70,.6); }
+  70%  { box-shadow: 0 0 0 12px rgba(255,70,70,0); }
+  100% { box-shadow: 0 0 0 0 rgba(255,70,70,0); }
+}
+
+/* badge número */
+.mv-icon__count{
+  position:absolute;
+  top:-4px;
+  right:-4px;
+
+  min-width:20px;
+  height:20px;
+  padding:0 6px;
+
+  border-radius:999px;
+  font-size:12px;
+  font-weight:600;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  background:#ff3b3b;
+  color:#fff;
+}
