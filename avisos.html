@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#0b1220">
   <title>Avisos Meteocat · MeteoValls</title>
-  <link rel="stylesheet" href="./style.css?v=2026-02-17-001">
+
+  <link rel="stylesheet" href="./style.css?v=2026-02-17-003">
 </head>
 
 <body data-page="avisos">
@@ -15,29 +16,42 @@
   </header>
 
   <main class="grid">
+    <!-- SITUACIÓ -->
     <section class="card span2">
-      <h2>Situació</h2>
+      <div class="card-head">
+        <h2>Situació</h2>
+        <button id="btnAlertsRefresh" class="btn" type="button">🔄 Actualitza</button>
+      </div>
+
       <p id="mvAlertsMeta" class="muted-line">Carregant…</p>
-      <div id="mvAlertsSummary" class="alert-xl" style="display:none;">
+
+      <!-- Hero/summary (només si hi ha avisos) -->
+      <div id="mvAlertsSummary" class="alert-xl" style="display:none;" role="status" aria-live="polite">
         <div class="alert-xl__left">
           <div class="alert-xl__title" id="mvAlertsTitle">—</div>
           <div class="alert-xl__msg" id="mvAlertsMsg">—</div>
           <div class="alert-xl__meta" id="mvAlertsWhen">—</div>
         </div>
       </div>
-    </section>
 
-    <section class="card span2">
-      <h2>Detall d’avisos</h2>
-      <div id="mvAlertsList" class="mv-alerts-list">
-        <!-- items -->
+      <!-- Estat “sense avisos” -->
+      <div id="mvAlertsEmpty" class="notice" style="display:none;">
+        <div class="notice__title">Sense avisos vigents</div>
+        <div class="notice__text">Ara mateix Meteocat no indica cap avís vigent per a l’Alt Camp.</div>
       </div>
     </section>
 
-        <!-- ENLLAÇ DE TORNADA (es manté) -->
+    <!-- DETALL -->
+    <section class="card span2">
+      <h2>Detall d’avisos</h2>
+      <div id="mvAlertsList" class="mv-alerts-list"></div>
+      <p id="mvAlertsHint" class="muted-line" style="display:none; margin-top:10px;"></p>
+    </section>
+
+    <!-- TORNADA (ja ho tens) -->
     <section class="card span2" style="text-align:center">
       <p>
-        <a href="/" class="back-link" aria-label="Tornar a la pàgina principal">
+        <a href="./index.html" class="back-link" aria-label="Tornar a la pàgina principal">
           ← Tornar a MeteoValls
         </a>
       </p>
@@ -48,6 +62,7 @@
     <span>© <span id="year"></span> MeteoValls</span>
   </footer>
 
-  <script type="module" src="./pages/avisos.js?v=2026-02-17-001"></script>
+  <!-- IMPORTANT: carrega l’entrypoint únic -->
+  <script type="module" src="./app.js?v=2026-02-17-003"></script>
 </body>
 </html>
