@@ -1,5 +1,5 @@
 // app.js — entrypoint únic (ESM)
-export const V = "2026-02-17-002";
+export const V = "2026-02-17-003";
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
