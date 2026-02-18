@@ -1767,3 +1767,19 @@ html.fs-lock, body.fs-lock {
 #meteocatIcon {
   visibility: hidden;
 }
+.mv-chips { display:flex; flex-wrap:wrap; gap:8px; }
+.mv-chip {
+  display:inline-flex;
+  padding:4px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.06);
+  font-size: 12px;
+}
+
+.mv-alert-day { margin: 10px 0 6px; }
+.mv-alert-day__title {
+  font-weight: 700;
+  opacity: .9;
+  margin: 6px 0;
+}
