@@ -4,7 +4,11 @@ import { getApi } from "../lib/env.js";
 function $(id){ return document.getElementById(id); }
 
 // =========================
-// Estils / textos
+// Estils / textos (Meteocat 0-6)
+// 0: sense perill
+// 1-2: moderat
+// 3-4: alt
+// 5-6: molt alt
 // =========================
 
 function levelToClass(perill){
@@ -53,17 +57,15 @@ function fmtIsoLocal(iso){
 }
 
 function ymdFromDia(dia){
-  // Meteocat sovint ve: "2026-02-19T00:00Z" → agafem YYYY-MM-DD
   const s = String(dia || "").trim();
   if (!s) return "";
-  return s.slice(0, 10);
+  return s.slice(0, 10); // "YYYY-MM-DD"
 }
 
 function prettyDia(dia){
   const ymd = ymdFromDia(dia);
   if (!ymd) return "—";
   try {
-    // data “naïve” a midnight local
     const d = new Date(`${ymd}T00:00:00`);
     return new Intl.DateTimeFormat("ca-ES", {
       timeZone: "Europe/Madrid",
@@ -77,13 +79,34 @@ function prettyDia(dia){
   }
 }
 
+function safeText(x, fallback="—"){
+  const s = String(x ?? "").trim();
+  return s ? s : fallback;
+}
+
+// =========================
+// Períodes (franges)
+// =========================
+
 function normPeriode(p){
   return String(p || "").trim().replaceAll(" ", "");
 }
 
-function safeText(x, fallback="—"){
-  const s = String(x ?? "").trim();
-  return s ? s : fallback;
+function fmtPeriodeChip(p){
+  const s = normPeriode(p);
+  if (!s) return "";
+  // "06-12" -> "06-12h" (si ja ve amb h, la respectem)
+  return s.endsWith("h") ? s : `${s}h`;
+}
+
+// Ordre natural de franges (06-12, 12-18, 18-00, 00-06, etc.)
+function periodeSortKey(p){
+  const s = normPeriode(p);
+  // Agafa el primer número (inici) per ordenar
+  // Ex: "18-00" -> 18 ; "00-06" -> 0
+  const m = s.match(/^(\d{1,2})/);
+  const h = m ? Number(m[1]) : 99;
+  return Number.isFinite(h) ? h : 99;
 }
 
 // =========================
@@ -136,7 +159,7 @@ function resetUI(){
 
   if (summaryBox) {
     summaryBox.style.display = "none";
-    summaryBox.classList.remove("is-warn","is-danger");
+    summaryBox.classList.remove("is-warn","is-high","is-danger");
   }
   if (emptyBox) emptyBox.style.display = "none";
   if (hintEl) {
@@ -174,50 +197,58 @@ function renderNoAlerts(j){
 }
 
 // =========================
-// Agrupació (per evitar duplicats per franges)
+// Agrupació (1 targeta per avís + múltiples franges)
+// IMPORTANT: NO agrupem per "perill" si pot variar per franges.
+// Però Meteocat, en el teu JSON, ja et dona mateix perill a les franges.
+// Si un dia varia, volem que surti separat.
 // =========================
 
 function groupItems(items){
   const map = new Map();
 
   for (const it of items){
-    const g = {
-      meteor: safeText(it?.meteor, "Meteor"),
-      tipus:  safeText(it?.tipus, "Avís"),
-      comarca: safeText(it?.comarca, ""),
-      perill: Number(it?.perill ?? 0),
-      dia: String(it?.dia ?? ""),
-      llindar: safeText(it?.llindar, ""),
-      inici: String(it?.inici ?? ""),
-      fi: String(it?.fi ?? ""),
-      coment: safeText(it?.comentari, "—"),
-      periodes: [],
-    };
+    const meteor  = safeText(it?.meteor, "Meteor");
+    const tipus   = safeText(it?.tipus, "Avís");
+    const comarca = safeText(it?.comarca, "");
+    const diaYmd  = ymdFromDia(it?.dia);
+    const llindar = safeText(it?.llindar, "");
+    const coment  = safeText(it?.comentari, "—");
+    const perill  = Number(it?.perill ?? 0);
 
-    // Clau d'agrupació: mateix avís però múltiples franges
+    const inici = String(it?.inici ?? "");
+    const fi    = String(it?.fi ?? "");
+
+    // Clau sense període (per agrupar franges del mateix episodi)
+    // ⚠️ Incloem "perill": si canvia la intensitat per franja, es veurà separat.
     const key = [
-      g.meteor,
-      g.tipus,
-      g.comarca,
-      ymdFromDia(g.dia),
-      g.perill,
-      g.llindar,
-      g.inici,
-      g.fi,
-      g.coment
+      meteor, tipus, comarca, diaYmd, perill, llindar, inici, fi, coment
     ].join("|");
 
-    if (!map.has(key)) map.set(key, g);
+    if (!map.has(key)){
+      map.set(key, {
+        meteor, tipus, comarca,
+        dia: String(it?.dia ?? ""),
+        perill,
+        llindar,
+        inici,
+        fi,
+        coment,
+        periodes: []
+      });
+    }
 
     const per = normPeriode(it?.periode);
-    if (per) {
+    if (per){
       const agg = map.get(key);
       if (!agg.periodes.includes(per)) agg.periodes.push(per);
     }
   }
 
   const out = Array.from(map.values());
-  for (const g of out) g.periodes.sort();
+
+  for (const g of out){
+    g.periodes.sort((a,b) => periodeSortKey(a) - periodeSortKey(b) || String(a).localeCompare(String(b)));
+  }
 
   // Ordre: dia (asc) + perill (desc) + meteor (asc)
   out.sort((a,b) => {
@@ -249,18 +280,20 @@ function renderAlerts(j){
   if (emptyBox) emptyBox.style.display = "none";
 
   const itemsRaw = Array.isArray(j?.items) ? j.items : [];
-  const grouped = groupItems(itemsRaw);
+  const grouped  = groupItems(itemsRaw);
 
   if (metaEl) {
     metaEl.textContent =
       `Actualitzat: ${fmtTsMillis(j?.updated_ts)} · Perill màxim: ${perillText(j?.max_perill)} · Episodis: ${grouped.length}`;
   }
 
-  // Resum
+  // Resum XL
   if (summaryBox && titleEl && msgEl && whenEl) {
     summaryBox.style.display = "block";
+
     const cls = levelToClass(j?.max_perill);
-    summaryBox.classList.toggle("is-warn", cls === "is-warn");
+    summaryBox.classList.toggle("is-warn",   cls === "is-warn");
+    summaryBox.classList.toggle("is-high",   cls === "is-high");
     summaryBox.classList.toggle("is-danger", cls === "is-danger");
 
     titleEl.textContent = `Avisos vigents · Perill ${perillText(j?.max_perill)}`;
@@ -290,25 +323,27 @@ function renderAlerts(j){
     card.className = `mv-alert-item ${c}`;
 
     const title = `${g.meteor} · ${g.tipus}`;
-    const periodes = (g.periodes || []).map(p => `<span class="mv-chip">${p}</span>`).join("");
 
-    const extraBits = [];
-    if (g.llindar) extraBits.push(`Llindar: ${g.llindar}`);
-    if (g.inici)   extraBits.push(`Inici: ${fmtIsoLocal(g.inici)}`);
-    if (g.fi)      extraBits.push(`Fi: ${fmtIsoLocal(g.fi)}`);
+    // Xips de franges amb "h"
+    const periodesHtml = (g.periodes || [])
+      .map(p => `<span class="mv-chip">${fmtPeriodeChip(p)}</span>`)
+      .join("");
 
-    const extra = extraBits.join(" · ");
+    // EXTRA: només Llindar (Inici/Fi confon amb franges → no el mostrem)
+    const extra = g.llindar ? `Llindar: ${g.llindar}` : "";
 
     card.innerHTML = `
       <div class="mv-alert-item__head">
         <div>
           <div class="mv-alert-item__title">${title}</div>
           <div class="mv-alert-item__meta">Perill: ${perillText(g.perill)}</div>
-          ${periodes ? `<div class="mv-chips" style="margin-top:8px;">${periodes}</div>` : ""}
+          ${periodesHtml ? `<div class="mv-chips" style="margin-top:10px;">${periodesHtml}</div>` : ""}
         </div>
         <div class="mv-alert-item__meta">${g.comarca || ""}</div>
       </div>
+
       <div class="mv-alert-item__txt">${g.coment || "—"}</div>
+
       ${extra ? `<div class="mv-alert-item__meta" style="margin-top:10px;">${extra}</div>` : ""}
     `;
 
