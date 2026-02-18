@@ -1801,3 +1801,12 @@ html.fs-lock, body.fs-lock {
 #meteocatIcon.is-warn   { box-shadow: 0 0 0 2px rgba(255, 193, 7, .25); }
 #meteocatIcon.is-high   { box-shadow: 0 0 0 2px rgba(255, 152, 0, .25); }
 #meteocatIcon.is-danger { box-shadow: 0 0 0 2px rgba(244, 67, 54, .25); }
+/* Separació entre meta (“Actualitzat…”) i el resum XL */
+#mvAlertsSummary{
+  margin-top: 12px;
+}
+
+/* Opcional: si vols que respiri encara més */
+#mvAlertsMeta{
+  margin-bottom: 8px;
+}
