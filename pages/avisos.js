@@ -10,16 +10,17 @@ function $(id){ return document.getElementById(id); }
 function levelToClass(perill){
   const n = Number(perill);
   if (!Number.isFinite(n) || n <= 0) return "";
-  if (n >= 3) return "is-danger"; // 3-6
-  return "is-warn";              // 1-2
+  if (n >= 5) return "is-danger"; // 5-6
+  if (n >= 3) return "is-high";   // 3-4
+  return "is-warn";               // 1-2
 }
 
 function perillText(p){
   const n = Number(p);
-  if (!Number.isFinite(n) || n <= 0) return "—"; // o "Sense perill"
+  if (!Number.isFinite(n) || n <= 0) return "Sense perill";
   if (n >= 5) return "Molt alt";
   if (n >= 3) return "Alt";
-  return "Moderat"; // 1-2
+  return "Moderat";
 }
 
 // =========================
