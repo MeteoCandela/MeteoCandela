@@ -354,4 +354,3 @@ export function initAvisos(){
   if (y) y.textContent = String(new Date().getFullYear());
   loadAlerts();
 }
-```0
