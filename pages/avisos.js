@@ -8,18 +8,18 @@ function $(id){ return document.getElementById(id); }
 // =========================
 
 function levelToClass(perill){
-  const p = Number(perill);
-  if (p >= 2) return "is-danger";
-  if (p >= 1) return "is-warn";
-  return "";
+  const n = Number(perill);
+  if (!Number.isFinite(n) || n <= 0) return "";
+  if (n >= 3) return "is-danger"; // 3-6
+  return "is-warn";              // 1-2
 }
 
 function perillText(p){
   const n = Number(p);
-  if (n >= 3) return "Molt alt";
-  if (n >= 2) return "Alt";
-  if (n >= 1) return "Moderat";
-  return "—";
+  if (!Number.isFinite(n) || n <= 0) return "—"; // o "Sense perill"
+  if (n >= 5) return "Molt alt";
+  if (n >= 3) return "Alt";
+  return "Moderat"; // 1-2
 }
 
 // =========================
