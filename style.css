@@ -1719,3 +1719,29 @@ html.fs-lock, body.fs-lock { overflow: hidden; }
   opacity: .75;
   line-height: 1.2;
 }
+/* Barra esquerra base */
+.mv-alert-item::before{
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  border-radius: 12px 0 0 12px;
+  background: #666; /* fallback */
+}
+
+/* MODERAT (1–2) */
+.mv-alert-item.is-warn::before{
+  background: #f4b400;
+}
+
+/* ALT (3–4) */
+.mv-alert-item.is-high::before{
+  background: #ff7a18;
+}
+
+/* MOLT ALT (5–6) */
+.mv-alert-item.is-danger::before{
+  background: #ff3b30;
+}
