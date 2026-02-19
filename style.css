@@ -1714,8 +1714,8 @@ html.fs-lock, body.fs-lock { overflow: hidden; }
 .mv-chips{ margin-top: 8px; }
 .mv-threshold{
   margin-top: 10px;
-  padding-left: 6px;     /* mateixa columna que Perill + hores */
-  font-size: 12.5px;
+  padding-left: 8px;     /* mateixa columna que Perill + hores */
+  font-size: 14px;
   opacity: .75;
   line-height: 1.2;
 }
