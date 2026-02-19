@@ -1701,3 +1701,14 @@ html.fs-lock, body.fs-lock { overflow: hidden; }
 .mv-alert-item__txt:last-child{
   margin-bottom: 2px;
 }
+
+.mv-alert-item__head,
+.mv-alert-item__meta,
+.mv-chips{
+  padding-left: 6px !important;
+}
+
+.mv-alert-item__txt{
+  padding-left: 14px !important;
+}
+.mv-chips{ margin-top:6px !important; }
