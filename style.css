@@ -1045,7 +1045,7 @@ h2{
 }
 
 #cardCurrent .kpi-val{
-  font-size: 34px; /* conservador (abans hi havia 38 i després 26 !important) */
+  font-size: 28px; /* conservador (abans hi havia 38 i després 26 !important) */
   line-height: 1.05;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
@@ -1136,7 +1136,7 @@ h2{
 /* mòbil estret: microajustos (si els uses) */
 @media (max-width: 420px){
   #cardCurrent .kpi{ padding: 12px 14px; }
-  #cardCurrent .kpi-val{ font-size: 33px; }
+  #cardCurrent .kpi-val{ font-size: 28px; }
   #cardCurrent .kpi-lab{ font-size: 12.5px; }
 
   #cardCurrent .chip{ padding: 11px 12px; }
