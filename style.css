@@ -1783,21 +1783,6 @@ html.fs-lock, body.fs-lock {
   opacity: .9;
   margin: 6px 0;
 }
-/* 3 nivells: warn (1-2), high (3-4), danger (5-6) */
-.is-warn {
-  border-color: rgba(255, 193, 7, .55);
-  background: rgba(255, 193, 7, .10);
-}
-
-.is-high {
-  border-color: rgba(255, 152, 0, .60);
-  background: rgba(255, 152, 0, .12);
-}
-
-.is-danger {
-  border-color: rgba(244, 67, 54, .65);
-  background: rgba(244, 67, 54, .12);
-}
 #meteocatIcon.is-warn   { box-shadow: 0 0 0 2px rgba(255, 193, 7, .25); }
 #meteocatIcon.is-high   { box-shadow: 0 0 0 2px rgba(255, 152, 0, .25); }
 #meteocatIcon.is-danger { box-shadow: 0 0 0 2px rgba(244, 67, 54, .25); }
@@ -1818,4 +1803,55 @@ html.fs-lock, body.fs-lock {
   .alert-xl + .push-row {
     margin-top: 16px;
   }
+}
+.mv-icon.is-warn{
+  border:2px solid rgba(255,196,0,.95);
+  animation: mvPulseWarn 1.3s infinite;
+}
+
+.mv-icon.is-danger{
+  border:2px solid rgba(255,70,70,.95);
+  animation: mvPulseDanger 1.1s infinite;
+}
+/* =========================
+   TARGETES D'AVISOS (uniformes)
+   Un sol patró + franja esquerra per risc
+   ========================= */
+
+.mv-alert-item{
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+
+  /* base comú */
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+}
+
+/* franja esquerra */
+.mv-alert-item::before{
+  content:"";
+  position:absolute;
+  left:0; top:0; bottom:0;
+  width: 10px;
+  background: rgba(255,255,255,.18);
+}
+
+/* colors franja per nivell */
+.mv-alert-item.is-warn::before   { background: rgba(255,193,7,.95); }
+.mv-alert-item.is-high::before   { background: rgba(255,152,0,.95); }
+.mv-alert-item.is-danger::before { background: rgba(244,67,54,.95); }
+
+/* contorn subtil per nivell (sense “tintar” el fons) */
+.mv-alert-item.is-warn   { border-color: rgba(255,193,7,.35); }
+.mv-alert-item.is-high   { border-color: rgba(255,152,0,.35); }
+.mv-alert-item.is-danger { border-color: rgba(244,67,54,.35); }
+
+/* separació perquè el contingut no enganxi a la franja */
+.mv-alert-item__head,
+.mv-alert-item__txt,
+.mv-alert-item__meta,
+.mv-chips{
+  position: relative;
+  padding-left: 6px;
 }
