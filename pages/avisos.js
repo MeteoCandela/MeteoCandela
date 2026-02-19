@@ -362,7 +362,7 @@ function renderAlerts(j){
 
   <div class="mv-alert-item__txt">${g.coment || "—"}</div>
 
-  ${llindarHtml ? `<div class="mv-alert-item__meta" style="margin-top:12px; opacity:0.85;">${llindarHtml}</div>` : ""}
+  ${llindarHtml ? `<div class="mv-alert-item__meta" style="margin-top:10px; opacity:0.85;">${llindarHtml}</div>` : ""}
 `;
 
     listEl.appendChild(card);
