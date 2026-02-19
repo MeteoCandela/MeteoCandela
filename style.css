@@ -1796,35 +1796,31 @@ html.fs-lock, body.fs-lock { overflow: hidden; }
   opacity: .75;
   line-height: 1.2;
 }
-/* =========================
-   RESUM AVISOS (franja esquerra)
-   ========================= */
+/* ===== Resum avisos (targeta “Avisos vigents…”) ===== */
 
 #mvAlertsSummary{
+  --mv-bar: 10px;                 /* amplada franja */
   position: relative;
-  overflow: hidden;              /* important perquè la franja no sobresurti */
-  padding-left: 14px;            /* espai per la franja */
+  overflow: hidden;
+  border-radius: 16px;
+
+  /* IMPORTANT: el contingut ha de començar DESPRÉS de la franja */
+  padding: 14px 14px 14px calc(14px + var(--mv-bar));
 }
 
-/* Franja per defecte (neutra) */
+/* franja: enganxada al cantó esquerre EXACTE de la targeta */
 #mvAlertsSummary::before{
   content:"";
   position:absolute;
   left:0;
   top:0;
   bottom:0;
-  width:8px;
-  border-radius: 14px 0 0 14px;
+  width: var(--mv-bar);
+  border-radius: 16px 0 0 16px;   /* com la vermella */
   background: rgba(255,255,255,.10);
 }
 
-/* Colors segons intensitat (les teves classes) */
-#mvAlertsSummary.is-warn::before{
-  background: #f59e0b;
-}
-#mvAlertsSummary.is-high::before{
-  background: #f97316;
-}
-#mvAlertsSummary.is-danger::before{
-  background: #ef4444;
-}
+/* colors */
+#mvAlertsSummary.is-warn::before{   background:#f59e0b; }
+#mvAlertsSummary.is-high::before{   background:#f97316; }
+#mvAlertsSummary.is-danger::before{ background:#ef4444; }
