@@ -351,18 +351,19 @@ function renderAlerts(j){
 
     // ✅ Inici/Fi fora (confús amb franges)
     card.innerHTML = `
-      <div class="mv-alert-item__head">
-        <div>
-          <div class="mv-alert-item__title">${title}</div>
-          <div class="mv-alert-item__meta">Perill: ${perillText(g.perill)} ${perillBadge(g.perill)}</div>
-          ${llindarHtml ? `<div class="mv-alert-item__meta" style="margin-top:6px;">${llindarHtml}</div>` : ""}
-          ${periodesHtml ? `<div class="mv-chips" style="margin-top:10px;">${periodesHtml}</div>` : ""}
-        </div>
-        <div class="mv-alert-item__meta">${g.comarca || ""}</div>
-      </div>
+  <div class="mv-alert-item__head">
+    <div>
+      <div class="mv-alert-item__title">${title}</div>
+      <div class="mv-alert-item__meta">Perill: ${perillText(g.perill)} ${perillBadge(g.perill)}</div>
+      ${periodesHtml ? `<div class="mv-chips" style="margin-top:10px;">${periodesHtml}</div>` : ""}
+    </div>
+    <div class="mv-alert-item__meta">${g.comarca || ""}</div>
+  </div>
 
-      <div class="mv-alert-item__txt">${g.coment || "—"}</div>
-    `;
+  <div class="mv-alert-item__txt">${g.coment || "—"}</div>
+
+  ${llindarHtml ? `<div class="mv-alert-item__meta" style="margin-top:12px; opacity:0.85;">${llindarHtml}</div>` : ""}
+`;
 
     listEl.appendChild(card);
   }
