@@ -1810,12 +1810,12 @@ html.fs-lock, body.fs-lock {
 #mvAlertsMeta{
   margin-bottom: 8px;
 }
-/* separa el toggle "Activar avisos" del bloc d'alerta XL */
-.alert-xl { margin-bottom: 12px; }
-
-/* si també tens "mvAlertsEmpty" en comptes de alert-xl */
-.notice { margin-bottom: 12px; }
+/* Espai entre alerta XL i botó Activar avisos */
+.alert-xl + .push-row {
+  margin-top: 14px;
+}
 @media (max-width: 720px) {
-  .alert-xl { margin-bottom: 14px; }
-  .notice   { margin-bottom: 14px; }
+  .alert-xl + .push-row {
+    margin-top: 16px;
+  }
 }
