@@ -1796,37 +1796,25 @@ html.fs-lock, body.fs-lock { overflow: hidden; }
   opacity: .75;
   line-height: 1.2;
 }
-/* =========================
-   RESUM “Avisos vigents” — FRANJA ESQUERRA
-   (això NO és .mv-alert-item)
-   ========================= */
-
-#mvAlertsSummary.alert-xl{
-  position: relative;
-  overflow: hidden;
-  border-radius: 18px;
+/* RESUM avisos: franja a l'extrem esquerre REAL */
+#mvAlertsSummary{
+  /* si ja tens border-radius/overflow, mantén-los */
+  border-left: 0 !important;
+  box-shadow: none !important;
 }
 
-/* franja enganxada al cantó esquerre del RESUM */
-#mvAlertsSummary.alert-xl::before{
-  content:"";
-  position:absolute;
-  left:0;
-  top:0;
-  bottom:0;
-  width: 10px;
-  border-radius: 18px 0 0 18px;
-  background: rgba(255,255,255,.18);
-  z-index: 1;
+/* base (neutre) */
+#mvAlertsSummary{
+  box-shadow: inset 10px 0 0 rgba(255,255,255,.10);
 }
 
-/* el contingut del resum ha d’anar per sobre de la franja */
-#mvAlertsSummary.alert-xl > *{
-  position: relative;
-  z-index: 2;
+/* colors segons nivell */
+#mvAlertsSummary.is-warn{
+  box-shadow: inset 10px 0 0 rgba(255,193,7,.95);
 }
-
-/* colors per nivell (classes que JA poses des del JS) */
-#mvAlertsSummary.alert-xl.is-warn::before   { background: rgba(255,193,7,.95); }
-#mvAlertsSummary.alert-xl.is-high::before   { background: rgba(255,152,0,.95); }
-#mvAlertsSummary.alert-xl.is-danger::before { background: rgba(244,67,54,.95); }
+#mvAlertsSummary.is-high{
+  box-shadow: inset 10px 0 0 rgba(255,152,0,.95);
+}
+#mvAlertsSummary.is-danger{
+  box-shadow: inset 10px 0 0 rgba(244,67,54,.95);
+}
