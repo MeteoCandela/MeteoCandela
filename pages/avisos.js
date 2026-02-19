@@ -307,10 +307,20 @@ function renderAlerts(j){
   if (summaryBox && titleEl && msgEl && whenEl) {
     summaryBox.style.display = "block";
 
-    const cls = levelToClass(j?.max_perill);
-    summaryBox.classList.toggle("is-warn",   cls === "is-warn");
-    summaryBox.classList.toggle("is-high",   cls === "is-high");
-    summaryBox.classList.toggle("is-danger", cls === "is-danger");
+const cls = levelToClass(j?.max_perill);
+
+// 1) al div interior (si també tens estils per alert-xl o similars)
+summaryBox.classList.toggle("is-warn",   cls === "is-warn");
+summaryBox.classList.toggle("is-high",   cls === "is-high");
+summaryBox.classList.toggle("is-danger", cls === "is-danger");
+
+// 2) ✅ al contenidor .card que pinta la franja esquerra
+const card = summaryBox.closest(".card");
+if (card) {
+  card.classList.remove("is-warn","is-high","is-danger");
+  if (cls) card.classList.add(cls);
+}
+
 
     titleEl.textContent = `Avisos vigents · Perill ${perillText(j?.max_perill)} ${perillBadge(j?.max_perill)}`;
     msgEl.textContent = "Consulta el detall a continuació.";
