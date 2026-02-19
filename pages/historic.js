@@ -243,11 +243,9 @@ export function initHistoric() {
       updateFilterInfo(y, m);
 
       if (info) {
-        const count = filtered.length;
-        // Mantinc el teu text (amb mes opcional) perquè és útil
-        const labelM = m ? ` · ${monthNameCA(m)}` : "";
-        info.textContent = `Mostrant ${count} dia/dies · any ${y}${labelM}.`;
-      }
+  const count = filtered.length;
+  info.textContent = `Mostrant ${count} dia/dies.`;
+}
     }
 
     yearSel.addEventListener("change", refresh);
