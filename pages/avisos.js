@@ -355,16 +355,14 @@ function renderAlerts(j){
     <div>
       <div class="mv-alert-item__title">${title}</div>
       <div class="mv-alert-item__meta">Perill: ${perillText(g.perill)} ${perillBadge(g.perill)}</div>
-      ${periodesHtml ? `<div class="mv-chips" style="margin-top:10px;">${periodesHtml}</div>` : ""}
+      ${periodesHtml ? `<div class="mv-chips">${periodesHtml}</div>` : ""}
     </div>
     <div class="mv-alert-item__meta">${g.comarca || ""}</div>
   </div>
 
   <div class="mv-alert-item__txt">${g.coment || "—"}</div>
 
-  ${llindarHtml ? `<div class="mv-threshold">
-  Llindar: ${threshold}
-</div>` : ""}
+  ${llindarNice ? `<div class="mv-threshold">Llindar: ${llindarNice}</div>` : ""}
 `;
 
     listEl.appendChild(card);
