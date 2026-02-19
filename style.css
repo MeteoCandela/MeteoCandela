@@ -1663,3 +1663,70 @@ html.fs-lock, body.fs-lock { overflow: hidden; }
   position: relative;
   padding: 0 12px 12px 18px;
 }
+/* =========================
+   AVISOS — targetes més compactes (Alt Camp a la dreta)
+   Funciona amb l’estructura actual: .mv-alert-item__head { title + area }
+   ========================= */
+
+/* Card més compacta */
+.mv-alert-item{
+  border-radius: 16px;
+}
+
+/* Head: títol a l’esquerra + comarca a la dreta */
+.mv-alert-item__head{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+
+  /* menys aire (abans era massa) */
+  padding: 10px 12px 0 18px; /* 18px per no trepitjar franja */
+}
+
+/* Títol (Vent · Avís) més compacte */
+.mv-alert-item__title{
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+/* El bloc “Alt Camp” (si és dins head) a la dreta */
+.mv-alert-item__head > :last-child{
+  flex: 0 0 auto;
+  white-space: nowrap;
+  opacity: .85;
+  font-size: 13px;
+}
+
+/* Línia “Perill: …” (meta) més a prop del head */
+.mv-alert-item__meta{
+  margin-top: 4px;        /* abans 6+ */
+  line-height: 1.2;
+  padding: 0 12px 0 18px; /* coherent amb head */
+}
+
+/* Xips d’hores: alineats esquerra i amb menys espai */
+.mv-chips{
+  display: flex;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 8px 12px 8px 18px;  /* compacte */
+}
+
+.mv-chip{
+  padding: 3px 9px;
+  font-size: 12px;
+  line-height: 1.1;
+}
+
+/* Text principal: menys separació i menys alçada de línia */
+.mv-alert-item__txt{
+  margin-top: 8px;         /* abans 10 */
+  line-height: 1.28;       /* compacte */
+  padding: 0 12px 12px 18px;
+}
+
+/* Franja esquerra una mica més fina */
+.mv-alert-item::before{
+  width: 8px; /* abans 10px */
+}
