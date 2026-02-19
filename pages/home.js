@@ -210,6 +210,335 @@ export function initHome() {
     hb: null,
     selectedDay: null,
     timers: { cur: null, hist: null },
+    chartsReady: false,
+    io: null,
+  };
+
+  function pickActualRow() {
+    const hist = state.historyRows || [];
+    if (state.current) return { row: state.current, tag: "dades en temps real" };
+    if (hist.length) return { row: hist[hist.length - 1], tag: "últim registre històric" };
+    return { row: null, tag: "sense dades carregades" };
+  }
+
+  function renderAll() {
+    const { row, tag } = pickActualRow();
+
+    if (!row) {
+      setSourceLine("Font: sense dades carregades");
+      if ($("statusLine")) $("statusLine").textContent = "No es pot mostrar informació: falta history/current.";
+      return null;
+    }
+
+    setSourceLine(`Font: ${tag}`);
+    renderCurrent(row, state.historyRows || []);
+    renderStatus(row.ts, state.hb);
+    return row;
+  }
+
+  function renderChartsIfNeeded() {
+    if (!state.selectedDay) return;
+    if (!state.chartsReady) return;
+
+    const todayKey = dayKeyFromTs(Date.now());
+    const currentMaybe = (state.selectedDay === todayKey) ? state.current : null;
+
+    buildChartsForDay(state.historyRows || [], state.selectedDay, currentMaybe);
+
+    // botó ⛶ (idempotent: evita duplicats)
+    initChartFullscreen(FS_CANVAS_IDS);
+  }
+
+  function setupLazyChartsObserver() {
+    if (state.chartsReady) return;
+
+    const target =
+      document.getElementById("chartTemp") ||
+      document.querySelector(".chart-box") ||
+      document.getElementById("daySelect");
+
+    if (!target) {
+      // fallback: si no trobem target, activem directe
+      state.chartsReady = true;
+      renderChartsIfNeeded();
+      return;
+    }
+
+    if (!("IntersectionObserver" in window)) {
+      state.chartsReady = true;
+      renderChartsIfNeeded();
+      return;
+    }
+
+    if (state.io) return;
+
+    state.io = new IntersectionObserver((entries) => {
+      const e = entries && entries[0];
+      if (!e || !e.isIntersecting) return;
+
+      state.chartsReady = true;
+
+      try { state.io.disconnect(); } catch {}
+      state.io = null;
+
+      renderChartsIfNeeded();
+    }, {
+      root: null,
+      rootMargin: "250px",
+      threshold: 0.01,
+    });
+
+    state.io.observe(target);
+  }
+
+  async function refreshCurrent() {
+    await loadCurrentAndHeartbeat(CURRENT_URL, HEARTBEAT_URL, state);
+    renderAll();
+    renderChartsIfNeeded();
+  }
+
+  async function refreshHistory() {
+    await loadHistoryOnce(HISTORY_URL, state);
+
+    const dayKeys = buildDayListFromRows(state.historyRows, state.current);
+    const keepWanted = state.selectedDay || getUrlDayParam() || dayKeyFromTs(Date.now());
+    const keep = dayKeys.includes(keepWanted) ? keepWanted : (dayKeys[dayKeys.length - 1] || keepWanted);
+
+    const sel = setupDaySelector(dayKeys, keep, (k) => {
+      state.selectedDay = k;
+
+      // Si l'usuari toca el selector, activem les gràfiques encara que estigui amunt
+      if (!state.chartsReady) state.chartsReady = true;
+
+      renderChartsIfNeeded();
+    });
+
+    state.selectedDay = sel || keep;
+
+    renderAll();
+    renderChartsIfNeeded();
+  }
+
+  async function main() {
+    try {
+      if ($("year")) $("year").textContent = String(new Date().getFullYear());
+
+      // 1) Carrega dades
+      await loadHistoryOnce(HISTORY_URL, state);
+      await loadCurrentAndHeartbeat(CURRENT_URL, HEARTBEAT_URL, state);
+
+      // 2) Render base (KPIs i estat)
+      const hist = state.historyRows || [];
+      const initialActual = state.current || (hist.length ? hist[hist.length - 1] : null);
+
+      renderAll();
+
+      // Badge Meteocat (NO pot trencar la home)
+      try {
+        const b = await import(`../lib/meteocat_badge.js?v=${Date.now()}`);
+        b?.initMeteocatBadge?.();
+      } catch (e) {
+        console.warn("Badge Meteocat no disponible", e);
+      }
+
+      // Avisos XL (NO pot trencar la home)
+      try {
+        const m = await import(`../lib/alerts_ui.js?v=${Date.now()}`);
+        m?.initAlertsXL?.({ pollMs: 60000 });
+      } catch (e) {
+        console.warn("Alerts XL no disponible", e);
+      }
+
+      // 3) Selector de dia
+      const dayKeys = buildDayListFromRows(hist, state.current);
+      const wanted = getUrlDayParam();
+      const initial = (wanted && dayKeys.includes(wanted))
+        ? wanted
+        : (initialActual ? dayKeyFromTs(initialActual.ts) : dayKeyFromTs(Date.now()));
+
+      const selected = setupDaySelector(dayKeys, initial, (k) => {
+        state.selectedDay = k;
+
+        // Si interactua amb el selector, renderitza
+        if (!state.chartsReady) state.chartsReady = true;
+
+        renderChartsIfNeeded();
+      });
+
+      state.selectedDay = selected || initial;
+
+      // 4) Gràfiques: lazy (IntersectionObserver)
+      setupLazyChartsObserver();
+      renderChartsIfNeeded(); // només farà res si chartsReady=true
+
+      // 5) Timers
+      safeClearInterval(state.timers.cur);
+      safeClearInterval(state.timers.hist);
+
+      state.timers.cur = setInterval(refreshCurrent, REFRESH_CURRENT_MS);
+      state.timers.hist = setInterval(refreshHistory, REFRESH_HISTORY_MS);
+
+      // 6) Quan tornes a la pestanya
+      if (REFRESH_ON_VISIBLE) {
+        document.addEventListener("visibilitychange", async () => {
+          if (document.visibilityState !== "visible") return;
+          await refreshCurrent();
+        });
+      }
+    } catch (e) {
+      console.warn("Inicialització parcial (offline?)", e);
+      renderAll();
+      // en cas d'error, no forcem charts
+      setupLazyChartsObserver();
+      renderChartsIfNeeded();
+    }
+  }
+
+  main();
+}
+
+  // KPI GRAN: intensitat pluja
+  if ($("kpiRainRate")) $("kpiRainRate").textContent = current.rain_rate_mmh == null ? "—" : fmt1(current.rain_rate_mmh);
+
+  // Chip: rosada
+  if ($("chipDew")) $("chipDew").textContent = current.dew_c == null ? "—" : `${fmt1(current.dew_c)} °C`;
+
+  // Chip: direcció
+  let dirTxt = "—";
+  if (current.wind_dir != null && current.wind_dir !== "") {
+    const deg = Number(current.wind_dir);
+    if (!Number.isNaN(deg)) dirTxt = `${deg.toFixed(0)}° (${degToWindCatalan(deg)})`;
+  }
+  if ($("chipDir")) $("chipDir").textContent = dirTxt;
+
+  // Chip: actualitzat
+  if ($("chipUpdated")) $("chipUpdated").textContent = fmtDate(current.ts);
+
+  // Sol
+  renderSunSub(); // escriu a #chipSun
+
+  // Min/Max i gust màxim del dia
+  const todayRows = computeTodayRows(historyRows, current);
+
+  const elMinMax = $("chipMinMax");
+  if (elMinMax) {
+    const { min, max } = minMax(todayRows.map((r) => r.temp_c));
+    elMinMax.textContent = (min == null || max == null) ? "—" : `${fmt1(min)}–${fmt1(max)} °C`;
+  }
+
+  const elGustMaxDay = $("kpiGustMaxDay");
+  if (elGustMaxDay) {
+    const gusts = todayRows.map((r) => Number(r.gust_kmh)).filter(Number.isFinite);
+    elGustMaxDay.textContent = gusts.length ? fmt1(Math.max(...gusts)) : "—";
+  }
+
+  // Icona actual
+  renderHomeIcon(current);
+
+  // Capçalera
+  if ($("lastUpdated")) $("lastUpdated").textContent = `Actualitzat: ${fmtDate(current.ts)}`;
+}
+
+function getUrlDayParam() {
+  try {
+    const u = new URL(location.href);
+    const v = u.searchParams.get("day");
+    return v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+function setUrlDayParam(dayKey) {
+  try {
+    const u = new URL(location.href);
+    u.searchParams.set("day", dayKey);
+    history.replaceState(null, "", u.toString());
+  } catch {}
+}
+
+function buildDayListFromRows(rows, current) {
+  const set = new Set();
+  for (const r of (rows || [])) {
+    if (r && Number.isFinite(r.ts)) set.add(dayKeyFromTs(r.ts));
+  }
+  set.add(dayKeyFromTs(Date.now()));
+  if (current && Number.isFinite(current.ts)) set.add(dayKeyFromTs(current.ts));
+  return Array.from(set).sort();
+}
+
+function labelForDay(dayKey) {
+  const today = dayKeyFromTs(Date.now());
+  const yesterday = dayKeyFromTs(Date.now() - 24 * 60 * 60 * 1000);
+  const pretty = dayKey.split("-").reverse().join("/");
+  if (dayKey === today) return `Avui (${pretty})`;
+  if (dayKey === yesterday) return `Ahir (${pretty})`;
+  return pretty;
+}
+
+function setupDaySelector(dayKeys, initialKey, onChange) {
+  const sel = $("daySelect");
+  const prev = $("dayPrev");
+  const next = $("dayNext");
+  if (!sel || !prev || !next) return null;
+
+  sel.innerHTML = "";
+  for (const k of dayKeys) {
+    const opt = document.createElement("option");
+    opt.value = k;
+    opt.textContent = labelForDay(k);
+    sel.appendChild(opt);
+  }
+
+  const idx0 = dayKeys.indexOf(initialKey);
+  sel.value = (idx0 >= 0) ? dayKeys[idx0] : (dayKeys[dayKeys.length - 1] || initialKey);
+
+  function currentIndex() { return dayKeys.indexOf(sel.value); }
+  function updateButtons() {
+    const i = currentIndex();
+    prev.disabled = (i <= 0);
+    next.disabled = (i < 0 || i >= dayKeys.length - 1);
+  }
+
+  sel.addEventListener("change", () => {
+    updateButtons();
+    setUrlDayParam(sel.value);
+    onChange(sel.value);
+  });
+
+  prev.addEventListener("click", () => {
+    const i = currentIndex();
+    if (i > 0) {
+      sel.value = dayKeys[i - 1];
+      sel.dispatchEvent(new Event("change"));
+    }
+  });
+
+  next.addEventListener("click", () => {
+    const i = currentIndex();
+    if (i >= 0 && i < dayKeys.length - 1) {
+      sel.value = dayKeys[i + 1];
+      sel.dispatchEvent(new Event("change"));
+    }
+  });
+
+  updateButtons();
+  return sel.value;
+}
+
+function safeClearInterval(id) {
+  try { if (id) clearInterval(id); } catch {}
+}
+
+export function initHome() {
+  const { HISTORY_URL, CURRENT_URL, HEARTBEAT_URL } = getApi();
+
+  const state = {
+    historyRows: [],
+    current: null,
+    hb: null,
+    selectedDay: null,
+    timers: { cur: null, hist: null },
     // ❌ fsInited eliminat: ara reinjectem (safe) després de cada render de gràfiques
   };
 
@@ -341,4 +670,4 @@ export function initHome() {
   }
 
   main();
-      }
+}
