@@ -1680,42 +1680,126 @@ html.fs-lock, body.fs-lock { overflow: hidden; }
   line-height: 1.2;
   text-align: left;
 }
+/* =========================
+   TARGETES D'AVISOS — compacte i net (Alt Camp a la dreta)
+   Objectiu:
+   - Només la FRANJA esquerra amb color segons gravetat
+   - Card neutra (sense border-color per nivell)
+   - Perill + hores + llindar alineats a la mateixa columna
+   ========================= */
 
-/* Chips hores: alineats esquerra i compactes */
-.mv-chips{
+:root{
+  --mv-alert-indent: 18px; /* prova 16-20px segons gust */
+}
+
+.mv-alerts-list{
   display:flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;            /* separació justa del “Perill” */
-  padding-bottom: 0;          /* no afegeix aire extra a baix */
+  flex-direction:column;
+  gap:12px;
 }
 
-/* Text */
-.mv-alert-item__txt{
-  margin-top: 10px;           /* abans 10, però ara sense padding extra queda bé */
-  opacity:.95;
-  line-height: 1.24;          /* més compacte que 1.35 */
+.mv-alert-day{ margin: 10px 0 6px; }
+.mv-alert-day__title{
+  font-weight: 700;
+  opacity: .9;
+  margin: 6px 0;
 }
 
-/* una mica d’aire al final de la targeta sense exagerar */
-.mv-alert-item__txt:last-child{
-  margin-bottom: 2px;
+.mv-chips{ display:flex; flex-wrap:wrap; gap:8px; }
+.mv-chip{
+  display:inline-flex;
+  padding:4px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.06);
+  font-size: 12px;
 }
 
+/* Card base (neutra) */
+.mv-alert-item{
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+
+  /* padding base perquè no quedi enganxat als extrems */
+  padding: 12px 14px;
+}
+
+/* Franja esquerra (únic indicador de gravetat) */
+.mv-alert-item::before{
+  content:"";
+  position:absolute;
+  left:0; top:0; bottom:0;
+  width: 10px;
+  background: rgba(255,255,255,.18);
+}
+
+/* Colors de franja per nivell */
+.mv-alert-item.is-warn::before   { background: rgba(255,193,7,.95); }
+.mv-alert-item.is-high::before   { background: rgba(255,152,0,.95); }
+.mv-alert-item.is-danger::before { background: rgba(244,67,54,.95); }
+
+/* Columna coherent (Perill + hores + llindar alineats) */
 .mv-alert-item__head,
 .mv-alert-item__meta,
-.mv-chips{
-  padding-left: 6px !important;
+.mv-chips,
+.mv-alert-item__txt,
+.mv-threshold{
+  position: relative;
+  margin: 0;
+  padding: 0;
+  padding-left: var(--mv-alert-indent);
 }
 
-.mv-alert-item__txt{
-  padding-left: 14px !important;
+/* Head: esquerra (títol) i dreta (Alt Camp) */
+.mv-alert-item__head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
 }
-.mv-chips{ margin-top: 8px; }
-.mv-threshold{
+
+/* Títol */
+.mv-alert-item__title{
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+/* “Alt Camp” a la dreta i sense salt de línia */
+.mv-alert-item__head > :last-child{
+  flex: 0 0 auto;
+  white-space: nowrap;
+  opacity: .85;
+}
+
+/* Meta “Perill: …” */
+.mv-alert-item__meta{
+  opacity: .85;
+  font-size: .92rem;
+  margin-top: 4px;
+  line-height: 1.2;
+  text-align: left;
+}
+
+/* Chips hores: compactes */
+.mv-chips{
+  gap: 6px;
+  margin-top: 8px;
+}
+
+/* Text comentari: més compacte */
+.mv-alert-item__txt{
   margin-top: 10px;
-  padding-left: 8px;     /* mateixa columna que Perill + hores */
-  font-size: 14px;
-  opacity: .75;
+  opacity: .95;
+  line-height: 1.24;
+}
+
+/* Llindar: mateixa columna, una mica més present */
+.mv-threshold{
+  margin-top: 8px;
+  font-size: 13.5px;  /* puja a 14px si el vols més gran */
+  opacity: .78;
   line-height: 1.2;
 }
