@@ -27,6 +27,12 @@ function perillText(p){
   return "Moderat";
 }
 
+function perillBadge(p){
+  const n = Number(p);
+  if (!Number.isFinite(n) || n <= 0) return "";
+  return `(${n}/6)`;
+}
+
 // =========================
 // Format dates (local)
 // =========================
@@ -102,11 +108,30 @@ function fmtPeriodeChip(p){
 // Ordre natural de franges (06-12, 12-18, 18-00, 00-06, etc.)
 function periodeSortKey(p){
   const s = normPeriode(p);
-  // Agafa el primer número (inici) per ordenar
-  // Ex: "18-00" -> 18 ; "00-06" -> 0
   const m = s.match(/^(\d{1,2})/);
   const h = m ? Number(m[1]) : 99;
   return Number.isFinite(h) ? h : 99;
+}
+
+// =========================
+// Llindar: afegir km/h si ve en m/s
+// Ex: "Ratxa màxima > 25m/s" -> "Ratxa màxima > 25m/s (90 km/h)"
+// =========================
+
+function msToKmh(ms){ return Math.round(ms * 3.6); }
+
+function addKmhToLlindar(llindar){
+  const s = String(llindar || "").trim();
+  if (!s) return "";
+  const m = s.match(/(\d+(?:[.,]\d+)?)\s*m\/s/i);
+  if (!m) return s;
+
+  const ms = Number(String(m[1]).replace(",", "."));
+  if (!Number.isFinite(ms)) return s;
+
+  const kmh = msToKmh(ms);
+  // Mantinc el text original i hi afegeixo el km/h
+  return s.replace(/m\/s/i, `m/s (${kmh} km/h)`);
 }
 
 // =========================
@@ -119,13 +144,8 @@ function setHeader({ updated_ts = null, message = "—" } = {}){
 
   if (subEl) subEl.textContent = updated_ts ? `Actualitzat: ${fmtTsMillis(updated_ts)}` : message;
 
-  if (stEl) {
-    if (!updated_ts) stEl.textContent = "—";
-    else {
-      const ageMin = Math.max(0, Math.round((Date.now() - Number(updated_ts)) / 60000));
-      stEl.textContent = `Dada: fa ${ageMin} min`;
-    }
-  }
+  // ✅ Eliminem "Dada: fa X min" (queda lleig quan és gran)
+  if (stEl) stEl.textContent = "";
 }
 
 // =========================
@@ -190,7 +210,7 @@ function renderNoAlerts(j){
 
   if (metaEl) {
     metaEl.textContent =
-      `Actualitzat: ${fmtTsMillis(j?.updated_ts)} · Perill màxim: ${perillText(j?.max_perill)} · Episodis: ${count}`;
+      `Actualitzat: ${fmtTsMillis(j?.updated_ts)} · Perill màxim: ${perillText(j?.max_perill)} ${perillBadge(j?.max_perill)} · Episodis: ${count}`;
   }
   if (emptyBox) emptyBox.style.display = "block";
   if (listEl) listEl.innerHTML = "";
@@ -198,9 +218,7 @@ function renderNoAlerts(j){
 
 // =========================
 // Agrupació (1 targeta per avís + múltiples franges)
-// IMPORTANT: NO agrupem per "perill" si pot variar per franges.
-// Però Meteocat, en el teu JSON, ja et dona mateix perill a les franges.
-// Si un dia varia, volem que surti separat.
+// IMPORTANT: incloem "perill" a la clau → si canvia per franges, surt separat
 // =========================
 
 function groupItems(items){
@@ -218,8 +236,6 @@ function groupItems(items){
     const inici = String(it?.inici ?? "");
     const fi    = String(it?.fi ?? "");
 
-    // Clau sense període (per agrupar franges del mateix episodi)
-    // ⚠️ Incloem "perill": si canvia la intensitat per franja, es veurà separat.
     const key = [
       meteor, tipus, comarca, diaYmd, perill, llindar, inici, fi, coment
     ].join("|");
@@ -284,7 +300,7 @@ function renderAlerts(j){
 
   if (metaEl) {
     metaEl.textContent =
-      `Actualitzat: ${fmtTsMillis(j?.updated_ts)} · Perill màxim: ${perillText(j?.max_perill)} · Episodis: ${grouped.length}`;
+      `Actualitzat: ${fmtTsMillis(j?.updated_ts)} · Perill màxim: ${perillText(j?.max_perill)} ${perillBadge(j?.max_perill)} · Episodis: ${grouped.length}`;
   }
 
   // Resum XL
@@ -296,7 +312,7 @@ function renderAlerts(j){
     summaryBox.classList.toggle("is-high",   cls === "is-high");
     summaryBox.classList.toggle("is-danger", cls === "is-danger");
 
-    titleEl.textContent = `Avisos vigents · Perill ${perillText(j?.max_perill)}`;
+    titleEl.textContent = `Avisos vigents · Perill ${perillText(j?.max_perill)} ${perillBadge(j?.max_perill)}`;
     msgEl.textContent = "Consulta el detall a continuació.";
     whenEl.textContent = `Actualització: ${fmtTsMillis(j?.updated_ts)}`;
   }
@@ -329,22 +345,23 @@ function renderAlerts(j){
       .map(p => `<span class="mv-chip">${fmtPeriodeChip(p)}</span>`)
       .join("");
 
-    // EXTRA: només Llindar (Inici/Fi confon amb franges → no el mostrem)
-    const extra = g.llindar ? `Llindar: ${g.llindar}` : "";
+    // ✅ Llindar a dalt + km/h al costat si ve en m/s
+    const llindarNice = addKmhToLlindar(g.llindar);
+    const llindarHtml = llindarNice ? `Llindar: ${llindarNice}` : "";
 
+    // ✅ Inici/Fi fora (confús amb franges)
     card.innerHTML = `
       <div class="mv-alert-item__head">
         <div>
           <div class="mv-alert-item__title">${title}</div>
-          <div class="mv-alert-item__meta">Perill: ${perillText(g.perill)}</div>
+          <div class="mv-alert-item__meta">Perill: ${perillText(g.perill)} ${perillBadge(g.perill)}</div>
+          ${llindarHtml ? `<div class="mv-alert-item__meta" style="margin-top:6px;">${llindarHtml}</div>` : ""}
           ${periodesHtml ? `<div class="mv-chips" style="margin-top:10px;">${periodesHtml}</div>` : ""}
         </div>
         <div class="mv-alert-item__meta">${g.comarca || ""}</div>
       </div>
 
       <div class="mv-alert-item__txt">${g.coment || "—"}</div>
-
-      ${extra ? `<div class="mv-alert-item__meta" style="margin-top:10px;">${extra}</div>` : ""}
     `;
 
     listEl.appendChild(card);
@@ -390,3 +407,4 @@ export function initAvisos(){
   if (y) y.textContent = String(new Date().getFullYear());
   loadAlerts();
 }
+```0
