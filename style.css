@@ -1824,3 +1824,13 @@ html.fs-lock, body.fs-lock { overflow: hidden; }
 #mvAlertsSummary.is-warn::before{   background:#f59e0b; }
 #mvAlertsSummary.is-high::before{   background:#f97316; }
 #mvAlertsSummary.is-danger::before{ background:#ef4444; }
+/* full-bleed: treu el “marge intern” de la card pare */
+.card #mvAlertsSummary{
+  margin-left: -16px;
+  margin-right: -16px;
+  border-radius: 18px;            /* una mica més gran si vols */
+}
+
+.card #mvAlertsSummary::before{
+  border-radius: 18px 0 0 18px;
+}
