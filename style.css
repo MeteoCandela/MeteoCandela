@@ -1719,3 +1719,10 @@ html.fs-lock, body.fs-lock { overflow: hidden; }
   opacity: .75;
   line-height: 1.2;
 }
+.alert-xl.is-high{
+  background: linear-gradient(
+    180deg,
+    rgba(255,152,0,.10),
+    rgba(255,152,0,.05)
+  );
+}
