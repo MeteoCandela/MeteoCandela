@@ -1603,13 +1603,19 @@ html.fs-lock, body.fs-lock { overflow: hidden; }
   gap:12px;
 }
 
-/* TARGETES D'AVISOS (uniformes) */
+/* =========================
+   TARGETES D'AVISOS — compacte i net (Alt Camp a la dreta)
+   ========================= */
+
 .mv-alert-item{
   position: relative;
   border-radius: 18px;
   overflow: hidden;
   background: rgba(255,255,255,.06);
   border: 1px solid rgba(255,255,255,.12);
+
+  /* clau: padding base perquè no quedi enganxat als extrems */
+  padding: 12px 14px 12px 14px;
 }
 
 /* franja esquerra */
@@ -1631,126 +1637,67 @@ html.fs-lock, body.fs-lock { overflow: hidden; }
 .mv-alert-item.is-high   { border-color: rgba(255,152,0,.35); }
 .mv-alert-item.is-danger { border-color: rgba(244,67,54,.35); }
 
+/* IMPORTANT:
+   Tot el contingut dins la card ha d'estar separat de la franja (10px).
+   Per això fem un "indent" únic coherent amb padding-left.
+*/
+.mv-alert-item__head,
+.mv-alert-item__meta,
+.mv-chips,
+.mv-alert-item__txt{
+  position: relative;
+  padding: 0;                 /* <- fora paddings per-bloc (evita enganxades raras) */
+  margin: 0;                  /* <- fora marges per defecte */
+  padding-left: 14px;         /* <- indent coherent (franja + aire) */
+}
+
+/* Head: esquerra (títol) i dreta (Alt Camp) */
 .mv-alert-item__head{
   display:flex;
   align-items:flex-start;
   justify-content:space-between;
   gap:10px;
-
-  position: relative;
-  padding: 12px 12px 0 18px; /* + espai per franja */
 }
 
-.mv-alert-item__title{ font-weight:700; }
+/* Títol */
+.mv-alert-item__title{
+  font-weight: 800;
+  line-height: 1.15;
+}
 
+/* Assegura que el node de "Alt Camp" queda a la dreta i no baixa */
+.mv-alert-item__head > :last-child{
+  flex: 0 0 auto;
+  white-space: nowrap;
+  opacity: .85;
+}
+
+/* Meta “Perill: …” just sota el títol i A L’ESQUERRA */
 .mv-alert-item__meta{
   opacity:.85;
   font-size:.92rem;
-  margin-top:6px;
-  position: relative;
-  padding: 0 12px 0 18px;
+  margin-top: 4px;            /* abans 6 */
+  line-height: 1.2;
+  text-align: left;
 }
 
+/* Chips hores: alineats esquerra i compactes */
+.mv-chips{
+  display:flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;            /* separació justa del “Perill” */
+  padding-bottom: 0;          /* no afegeix aire extra a baix */
+}
+
+/* Text */
 .mv-alert-item__txt{
-  margin-top:10px;
+  margin-top: 10px;           /* abans 10, però ara sense padding extra queda bé */
   opacity:.95;
-  line-height:1.35;
-  position: relative;
-  padding: 0 12px 12px 18px;
+  line-height: 1.24;          /* més compacte que 1.35 */
 }
 
-.mv-chips{
-  position: relative;
-  padding: 0 12px 12px 18px;
-}
-/* =========================
-   AVISOS — FIX DEFINITIU (compacte + alineat + Alt Camp a la dreta)
-   Enganxa AL FINAL del style.css
-   ========================= */
-
-.mv-alert-item{
-  position: relative !important;
-  overflow: hidden !important;
-  border-radius: 18px !important;
-
-  /* PADDING REAL de la targeta (perquè NO quedi enganxat als extrems) */
-  padding: 12px 14px 12px 18px !important;
-
-  /* reserva per la franja esquerra (8px) + espai (10px) */
-  padding-left: 26px !important; /* 8 + 10 + 8 (tune) */
-}
-
-/* franja esquerra */
-.mv-alert-item::before{
-  width: 8px !important;
-}
-
-/* ANUL·LA la regla que et desquadra tot (padding-left:6px en blocs) */
-.mv-alert-item__head,
-.mv-alert-item__meta,
-.mv-chips,
-.mv-alert-item__txt{
-  padding: 0 !important;
-  margin: 0 !important;
-  text-align: left !important;
-}
-
-/* Header: títol esquerra + comarca dreta */
-.mv-alert-item__head{
-  display: flex !important;
-  align-items: flex-start !important;
-  justify-content: space-between !important;
-  gap: 10px !important;
-}
-
-/* "Vent · Avís" */
-.mv-alert-item__title{
-  font-weight: 800 !important;
-  line-height: 1.15 !important;
-  margin: 0 !important;
-}
-
-/* "Alt Camp" (normalment és el 2n element dins head) */
-.mv-alert-item__head > :last-child{
-  flex: 0 0 auto !important;
-  white-space: nowrap !important;
-  opacity: .85 !important;
-  font-size: 13px !important;
-  margin: 0 !important;
-}
-
-/* "Perill: Alt (4/6)" — just sota el títol, alineat esquerra */
-.mv-alert-item__meta{
-  margin-top: 4px !important;
-  line-height: 1.2 !important;
-  opacity: .9 !important;
-}
-
-/* Xips d’hores — alineats esquerra i compactes */
-.mv-chips{
-  display: flex !important;
-  justify-content: flex-start !important;
-  gap: 6px !important;
-  margin-top: 8px !important;
-}
-
-.mv-chip{
-  padding: 3px 9px !important;
-  font-size: 12px !important;
-  line-height: 1.1 !important;
-}
-
-/* Text principal — menys espai entre frases */
-.mv-alert-item__txt{
-  margin-top: 10px !important;
-  line-height: 1.22 !important; /* compacta */
-  opacity: .95 !important;
-}
-
-/* Si tens línia de “Llindar: …” dins el text, compacta encara més */
-.mv-alert-item__txt .threshold,
-.mv-alert-item__txt small{
-  display: block !important;
-  margin-top: 8px !important;
-  opacity: .85 !important;
+/* una mica d’aire al final de la targeta sense exagerar */
+.mv-alert-item__txt:last-child{
+  margin-bottom: 2px;
 }
