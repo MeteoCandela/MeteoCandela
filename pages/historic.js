@@ -62,7 +62,10 @@ function render(rows) {
   }
 
   const isMobile = window.matchMedia("(max-width: 720px)").matches;
-  const list = rows.slice().sort((a,b)=> String(a.date ?? a.day).localeCompare(String(b.date ?? b.day))).reverse();
+  const list = rows
+    .slice()
+    .sort((a,b)=> String(a.date ?? a.day).localeCompare(String(b.date ?? b.day)))
+    .reverse();
 
   if (isMobile) {
     const row = (k, v) => `
@@ -78,6 +81,7 @@ function render(rows) {
           <div class="daycards">
             ${list.map(r => {
               const day  = r.date ?? r.day;
+
               const tmin = r.temp_min_c ?? r.tmin;
               const tmax = r.temp_max_c ?? r.tmax;
               const tavg = r.temp_avg_c ?? r.tavg;
@@ -188,22 +192,31 @@ async function fetchDaily(DAILY_URL) {
 
 export function initHistoric() {
   const { DAILY_URL } = getApi();
+
   const yearEl = $("year");
   if (yearEl) yearEl.textContent = String(new Date().getFullYear());
 
   async function main() {
     const info = $("histInfo");
+    const filterInfo = $("histFilterInfo"); // ✅ nou element (afegir a historic.html)
     const daily = await fetchDaily(DAILY_URL);
 
     if (!daily.length) {
       render([]);
+      renderSummary([]);
       if (info) info.textContent = "Sense dades encara (daily-summary buit).";
+      if (filterInfo) filterInfo.textContent = "";
       return;
     }
 
     const yrs = yearsFromRows(daily);
     const yearSel = $("yearSelect");
     const monthSel = $("monthSelect");
+
+    if (!yearSel || !monthSel) {
+      if (info) info.textContent = "Error: no s'han trobat els controls de filtre (yearSelect/monthSelect).";
+      return;
+    }
 
     yearSel.innerHTML = yrs.map(y => `<option value="${y}">${y}</option>`).join("");
 
@@ -213,6 +226,12 @@ export function initHistoric() {
     yearSel.value = defaultY;
     monthSel.value = m0 || "";
 
+    function updateFilterInfo(y, m){
+      if (!filterInfo) return;
+      const monthLabel = m ? monthNameCA(m) : "Tots els mesos";
+      filterInfo.textContent = `Filtre: ${y} · ${monthLabel}`;
+    }
+
     function refresh() {
       const y = yearSel.value || "";
       const m = monthSel.value || "";
@@ -221,9 +240,11 @@ export function initHistoric() {
       const filtered = applyFilters(daily, y, m);
       render(filtered);
       renderSummary(filtered);
+      updateFilterInfo(y, m);
 
       if (info) {
         const count = filtered.length;
+        // Mantinc el teu text (amb mes opcional) perquè és útil
         const labelM = m ? ` · ${monthNameCA(m)}` : "";
         info.textContent = `Mostrant ${count} dia/dies · any ${y}${labelM}.`;
       }
@@ -245,4 +266,4 @@ export function initHistoric() {
   }
 
   main();
-                                                   }
+    }
