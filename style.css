@@ -1796,3 +1796,35 @@ html.fs-lock, body.fs-lock { overflow: hidden; }
   opacity: .75;
   line-height: 1.2;
 }
+/* =========================
+   RESUM AVISOS (franja esquerra)
+   ========================= */
+
+#mvAlertsSummary{
+  position: relative;
+  overflow: hidden;              /* important perquè la franja no sobresurti */
+  padding-left: 14px;            /* espai per la franja */
+}
+
+/* Franja per defecte (neutra) */
+#mvAlertsSummary::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  width:8px;
+  border-radius: 14px 0 0 14px;
+  background: rgba(255,255,255,.10);
+}
+
+/* Colors segons intensitat (les teves classes) */
+#mvAlertsSummary.is-warn::before{
+  background: #f59e0b;
+}
+#mvAlertsSummary.is-high::before{
+  background: #f97316;
+}
+#mvAlertsSummary.is-danger::before{
+  background: #ef4444;
+}
