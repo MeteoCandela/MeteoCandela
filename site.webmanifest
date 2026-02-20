@@ -5,14 +5,40 @@
   "start_url": "/?source=pwa",
   "scope": "/",
   "lang": "ca",
+  "dir": "ltr",
+
   "display": "standalone",
+  "orientation": "portrait",
+
   "background_color": "#0b1220",
   "theme_color": "#0b1220",
+
   "description": "Estació meteorològica automàtica a Valls (Alt Camp) amb dades en temps real i gràfiques diàries.",
-  "orientation": "portrait",
   "categories": ["weather", "utilities"],
+
+  "prefer_related_applications": true,
+  "related_applications": [
+    { "platform": "play", "id": "cat.meteovalls.android" }
+  ],
+
   "icons": [
-    { "src": "/android-chrome-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/android-chrome-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    {
+      "src": "/android-chrome-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/android-chrome-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/android-chrome-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
