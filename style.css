@@ -1853,3 +1853,8 @@ html.fs-lock, body.fs-lock { overflow: hidden; }
 #mvAlertsSummary.is-danger{
   box-shadow: inset 10px 0 0 rgba(244,67,54,.95);
 }
+/* Històric: separació del badge respecte KPIs */
+#histFilterInfo{
+  margin-top: 10px;
+  margin-bottom: 16px; /* <- puja/baixa fins que et quedi perfecte */
+}
