@@ -1,17 +1,11 @@
 // app.js — entrypoint únic (ESM)
 export const V = "2026-02-19-001";
 
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register(`./sw.js?v=${V}`).catch(console.error);
-  });
-}
-
 async function initPushIfPresent() {
   try {
     const btn = document.getElementById("btnPush");
     if (!btn) return;
-    const push = await import(`./lib/push.js?v=${V}`);
+    const push = await import(`/lib/push.js?v=${V}`);
     push?.initPushBell?.();
   } catch (e) {
     console.warn("push init fail", e);
@@ -23,7 +17,7 @@ async function boot() {
 
   // Install FAB
   try {
-    const install = await import(`./lib/install.js?v=${V}`);
+    const install = await import(`/lib/install.js?v=${V}`);
     install?.initInstallFab?.();
   } catch (e) {
     console.warn("install.js no carregat", e);
@@ -33,40 +27,45 @@ async function boot() {
   try {
     switch (page) {
       case "home": {
-  const m = await import(`./pages/home.js?v=${V}`);
-  m.initHome?.();
+        const m = await import(`/pages/home.js?v=${V}`);
+        m.initHome?.();
 
-  // Meteocat badge (només a home)
-  try {
-    const b = await import(`./lib/meteocat_badge.js?v=${V}`);
-    b?.initMeteocatBadge?.();
-  } catch (e) {
-    console.warn("meteocat badge fail", e);
-  }
-  break;
-}
+        // Meteocat badge (només a home)
+        try {
+          const b = await import(`/lib/meteocat_badge.js?v=${V}`);
+          b?.initMeteocatBadge?.();
+        } catch (e) {
+          console.warn("meteocat badge fail", e);
+        }
+        break;
+      }
+
       case "previsio": {
-        const m = await import(`./pages/previsio.js?v=${V}`);
+        const m = await import(`/pages/previsio.js?v=${V}`);
         m.initPrevisio?.();
         break;
       }
-     case "avisos": {
-       const m = await import(`./pages/avisos.js?v=${V}`);
-       m.initAvisos?.();
-       break;
-    }
+
+      case "avisos": {
+        const m = await import(`/pages/avisos.js?v=${V}`);
+        m.initAvisos?.();
+        break;
+      }
+
       case "historic": {
-        const m = await import(`./pages/historic.js?v=${V}`);
+        const m = await import(`/pages/historic.js?v=${V}`);
         m.initHistoric?.();
         break;
       }
+
       case "sobre": {
-        const m = await import(`./pages/sobre.js?v=${V}`);
+        const m = await import(`/pages/sobre.js?v=${V}`);
         m.initSobre?.();
         break;
       }
+
       default: {
-        const m = await import(`./pages/home.js?v=${V}`);
+        const m = await import(`/pages/home.js?v=${V}`);
         m.initHome?.();
       }
     }
@@ -78,6 +77,18 @@ async function boot() {
 
   // Push (després de la pàgina)
   await initPushIfPresent();
+}
+
+// =========================
+// Register Service Worker (PWA)
+// =========================
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("/sw.js")
+      .then((reg) => console.log("SW registrat:", reg.scope))
+      .catch((err) => console.error("SW error:", err));
+  });
 }
 
 boot();
