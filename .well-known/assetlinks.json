@@ -1,0 +1,11 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "cat.meteovalls.android",
+      "sha256_cert_fingerprints":
+        ["B9:89:54:9B:22:9D:64:95:73:07:80:41:8D:8E:F5:92:9B:50:1C:15:17:86:6A:AE:87:30:EA:C2:19:56:51:C0"]
+    }
+  }
+]
