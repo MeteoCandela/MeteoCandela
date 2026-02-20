@@ -611,7 +611,42 @@ h2{
   text-align: right;
   white-space: nowrap;
 }
+/* =========================
+   HISTÒRIC — Day picker + badge filtre
+   ========================= */
+.hist-daypick{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.hist-daypick__left{ min-width: 220px; }
+.hist-daypick__right{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+}
 
+/* Badge visible del filtre (mes actiu) */
+.hist-filter-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 12px;
+  border-radius:999px;
+  background: rgba(255, 211, 77, .14);
+  border: 1px solid rgba(255, 211, 77, .28);
+  font-weight: 650;
+}
+
+/* Quan NO hi ha mes, badge més neutre */
+.hist-filter-badge--year{
+  background: rgba(255,255,255,.06);
+  border-color: rgba(255,255,255,.10);
+  font-weight: 600;
+}
 /* =========================
    Forecast
    ========================= */
