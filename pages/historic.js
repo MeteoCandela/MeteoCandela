@@ -348,7 +348,7 @@ export function initHistoric() {
       renderSummary(filtered);
 
       // Badge anual/mensual (sempre clar)
-      updateFilterBadge(filterInfo, y, m);
+      updateFilterBadge(filterInfo, y, m, d);
 
       if (info) {
         info.textContent = d
