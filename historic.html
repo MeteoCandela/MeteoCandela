@@ -23,7 +23,6 @@
   <link rel="stylesheet" href="/style.css?v=2026-02-06-01">
 </head>
 
-<body>
 <body data-page="historic">
   <!-- HERO -->
   <header class="hero hero--small">
@@ -36,28 +35,32 @@
 
   <main class="grid">
 
+    <!-- Navegació ràpida -->
     <section class="card span2">
       <nav class="quick-nav" aria-label="Navegació principal">
         <a href="/index.html" class="quick-nav__btn">🏠 Inici</a>
-        <a href="previsio.html" class="quick-nav__btn">
-      ⛅ Previsió</a>
+        <a href="/previsio.html" class="quick-nav__btn">⛅ Previsió</a>
       </nav>
     </section>
 
-    <!-- Intro -->
+    <!-- Resum -->
     <section class="card span2">
-      <h2>Resum Global</h2>
+      <h2>Resum global</h2>
       <p>
         Dades <strong>històriques</strong> de l’estació <strong>meteorològica</strong>
         a la <strong>Ciutat de Valls</strong> (Valls): temperatura mínima/màxima i mitjana,
         pluja, ratxa màxima, vent mitjà i humitat mitjana.
       </p>
+
       <p class="muted-line" id="histInfo" aria-live="polite">Carregant dades…</p>
+
+      <!-- Badge filtre (anual/mensual) -->
       <p class="muted-line" id="histFilterInfo" aria-live="polite"></p>
-       <div class="kpis kpis--summary" id="summaryKpis"></div>
+
+      <div class="kpis kpis--summary" id="summaryKpis"></div>
     </section>
 
-    <!-- Filtres -->
+    <!-- Filtres any/mes -->
     <section class="card span2">
       <div class="hist-controls">
         <div class="hist-controls__left">
@@ -91,9 +94,25 @@
       </div>
     </section>
 
-    <!-- Taula -->
+    <!-- Calendari (dia concret) -->
     <section class="card span2">
-      <h2>Dades d'historic diari</h2>
+      <div class="hist-daypick">
+        <div class="hist-daypick__left">
+          <div class="daybar__title">Dia concret</div>
+          <div class="daybar__subtitle">Tria una data per veure només aquell dia (opcional)</div>
+        </div>
+
+        <div class="hist-daypick__right">
+          <label class="sr-only" for="dayPicker">Dia</label>
+          <input id="dayPicker" class="select" type="date" aria-label="Tria un dia" />
+          <button id="dayClearBtn" class="btn" type="button">Tots els dies</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Taula / Cards -->
+    <section class="card span2">
+      <h2>Dades d’històric diari</h2>
 
       <div class="table-wrap">
         <table class="hist-table" aria-label="Taula d'històric diari">
@@ -131,6 +150,7 @@
   <footer class="footer">
     <span>© <span id="year"></span> MeteoValls</span>
   </footer>
-<script type="module" src="/app.js?v=2026-02-12-100"></script>
+
+  <script type="module" src="/app.js?v=2026-02-12-100"></script>
 </body>
 </html>
