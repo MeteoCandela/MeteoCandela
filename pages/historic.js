@@ -239,9 +239,17 @@ async function fetchDaily(DAILY_URL) {
 /* =========================
    UI helpers
    ========================= */
-function updateFilterBadge(filterInfoEl, y, m){
+function updateFilterBadge(filterInfoEl, y, m, d){
   if (!filterInfoEl) return;
 
+  // ✅ Prioritat 1: dia concret
+  if (d) {
+    filterInfoEl.innerHTML =
+      `<span class="hist-filter-badge">📍 Dia: <strong>${fmtDateCA(d)}</strong></span>`;
+    return;
+  }
+
+  // ✅ Prioritat 2: mes o any
   if (m) {
     filterInfoEl.innerHTML =
       `<span class="hist-filter-badge">📅 Resum de <strong>${monthNameCA(m)}</strong> ${y}</span>`;
