@@ -1858,3 +1858,24 @@ html.fs-lock, body.fs-lock { overflow: hidden; }
   margin-top: 10px;
   margin-bottom: 16px; /* <- puja/baixa fins que et quedi perfecte */
 }
+/* ===== Fullscreen chart modal: capçalera sempre clickable ===== */
+.fs-overlay { z-index: 99999; }
+
+.fs-panel { position: relative; }
+
+.fs-head{
+  position: relative;
+  z-index: 20;          /* ✅ per sobre del canvas */
+}
+
+.fs-close{
+  position: relative;
+  z-index: 21;          /* ✅ encara per sobre */
+  pointer-events: auto; /* ✅ el tap sempre entra */
+}
+
+.fs-body,
+.fs-canvas-host{
+  position: relative;
+  z-index: 1;
+}
