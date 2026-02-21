@@ -46,6 +46,53 @@ function renderStatus(lastTsMs, hb) {
   el.textContent = msg;
 }
 
+function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
+
+// Heat Index (NOAA) en °C. Vàlid sobretot amb T>=27°C i RH>=40%
+// Si no aplica, retorna null
+function heatIndexC(tC, rh){
+  if (!Number.isFinite(tC) || !Number.isFinite(rh)) return null;
+  if (tC < 27 || rh < 40) return null;
+
+  const tF = (tC * 9/5) + 32;
+
+  // NOAA Rothfusz regression
+  const hiF =
+    -42.379 + 2.04901523*tF + 10.14333127*rh
+    - 0.22475541*tF*rh - 0.00683783*tF*tF
+    - 0.05481717*rh*rh + 0.00122874*tF*tF*rh
+    + 0.00085282*tF*rh*rh - 0.00000199*tF*tF*rh*rh;
+
+  const hiC = (hiF - 32) * 5/9;
+  return hiC;
+}
+
+// Wind Chill (Environment Canada) en °C. Aplica amb T<=10°C i vent>4.8 km/h
+// Si no aplica, retorna null
+function windChillC(tC, windKmh){
+  if (!Number.isFinite(tC) || !Number.isFinite(windKmh)) return null;
+  if (tC > 10 || windKmh <= 4.8) return null;
+
+  const v = windKmh;
+  const wc =
+    13.12 + 0.6215*tC - 11.37*Math.pow(v, 0.16) + 0.3965*tC*Math.pow(v, 0.16);
+
+  return wc;
+}
+
+// Decideix quin model usar i retorna { valueC, label } o null
+function feelsLike(tC, rh, windKmh){
+  const wc = windChillC(tC, windKmh);
+  if (wc != null) return { valueC: wc, label: "Sensació (vent)" };
+
+  const hi = heatIndexC(tC, rh);
+  if (hi != null) return { valueC: hi, label: "Sensació (xafogor)" };
+
+  // fallback neutre: T real
+  if (!Number.isFinite(tC)) return null;
+  return { valueC: tC, label: "Sensació" };
+}
+
 function computeTodayRows(historyRows, current) {
   const todayKey = dayKeyFromTs(Date.now());
   const { start, end } = startEndMsFromDayKey(todayKey);
