@@ -131,7 +131,18 @@ function renderCurrent(current, historyRows) {
 
   // Chip: actualitzat
   if ($("chipUpdated")) $("chipUpdated").textContent = fmtDate(current.ts);
+ 
+  // Chip: sensació tèrmica
+const elFeels = $("chipFeels");
+if (elFeels) {
+  const tC = Number(current.temp_c);
+  const rh = Number(current.hum_pct);
+  const w  = Number(current.wind_kmh);
 
+  const f = feelsLike(tC, rh, w);
+  elFeels.textContent = f ? `${fmt1(f.valueC)} °C` : "—";
+}
+  
   // Sol
   renderSunSub(); // escriu a #chipSun
 
