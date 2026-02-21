@@ -174,7 +174,7 @@ if (!f) {
 } else if (f.same) {
   elFeels.textContent = "Sense diferència";
 } else {
-  elFeels.textContent = `${fmt1(f.valueC)} °C`;
+  elFeels.textContent = f.text;
 }
 }
   
