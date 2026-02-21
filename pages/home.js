@@ -82,15 +82,21 @@ function windChillC(tC, windKmh){
 
 // Decideix quin model usar i retorna { valueC, label } o null
 function feelsLike(tC, rh, windKmh){
+  if (!Number.isFinite(tC)) return null;
+
   const wc = windChillC(tC, windKmh);
-  if (wc != null) return { valueC: wc, label: "Sensació (vent)" };
+  if (wc != null) {
+    if (Math.abs(wc - tC) < 0.5) return { same:true };
+    return { valueC: wc, label: "vent" };
+  }
 
   const hi = heatIndexC(tC, rh);
-  if (hi != null) return { valueC: hi, label: "Sensació (xafogor)" };
+  if (hi != null) {
+    if (Math.abs(hi - tC) < 0.5) return { same:true };
+    return { valueC: hi, label: "xafogor" };
+  }
 
-  // fallback neutre: T real
-  if (!Number.isFinite(tC)) return null;
-  return { valueC: tC, label: "Sensació" };
+  return { same:true };
 }
 
 function computeTodayRows(historyRows, current) {
