@@ -146,7 +146,14 @@ if (elFeels) {
   const w  = Number(current.wind_kmh);
 
   const f = feelsLike(tC, rh, w);
-  elFeels.textContent = f ? `${fmt1(f.valueC)} °C` : "—";
+
+if (!f) {
+  elFeels.textContent = "—";
+} else if (f.same) {
+  elFeels.textContent = "Sense diferència respecte temps real";
+} else {
+  elFeels.textContent = `${fmt1(f.valueC)} °C`;
+}
 }
   
   // Sol
