@@ -1859,23 +1859,43 @@ html.fs-lock, body.fs-lock { overflow: hidden; }
   margin-bottom: 16px; /* <- puja/baixa fins que et quedi perfecte */
 }
 /* ===== Fullscreen chart modal: capçalera sempre clickable ===== */
-.fs-overlay { z-index: 99999; }
+.fs-overlay{
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+}
 
-.fs-panel { position: relative; }
+.fs-panel{
+  position: relative;
+}
+
+/* IMPORTANT: crea stacking context estable pel panel */
+.fs-panel{
+  isolation: isolate;          /* ✅ clau: evita que el canvas “surti per sobre” */
+}
 
 .fs-head{
-  position: relative;
-  z-index: 20;          /* ✅ per sobre del canvas */
+  position: sticky;            /* ✅ o relative, però sticky ajuda si hi ha scroll */
+  top: 0;
+  z-index: 1000;               /* ✅ molt per sobre */
+  pointer-events: auto;
 }
 
 .fs-close{
   position: relative;
-  z-index: 21;          /* ✅ encara per sobre */
-  pointer-events: auto; /* ✅ el tap sempre entra */
+  z-index: 1100;               /* ✅ més amunt que la capçalera */
+  pointer-events: auto;
+  touch-action: manipulation;  /* ✅ millora taps Android */
 }
 
 .fs-body,
 .fs-canvas-host{
+  position: relative;
+  z-index: 1;
+}
+
+/* Per si Chart.js o el canvas crea una capa agressiva */
+.fs-canvas-host canvas{
   position: relative;
   z-index: 1;
 }
