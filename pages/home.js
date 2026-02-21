@@ -150,7 +150,7 @@ if (elFeels) {
 if (!f) {
   elFeels.textContent = "—";
 } else if (f.same) {
-  elFeels.textContent = "Sense diferència respecte temps real";
+  elFeels.textContent = "Sense diferència";
 } else {
   elFeels.textContent = `${fmt1(f.valueC)} °C`;
 }
