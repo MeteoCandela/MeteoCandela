@@ -84,16 +84,38 @@ function windChillC(tC, windKmh){
 function feelsLike(tC, rh, windKmh){
   if (!Number.isFinite(tC)) return null;
 
-  const wc = windChillC(tC, windKmh);
-  if (wc != null) {
-    if (Math.abs(wc - tC) < 0.5) return { same:true };
-    return { valueC: wc, label: "vent" };
+  const hasRh = Number.isFinite(rh);
+  const hasWind = Number.isFinite(windKmh);
+
+  // Si no tenim ni humitat ni vent
+  if (!hasRh && !hasWind) return null;
+
+  // Helper delta
+  function pack(v, emoji){
+    const d = v - tC;
+    const sign = d > 0 ? "+" : "";
+    return {
+      valueC: v,
+      text: `${emoji} ${fmt1(v)} °C (${sign}${fmt1(d)}°)`
+    };
   }
 
-  const hi = heatIndexC(tC, rh);
-  if (hi != null) {
-    if (Math.abs(hi - tC) < 0.5) return { same:true };
-    return { valueC: hi, label: "xafogor" };
+  // ❄️ Fred amb vent (prioritat)
+  if (hasWind) {
+    const wc = windChillC(tC, windKmh);
+    if (wc != null) {
+      if (Math.abs(wc - tC) < 0.5) return { same:true };
+      return pack(wc, "❄️");
+    }
+  }
+
+  // 🥵 Calor amb humitat
+  if (hasRh) {
+    const hi = heatIndexC(tC, rh);
+    if (hi != null) {
+      if (Math.abs(hi - tC) < 0.5) return { same:true };
+      return pack(hi, "🥵");
+    }
   }
 
   return { same:true };
