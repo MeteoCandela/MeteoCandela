@@ -408,9 +408,10 @@ export function initHome() {
     try {
       if ($("year")) $("year").textContent = String(new Date().getFullYear());
 
-      await loadHistoryOnce(HISTORY_URL, state);
-      await loadCurrentAndHeartbeat(CURRENT_URL, HEARTBEAT_URL, state);
-
+      await Promise.all([
+  loadHistoryOnce(HISTORY_URL, state),
+  loadCurrentAndHeartbeat(CURRENT_URL, HEARTBEAT_URL, state),
+]);
       const hist = state.historyRows || [];
       const initialActual = state.current || (hist.length ? hist[hist.length - 1] : null);
 
