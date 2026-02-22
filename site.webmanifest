@@ -2,7 +2,7 @@
   "name": "MeteoValls",
   "short_name": "MeteoValls",
   "id": "/",
-  "start_url": "/?source=pwa",
+  "start_url": "/",
   "scope": "/",
   "lang": "ca",
   "dir": "ltr",
