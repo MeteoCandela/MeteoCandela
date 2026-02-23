@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <!-- (igual que index.html) -->
+  <title>MeteoValls · Agrícola (ET0, VPD, GDD) · Valls</title>
+  <meta name="description" content="Panell agronòmic: ET0 (Hargreaves), VPD, GDD, risc de rosada, pluja i vent a Valls (Alt Camp).">
+  <link rel="canonical" href="https://meteocandela.cat/agricola.html">
+
+  <link rel="stylesheet" href="./style.css?v=2026-02-19-001">
+  <script defer src="./vendor/chart.umd.min.js"></script>
+</head>
+
+<body data-page="agricola">
+  <header class="hero">
+    <div class="hero__overlay"></div>
+    <div class="hero__content">
+      <h1>MeteoValls · Agrícola</h1>
+      <p id="lastUpdated" aria-live="polite">Carregant…</p>
+      <p id="statusLine" class="status" aria-live="polite">Indicadors agronòmics (ET0, VPD, GDD)</p>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="card span2">
+      <nav class="quick-nav" aria-label="Navegació principal">
+        <a href="./index.html" class="quick-nav__btn">🏠 Inici</a>
+        <a href="./previsio.html" class="quick-nav__btn">⛅ Previsió</a>
+        <a href="./historic.html" class="quick-nav__btn">📊 Històric</a>
+      </nav>
+    </section>
+
+    <!-- KPIs AGRÍCOLA -->
+    <section class="card span2">
+      <div class="card-head">
+        <h2>Indicadors agrícoles (avui)</h2>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-val" id="kpiVpdNow">—</div>
+          <div class="kpi-lab">VPD ara (kPa)</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-val" id="kpiVpdMax">—</div>
+          <div class="kpi-lab">VPD màxim avui (kPa)</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-val" id="kpiEt0">—</div>
+          <div class="kpi-lab">ET0 avui (mm) · Hargreaves</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-val" id="kpiEtc">—</div>
+          <div class="kpi-lab">ETc avui (mm) · ET0·Kc</div>
+        </div>
+
+        <div class="kpi kpi--wide-left">
+          <div class="kpi-val" id="kpiGdd">—</div>
+          <div class="kpi-lab">GDD avui (°C·dia)</div>
+        </div>
+        <div class="kpi kpi--wide-right">
+          <div class="kpi-val" id="kpiDewSpread">—</div>
+          <div class="kpi-lab">T–Td ara (°C) · prox. rosada</div>
+        </div>
+      </div>
+
+      <div class="chips-grid">
+        <div class="chip">
+          <span>🌱 Kc</span>
+          <strong>
+            <select id="kcSelect" class="select" aria-label="Kc cultiu">
+              <option value="0.30">0.30 (hivern / sòl nu)</option>
+              <option value="0.45">0.45 (vinya inicial)</option>
+              <option value="0.70" selected>0.70 (vinya mitjana)</option>
+              <option value="0.85">0.85 (horta activa)</option>
+              <option value="1.00">1.00 (referència)</option>
+            </select>
+          </strong>
+        </div>
+
+        <div class="chip">
+          <span>🌡️ Base GDD</span>
+          <strong>
+            <select id="gddBase" class="select" aria-label="Base GDD">
+              <option value="5">5 °C</option>
+              <option value="10" selected>10 °C</option>
+              <option value="12">12 °C</option>
+            </select>
+          </strong>
+        </div>
+
+        <div class="chip"><span>⏱️ Hores VPD>1.2</span><strong id="chipVpd12">—</strong></div>
+        <div class="chip"><span>⏱️ Hores VPD>1.6</span><strong id="chipVpd16">—</strong></div>
+        <div class="chip"><span>💧 Punt de rosada</span><strong id="chipDew">—</strong></div>
+        <div class="chip"><span>🌧️ Pluja avui</span><strong id="chipRain">—</strong></div>
+      </div>
+    </section>
+
+    <!-- Gràfica VPD -->
+    <section class="card chart-box span2">
+      <h2>VPD (dia)</h2>
+      <canvas id="chartVpd"></canvas>
+    </section>
+
+    <!-- Gràfica ET0/Pluja (resum) -->
+    <section class="card chart-box span2">
+      <h2>ET0 estimada vs pluja (dia)</h2>
+      <canvas id="chartEt0"></canvas>
+      <p class="muted-line">ET0 via Hargreaves (sense radiació solar). Útil per seguiment i comparatives.</p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>© <span id="year"></span> MeteoValls</span>
+  </footer>
+
+  <script type="module" src="./app.js?v=2026-02-19-001"></script>
+</body>
+</html>
