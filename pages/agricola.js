@@ -17,8 +17,8 @@ const REFRESH_ON_VISIBLE = true;
 
 const LAT_VALLS = 41.29;
 
-// Charts fullscreen
-const FS_CANVAS_IDS = ["chartVpd", "chartAgroTemp", "chartDew"];
+// Fullscreen charts (ids del teu agrícola.html nou)
+const FS_CANVAS_IDS = ["chartVpd", "chartDew", "chartAgroTemp", "chartEt"];
 
 // ---------- helpers UI ----------
 function setText(id, txt) {
@@ -59,6 +59,14 @@ function fmt2(x) {
 
 function clamp(n, a, b) {
   return Math.max(a, Math.min(b, n));
+}
+
+function fmtTimeHHMM(ts) {
+  try {
+    return new Date(Number(ts)).toLocaleTimeString("ca-ES", { hour: "2-digit", minute: "2-digit" });
+  } catch {
+    return "—";
+  }
 }
 
 // ---------- Agro maths ----------
@@ -211,13 +219,13 @@ function setupDaySelector(dayKeys, initialKey, onChange) {
   return sel.value;
 }
 
-// ---------- charts (reuse style like charts_day.js) ----------
+// ---------- charts ----------
 function destroyChart(ref) {
   try { ref?.destroy?.(); } catch {}
   return null;
 }
 
-function buildLineChart(canvasId, labels, data, label, unit) {
+function buildLineChart(canvasId, labels, data, label, unit, rowsRef) {
   const el = document.getElementById(canvasId);
   if (!el || !window.Chart) return null;
 
@@ -248,18 +256,71 @@ function buildLineChart(canvasId, labels, data, label, unit) {
         tooltip: {
           displayColors: false,
           callbacks: {
+            title: (items) => {
+              const idx = items?.[0]?.dataIndex;
+              const ts = (idx == null) ? null : rowsRef?.[idx]?.ts;
+              return ts ? fmtTimeHHMM(ts) : "";
+            },
             label: (ctx) => {
               const v = ctx.parsed?.y;
               if (v == null) return "—";
               const n = Number(v);
-              return `${ctx.dataset?.label || ""}: ${Number.isFinite(n) ? n.toFixed(2) : "—"} ${unit || ""}`.trim();
+              const txt = Number.isFinite(n) ? n.toFixed(2) : "—";
+              return `${ctx.dataset?.label || ""}: ${txt} ${unit || ""}`.trim();
             }
           }
         }
       },
       scales: {
-        x: { ticks: { autoSkip: true, maxTicksLimit: 12, maxRotation: 45, minRotation: 45 } },
+        x: { ticks: { autoSkip: true, maxTicksLimit: 14, maxRotation: 45, minRotation: 45 } },
         y: { beginAtZero: false }
+      }
+    }
+  });
+}
+
+function buildBarChartET(canvasId, et0, etc) {
+  const el = document.getElementById(canvasId);
+  if (!el || !window.Chart) return null;
+
+  const dpr = Math.min(2, (window.devicePixelRatio || 1));
+
+  const data = [
+    Number.isFinite(et0) ? Number(et0.toFixed(2)) : null,
+    Number.isFinite(etc) ? Number(etc.toFixed(2)) : null
+  ];
+
+  return new Chart(el, {
+    type: "bar",
+    data: {
+      labels: ["ET0", "ETc"],
+      datasets: [{
+        label: "ET (mm)",
+        data,
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      devicePixelRatio: dpr,
+      plugins: {
+        legend: { display: true },
+        tooltip: {
+          displayColors: false,
+          callbacks: {
+            label: (ctx) => {
+              const v = ctx.parsed?.y;
+              if (v == null) return "—";
+              const n = Number(v);
+              return `ET: ${Number.isFinite(n) ? n.toFixed(2) : "—"} mm`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { autoSkip: false } },
+        y: { beginAtZero: true }
       }
     }
   });
@@ -275,7 +336,7 @@ export function initAgricola() {
     hb: null,
     selectedDay: null,
     timers: { cur: null, hist: null },
-    charts: { vpd: null, temp: null, dew: null },
+    charts: { vpd: null, temp: null, dew: null, et: null },
   };
 
   function pickActualRow() {
@@ -290,50 +351,54 @@ export function initAgricola() {
     const et0 = Number($("kpiEt0")?.dataset?.num || NaN);
     const etc = Number.isFinite(et0) ? et0 * kc : NaN;
     setText("kpiEtc", Number.isFinite(etc) ? fmt2(etc) : "—");
+
+    // si existeix chartEt, el refem perquè reflecteixi Kc
+    if (document.getElementById("chartEt")) {
+      state.charts.et = destroyChart(state.charts.et);
+      state.charts.et = buildBarChartET("chartEt", et0, etc);
+      initChartFullscreen(FS_CANVAS_IDS);
+    }
   }
 
   function renderKPIsForDay(rowsDay, curRow, dayKey) {
     const base = Number($("gddBase")?.value || 10);
 
-    // sèries
     const labels = [];
     const vpdSeries = [];
     const tSeries = [];
     const dewSeries = [];
+    const rowsRef = [];
 
     let vpdMax = -Infinity;
 
     for (const r of rowsDay) {
       const ts = Number(r?.ts);
+      if (!Number.isFinite(ts)) continue;
+
       const Tc = Number(r?.temp_c);
       const RH = Number(r?.hum_pct);
       const Td = Number(r?.dew_c);
 
-      if (!Number.isFinite(ts)) continue;
+      rowsRef.push({ ts });
 
-      // label hora
-      labels.push(new Date(ts).toLocaleTimeString("ca-ES", { hour: "2-digit", minute: "2-digit" }));
+      labels.push(fmtTimeHHMM(ts));
 
-      // temp
       tSeries.push(Number.isFinite(Tc) ? Tc : null);
-
-      // dew
       dewSeries.push(Number.isFinite(Td) ? Td : null);
 
-      // vpd
       const v = vpd_kpa(Tc, RH);
       vpdSeries.push(Number.isFinite(v) ? v : null);
       if (Number.isFinite(v)) vpdMax = Math.max(vpdMax, v);
     }
 
-    // Tmin/Tmax/Tmean (per ET0/GDD)
+    // Tmin/Tmax/Tmean (per ET0/GDD) del DIA SELECCIONAT
     const temps = rowsDay.map(r => Number(r?.temp_c)).filter(Number.isFinite);
-    const mm = minMax(temps);
-    const Tmax = mm?.max ?? null;
-    const Tmin = mm?.min ?? null;
+    const mmT = minMax(temps);
+    const Tmax = mmT?.max ?? null;
+    const Tmin = mmT?.min ?? null;
     const Tmean = (Tmax != null && Tmin != null) ? (Tmax + Tmin) / 2 : null;
 
-    // data del dia seleccionat (no Date.now!)
+    // data del dia seleccionat
     const [yy, mmS, dd] = String(dayKey).split("-").map(Number);
     const dateObj = new Date(yy, (mmS || 1) - 1, dd || 1);
 
@@ -345,7 +410,7 @@ export function initAgricola() {
       ? gdd_day(Tmax, Tmin, base)
       : NaN;
 
-    // Instantani (del “curRow” real, no del dia seleccionat)
+    // Instantani (curRow real)
     const Tnow = Number(curRow?.temp_c);
     const RHnow = Number(curRow?.hum_pct);
     const TdNow = Number(curRow?.dew_c);
@@ -353,7 +418,7 @@ export function initAgricola() {
 
     const vpdNow = vpd_kpa(Tnow, RHnow);
 
-    // Pintar KPIs
+    // KPIs
     setText("kpiVpdNow", Number.isFinite(vpdNow) ? fmt2(vpdNow) : "—");
     setText("kpiVpdMax", Number.isFinite(vpdMax) ? fmt2(vpdMax) : "—");
 
@@ -364,18 +429,16 @@ export function initAgricola() {
     }
 
     setText("kpiGdd", Number.isFinite(gdd) ? fmt2(gdd) : "—");
-    recomputeEtc();
 
-    // Spread T-Td (ara)
-    setText("kpiSpread",
+    // Spread (ara) -> id nou
+    setText("kpiSpreadChip",
       (Number.isFinite(Tnow) && Number.isFinite(TdNow)) ? fmt1(Tnow - TdNow) : "—"
     );
 
-    // Pluja (ara)
-    setText("kpiRainDay", Number.isFinite(rainDayNow) ? fmt1(rainDayNow) : "—");
-    setText("chipRain", Number.isFinite(rainDayNow) ? `${fmt1(rainDayNow)} mm` : "—");
+    // Pluja (ara) -> id nou
+    setText("kpiRainDayAgro", Number.isFinite(rainDayNow) ? fmt1(rainDayNow) : "—");
 
-    // Punt de rosada (ara)
+    // Rosada (ara)
     setText("chipDew", Number.isFinite(TdNow) ? `${fmt1(TdNow)} °C` : "—");
 
     // Hores llindar (del dia seleccionat)
@@ -384,21 +447,26 @@ export function initAgricola() {
     setText("chipVpd12", Number.isFinite(h12) ? `${fmt1(h12)} h` : "—");
     setText("chipVpd16", Number.isFinite(h16) ? `${fmt1(h16)} h` : "—");
 
+    // ETc depèn de Kc
+    const kc = Number($("kcSelect")?.value || 0.7);
+    const etc = Number.isFinite(et0) ? et0 * kc : NaN;
+    setText("kpiEtc", Number.isFinite(etc) ? fmt2(etc) : "—");
+
     // Charts
     state.charts.vpd = destroyChart(state.charts.vpd);
     state.charts.temp = destroyChart(state.charts.temp);
     state.charts.dew = destroyChart(state.charts.dew);
+    state.charts.et = destroyChart(state.charts.et);
 
-    state.charts.vpd = buildLineChart("chartVpd", labels, vpdSeries, "VPD", "kPa");
-    state.charts.temp = buildLineChart("chartAgroTemp", labels, tSeries, "Temperatura", "°C");
+    state.charts.vpd = buildLineChart("chartVpd", labels, vpdSeries, "VPD", "kPa", rowsRef);
+    state.charts.dew = buildLineChart("chartDew", labels, dewSeries, "Punt de rosada", "°C", rowsRef);
+    state.charts.temp = buildLineChart("chartAgroTemp", labels, tSeries, "Temperatura", "°C", rowsRef);
 
-    // opcional (si tens canvas chartDew a l’HTML)
-    const dewCanvas = document.getElementById("chartDew");
-    if (dewCanvas) {
-      state.charts.dew = buildLineChart("chartDew", labels, dewSeries, "Punt de rosada", "°C");
+    // ET bar
+    if (document.getElementById("chartEt")) {
+      state.charts.et = buildBarChartET("chartEt", et0, etc);
     }
 
-    // Fullscreen buttons
     initChartFullscreen(FS_CANVAS_IDS);
   }
 
@@ -407,6 +475,7 @@ export function initAgricola() {
     if (!row) {
       setSourceLine("Font: sense dades carregades");
       setText("lastUpdated", "Sense dades");
+      renderStatus(null, state.hb);
       return;
     }
 
@@ -414,9 +483,14 @@ export function initAgricola() {
     setText("lastUpdated", `Actualitzat: ${fmtDate(row.ts)}`);
     renderStatus(row.ts, state.hb);
 
-    // Dia seleccionat
     const dayKey = state.selectedDay || dayKeyFromTs(Date.now());
-    const rowsDay = computeRowsForDay(state.historyRows, dayKey, (dayKey === dayKeyFromTs(Date.now())) ? state.current : null);
+    const isToday = dayKey === dayKeyFromTs(Date.now());
+
+    const rowsDay = computeRowsForDay(
+      state.historyRows,
+      dayKey,
+      isToday ? state.current : null
+    );
 
     setText("dayLabel", rowsDay.length ? labelForDay(dayKey) : `${labelForDay(dayKey)} · sense dades`);
     renderKPIsForDay(rowsDay, row, dayKey);
@@ -450,7 +524,6 @@ export function initAgricola() {
   async function main() {
     if ($("year")) $("year").textContent = String(new Date().getFullYear());
 
-    // listeners
     $("kcSelect")?.addEventListener("change", recomputeEtc);
     $("gddBase")?.addEventListener("change", () => renderAll());
 
@@ -459,9 +532,9 @@ export function initAgricola() {
       loadCurrentAndHeartbeat(CURRENT_URL, HEARTBEAT_URL, state),
     ]);
 
-    // selector dia
     const hist = state.historyRows || [];
     const dayKeys = buildDayListFromRows(hist, state.current);
+
     const wanted = getUrlDayParam();
     const initial = (wanted && dayKeys.includes(wanted))
       ? wanted
@@ -476,7 +549,6 @@ export function initAgricola() {
 
     renderAll();
 
-    // timers
     safeClearInterval(state.timers.cur);
     safeClearInterval(state.timers.hist);
 
