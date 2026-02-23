@@ -1,9 +1,9 @@
 {
   "name": "MeteoValls",
   "short_name": "MeteoValls",
-  "id": "https://meteocandela.cat/",
-  "start_url": "https://meteocandela.cat/",
-  "scope": "https://meteocandela.cat/"
+  "id": "/",
+  "start_url": "/",
+  "scope": "/"
   "lang": "ca",
   "dir": "ltr",
 
