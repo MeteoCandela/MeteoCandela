@@ -1916,7 +1916,7 @@ html.fs-lock, body.fs-lock { overflow: hidden; }
 
 /* valor/label */
 #cardAgroCurrent .kpi-val{
-  font-size: 34px; /* posa el mateix que a l'índex */
+  font-size: 26px; /* posa el mateix que a l'índex */
   line-height: 1;
   letter-spacing: -0.5px;
 }
