@@ -1,13 +1,28 @@
 <!doctype html>
 <html lang="ca">
 <head>
-  <!-- (igual que index.html) -->
-  <title>MeteoValls · Agrícola (ET0, VPD, GDD) · Valls</title>
-  <meta name="description" content="Panell agronòmic: ET0 (Hargreaves), VPD, GDD, risc de rosada, pluja i vent a Valls (Alt Camp).">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <meta name="theme-color" content="#0b1220">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MeteoValls">
+
+  <title>MeteoValls · Agrícola · Valls (Alt Camp)</title>
+  <meta name="description" content="Panell agrícola: VPD, ET0 (Hargreaves), ETc, GDD i risc de rosada a Valls (Alt Camp).">
   <link rel="canonical" href="https://meteocandela.cat/agricola.html">
+  <meta name="robots" content="index,follow">
+
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="./favicon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+  <link rel="manifest" href="./site.webmanifest">
 
   <link rel="stylesheet" href="./style.css?v=2026-02-19-001">
+
   <script defer src="./vendor/chart.umd.min.js"></script>
+  <script defer src="./vendor/suncalc.min.js"></script>
 </head>
 
 <body data-page="agricola">
@@ -16,102 +31,148 @@
     <div class="hero__content">
       <h1>MeteoValls · Agrícola</h1>
       <p id="lastUpdated" aria-live="polite">Carregant…</p>
-      <p id="statusLine" class="status" aria-live="polite">Indicadors agronòmics (ET0, VPD, GDD)</p>
+      <p id="statusLine" class="status" aria-live="polite">—</p>
     </div>
   </header>
 
   <main class="grid">
-    <!-- Navegació -->
-<section class="card span2">
-  <nav class="quick-nav" aria-label="Navegació principal">
-    <a href="./index.html" class="quick-nav__btn">🏠 Inici</a>
-    <a href="./previsio.html" class="quick-nav__btn">⛅ Previsió</a>
-    <a href="./historic.html" class="quick-nav__btn">📊 Històric</a>
-  </nav>
-</section>
 
-<!-- AGRÍCOLA KPIs -->
-<section class="card span2" id="cardAgro">
-  <div class="card-head">
-    <h2>Agrícola (avui)</h2>
-    <div class="pill" id="agroNote">ET0 via Hargreaves (sense radiació solar)</div>
-  </div>
+    <!-- Navegació ràpida (mateix patró) -->
+    <section class="card span2">
+      <nav class="quick-nav" aria-label="Navegació principal">
+        <a href="./index.html" class="quick-nav__btn">🏠 Inici</a>
+        <a href="./previsio.html" class="quick-nav__btn">⛅ Previsió</a>
+        <a href="./historic.html" class="quick-nav__btn">📊 Històric</a>
+      </nav>
+    </section>
 
-  <div class="kpi-grid">
-    <div class="kpi">
-      <div class="kpi-val" id="kpiVpdNow">—</div>
-      <div class="kpi-lab">VPD ara (kPa)</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-val" id="kpiVpdMax">—</div>
-      <div class="kpi-lab">VPD màxim avui (kPa)</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-val" id="kpiEt0">—</div>
-      <div class="kpi-lab">ET0 avui (mm)</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-val" id="kpiEtc">—</div>
-      <div class="kpi-lab">ETc avui (mm) · ET0·Kc</div>
-    </div>
+    <!-- “Actual” AGRÍCOLA (mateix look que cardCurrent) -->
+    <section class="card" id="cardAgroCurrent">
+      <div class="card-head">
+        <h2>Agrícola · Actual</h2>
+        <div class="pill" id="agroNote">ET0 via Hargreaves (sense radiació)</div>
+      </div>
 
-    <div class="kpi kpi--wide-left">
-      <div class="kpi-val" id="kpiGdd">—</div>
-      <div class="kpi-lab">GDD avui (base configurable)</div>
-    </div>
-    <div class="kpi kpi--wide-right">
-      <div class="kpi-val" id="kpiSpread">—</div>
-      <div class="kpi-lab">T–Td ara (°C) · prox. rosada</div>
-    </div>
-  </div>
+      <div class="now-source">
+        <span class="pill" id="sourceLine">Font: —</span>
+      </div>
 
-  <div class="chips-grid">
-    <div class="chip">
-      <span>🌱 Kc</span>
-      <strong>
-        <select id="kcSelect" class="select">
-          <option value="0.30">0.30 (sòl nu / hivern)</option>
-          <option value="0.45">0.45 (vinya inici)</option>
-          <option value="0.70" selected>0.70 (vinya mitja)</option>
-          <option value="0.85">0.85 (horta activa)</option>
-          <option value="1.00">1.00 (referència)</option>
-        </select>
-      </strong>
-    </div>
+      <!-- KPIs (mateixa grid kpi) -->
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-val" id="kpiVpdNow">—</div>
+          <div class="kpi-lab">VPD ara (kPa)</div>
+        </div>
 
-    <div class="chip">
-      <span>🌡️ Base GDD</span>
-      <strong>
-        <select id="gddBase" class="select">
-          <option value="5">5 °C</option>
-          <option value="10" selected>10 °C</option>
-          <option value="12">12 °C</option>
-        </select>
-      </strong>
-    </div>
+        <div class="kpi">
+          <div class="kpi-val" id="kpiEt0">—</div>
+          <div class="kpi-lab">ET0 avui (mm)</div>
+        </div>
 
-    <div class="chip"><span>⏱️ Hores VPD>1.2</span><strong id="chipVpd12">—</strong></div>
-    <div class="chip"><span>⏱️ Hores VPD>1.6</span><strong id="chipVpd16">—</strong></div>
-    <div class="chip"><span>💧 Punt de rosada</span><strong id="chipDew">—</strong></div>
-    <div class="chip"><span>🌧️ Pluja avui</span><strong id="chipRain">—</strong></div>
-  </div>
-</section>
+        <div class="kpi">
+          <div class="kpi-val" id="kpiEtc">—</div>
+          <div class="kpi-lab">ETc avui (mm)</div>
+        </div>
 
-<!-- GRÀFICA VPD -->
-<section class="card chart-box span2">
-  <h2>VPD (dia)</h2>
-  <canvas id="chartVpd"></canvas>
-</section>
+        <div class="kpi">
+          <div class="kpi-val" id="kpiGdd">—</div>
+          <div class="kpi-lab">GDD avui</div>
+        </div>
 
-<!-- GRÀFICA TEMPERATURA (dia) -->
-<section class="card chart-box span2">
-  <h2>Temperatura (dia) · per ET0/GDD</h2>
-  <canvas id="chartAgroTemp"></canvas>
-</section>
+        <div class="kpi kpi--wide-left">
+          <div class="kpi-val" id="kpiVpdMax">—</div>
+          <div class="kpi-lab">VPD màxim avui (kPa)</div>
+        </div>
+
+        <div class="kpi kpi--wide-right">
+          <div class="kpi-val" id="kpiRainDayAgro">—</div>
+          <div class="kpi-lab">Pluja diària (mm)</div>
+        </div>
+      </div>
+
+      <!-- Chips (mateix estil chips-grid) -->
+      <div class="chips-grid">
+        <div class="chip">
+          <span>🌱 Kc</span>
+          <strong>
+            <select id="kcSelect" class="select" aria-label="Kc cultiu">
+              <option value="0.30">0.30 (sòl nu / hivern)</option>
+              <option value="0.45">0.45 (vinya inici)</option>
+              <option value="0.70" selected>0.70 (vinya mitja)</option>
+              <option value="0.85">0.85 (horta activa)</option>
+              <option value="1.00">1.00 (referència)</option>
+            </select>
+          </strong>
+        </div>
+
+        <div class="chip">
+          <span>🌡️ Base GDD</span>
+          <strong>
+            <select id="gddBase" class="select" aria-label="Base GDD">
+              <option value="5">5 °C</option>
+              <option value="10" selected>10 °C</option>
+              <option value="12">12 °C</option>
+            </select>
+          </strong>
+        </div>
+
+        <div class="chip"><span>💧 Punt de rosada</span><strong id="chipDew">—</strong></div>
+        <div class="chip"><span>ΔT (T–Td)</span><strong id="kpiSpreadChip">—</strong></div>
+        <div class="chip"><span>⏱️ Hores VPD&gt;1.2</span><strong id="chipVpd12">—</strong></div>
+        <div class="chip"><span>⏱️ Hores VPD&gt;1.6</span><strong id="chipVpd16">—</strong></div>
+      </div>
+    </section>
+
+    <!-- Daybar (igual que home, perquè el layout sempre quedi igual) -->
+    <section class="card span2">
+      <div class="daybar">
+        <div class="daybar__left">
+          <div class="daybar__title">Gràfiques del dia (Agrícola)</div>
+          <div id="dayLabel" class="daybar__subtitle">—</div>
+        </div>
+
+        <div class="daybar__right">
+          <button id="dayPrev" class="btn" type="button" aria-label="Dia anterior">◀</button>
+
+          <label class="sr-only" for="daySelect">Selecciona dia</label>
+          <select id="daySelect" class="select" aria-label="Selecciona dia">
+            <option>Carregant…</option>
+          </select>
+
+          <button id="dayNext" class="btn" type="button" aria-label="Dia següent">▶</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHARTS (mateixa disposició que home: 1,1,span2,span2) -->
+    <section class="card chart-box">
+      <h2 id="chartVpdTitle">VPD</h2>
+      <canvas id="chartVpd"></canvas>
+    </section>
+
+    <section class="card chart-box">
+      <h2 id="chartDewTitle">Punt de rosada</h2>
+      <canvas id="chartDew"></canvas>
+    </section>
+
+    <section class="card chart-box span2">
+      <h2 id="chartTempTitle">Temperatura</h2>
+      <canvas id="chartAgroTemp"></canvas>
+    </section>
+
+    <section class="card chart-box span2">
+      <h2 id="chartEtTitle">ET0 / ETc (resum)</h2>
+      <canvas id="chartEt"></canvas>
+      <p class="muted-line">ET0 via Hargreaves (sense radiació solar).</p>
+    </section>
+
   </main>
 
   <footer class="footer">
     <span>© <span id="year"></span> MeteoValls</span>
+    <span style="margin-left:12px;">
+      <a href="./sobre.html" style="color:inherit; text-decoration:underline;">Sobre l’estació</a>
+    </span>
   </footer>
 
   <script type="module" src="./app.js?v=2026-02-19-001"></script>
