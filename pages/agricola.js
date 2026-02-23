@@ -4,7 +4,7 @@ import { getApi } from "../lib/env.js";
 import { fmt1, dayKeyFromTs, startEndMsFromDayKey, minMax } from "../lib/format.js";
 import { loadHistoryOnce, loadCurrentAndHeartbeat } from "../lib/api.js";
 
-const LAT_VALLS = 41.29; // Valls aprox.
+const LAT_VALLS = 41.29;
 
 let chVpd = null;
 let chTemp = null;
@@ -19,13 +19,6 @@ function vpd_kpa(Tc, RH){
   if (!Number.isFinite(Tc) || !Number.isFinite(RH)) return NaN;
   const rh = clamp(Number(RH), 0, 100);
   return esat_kpa(Tc) * (1 - rh/100);
-}
-function dewpoint_c(Tc, RH){
-  if (!Number.isFinite(Tc) || !Number.isFinite(RH)) return NaN;
-  const rh = clamp(Number(RH), 0.0001, 100);
-  const a = 17.27, b = 237.3;
-  const alpha = ((a*Tc)/(b+Tc)) + Math.log(rh/100);
-  return (b*alpha)/(a-alpha);
 }
 
 // Ra FAO56 (MJ/m²/day)
@@ -109,10 +102,10 @@ function buildLineChart(canvasId, labels, data, label){
   });
 }
 
-function countHoursOver(rows, thr){
-  // rows són cada ~5 min -> estimem 5 min per punt
+function countHoursOver(todayRows, thr){
+  // el teu històric va a 5 min → 5 min per punt (aprox)
   let minutes = 0;
-  for (const r of rows){
+  for (const r of todayRows){
     const v = vpd_kpa(Number(r?.temp_c), Number(r?.hum_pct));
     if (Number.isFinite(v) && v > thr) minutes += 5;
   }
@@ -134,13 +127,8 @@ function recomputeEtc(){
 export function initAgricola(){
   const { HISTORY_URL, CURRENT_URL, HEARTBEAT_URL } = getApi();
 
-  const state = {
-    historyRows: [],
-    current: null,
-    hb: null,
-  };
+  const state = { historyRows: [], current: null, hb: null };
 
-  // listeners UI
   $("#kcSelect")?.addEventListener("change", recomputeEtc);
   $("#gddBase")?.addEventListener("change", () => { main().catch(()=>{}); });
 
@@ -160,34 +148,33 @@ export function initAgricola(){
       return;
     }
 
-    // Dades instantànies
+    // Instantani
     const Tnow = Number(cur.temp_c);
     const RHnow = Number(cur.hum_pct);
+    const dewNow = Number(cur.dew_c);
     const rainDay = Number(cur.rain_day_mm);
 
     const vpdNow = vpd_kpa(Tnow, RHnow);
-    const dewNow = dewpoint_c(Tnow, RHnow);
 
     setText("kpiVpdNow", Number.isFinite(vpdNow) ? fmt2(vpdNow) : "—");
     setText("chipDew", Number.isFinite(dewNow) ? `${fmt1(dewNow)} °C` : "—");
     setText("kpiSpread", (Number.isFinite(Tnow) && Number.isFinite(dewNow)) ? fmt1(Tnow - dewNow) : "—");
     setText("chipRain", Number.isFinite(rainDay) ? `${fmt1(rainDay)} mm` : "—");
 
-    // Sèrie d’avui (per màxims/hores/charts)
+    // Sèrie d’avui
     const todayRows = computeTodayRows(hist, state.current);
 
     const temps = todayRows.map(r => Number(r.temp_c)).filter(Number.isFinite);
-    const hums  = todayRows.map(r => Number(r.hum_pct)).filter(Number.isFinite);
-
     const mm = minMax(temps);
     const Tmax = mm?.max ?? null;
     const Tmin = mm?.min ?? null;
     const Tmean = (Tmax != null && Tmin != null) ? (Tmax + Tmin)/2 : null;
 
-    // VPD màxim del dia
+    // VPD màxim + sèrie per gràfica
     let vpdMax = -Infinity;
     const vpdSeries = [];
     const labels = [];
+    const tempSeries = [];
 
     for (const r of todayRows){
       const Tc = Number(r.temp_c);
@@ -196,7 +183,9 @@ export function initAgricola(){
 
       const v = vpd_kpa(Tc, RH);
       if (Number.isFinite(v)) vpdMax = Math.max(vpdMax, v);
+
       vpdSeries.push(v);
+      tempSeries.push(Tc);
 
       try{
         labels.push(new Date(r.ts).toLocaleTimeString("ca-ES", { hour:"2-digit", minute:"2-digit" }));
@@ -207,13 +196,12 @@ export function initAgricola(){
 
     setText("kpiVpdMax", Number.isFinite(vpdMax) ? fmt2(vpdMax) : "—");
 
-    // Hores sobre llindars
     const h12 = countHoursOver(todayRows, 1.2);
     const h16 = countHoursOver(todayRows, 1.6);
     setText("chipVpd12", Number.isFinite(h12) ? `${fmt1(h12)} h` : "—");
     setText("chipVpd16", Number.isFinite(h16) ? `${fmt1(h16)} h` : "—");
 
-    // ET0 Hargreaves + GDD
+    // ET0 + GDD
     const base = Number($("#gddBase")?.value || 10);
     const d0 = new Date();
     const dateObj = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate());
@@ -236,9 +224,8 @@ export function initAgricola(){
     // Charts
     destroyCharts();
     chVpd = buildLineChart("chartVpd", labels, vpdSeries, "VPD (kPa)");
-    chTemp = buildLineChart("chartAgroTemp", labels, todayRows.map(r=>Number(r.temp_c)), "Temperatura (°C)");
+    chTemp = buildLineChart("chartAgroTemp", labels, tempSeries, "Temperatura (°C)");
 
-    // Capçalera updated
     setText("lastUpdated", `Actualitzat: ${new Date(cur.ts).toLocaleString("ca-ES")}`);
   }
 
@@ -253,4 +240,4 @@ export function initAgricola(){
   }
 
   main();
-          }
+}
