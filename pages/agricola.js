@@ -3,11 +3,7 @@ import { $ } from "../lib/dom.js";
 import { getApi } from "../lib/env.js";
 import {
   fmt1,
-  fmt2,          // si NO tens fmt2 al teu format.js, elimina aquesta importació i usa la funció local fmt2f()
   fmtDate,
-  fmtDayLong,
-  fmtTime,
-  fmtTimeWithH,
   dayKeyFromTs,
   startEndMsFromDayKey,
   minMax,
@@ -15,34 +11,22 @@ import {
 import { loadHistoryOnce, loadCurrentAndHeartbeat } from "../lib/api.js";
 import { initChartFullscreen } from "../lib/fullscreen_chart.js";
 
-// =========================
-// Config
-// =========================
-const LAT_VALLS = 41.29;
-
 const REFRESH_CURRENT_MS = 60 * 1000;       // 1 min
 const REFRESH_HISTORY_MS = 60 * 60 * 1000;  // 60 min
 const REFRESH_ON_VISIBLE = true;
 
-// canvases del layout agrícola
-const FS_CANVAS_IDS = ["chartVpd", "chartDew", "chartAgroTemp", "chartEt"];
+const LAT_VALLS = 41.29;
 
-// =========================
-// Helpers bàsics
-// =========================
-function fmt2f(x){
-  const n = Number(x);
-  return Number.isFinite(n) ? n.toFixed(2) : "—";
-}
+// Charts fullscreen
+const FS_CANVAS_IDS = ["chartVpd", "chartAgroTemp", "chartDew"];
 
-function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
-
-function setText(id, txt){
+// ---------- helpers UI ----------
+function setText(id, txt) {
   const el = $(id);
   if (el) el.textContent = txt;
 }
 
-function setSourceLine(txt){
+function setSourceLine(txt) {
   const el = $("sourceLine");
   if (el) el.textContent = txt;
 }
@@ -68,38 +52,47 @@ function renderStatus(lastTsMs, hb) {
   el.textContent = msg;
 }
 
-// =========================
-// Física agro
-// =========================
-function esat_kpa(Tc){
+function fmt2(x) {
+  const n = Number(x);
+  return Number.isFinite(n) ? n.toFixed(2) : "—";
+}
+
+function clamp(n, a, b) {
+  return Math.max(a, Math.min(b, n));
+}
+
+// ---------- Agro maths ----------
+function esat_kpa(Tc) {
   return 0.6108 * Math.exp((17.27 * Tc) / (Tc + 237.3));
 }
 
-function vpd_kpa(Tc, RH){
+function vpd_kpa(Tc, RH) {
   if (!Number.isFinite(Tc) || !Number.isFinite(RH)) return NaN;
   const rh = clamp(Number(RH), 0, 100);
-  return esat_kpa(Tc) * (1 - rh/100);
+  return esat_kpa(Tc) * (1 - rh / 100);
 }
 
 // Ra FAO56 (MJ/m²/day)
-function ra_mj_m2_day(latDeg, dateObj){
-  const lat = (Math.PI/180) * latDeg;
+function ra_mj_m2_day(latDeg, dateObj) {
+  const lat = (Math.PI / 180) * latDeg;
 
   const J = Math.floor(
-    (Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()) - Date.UTC(dateObj.getFullYear(), 0, 0)) / 86400000
+    (Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()) -
+      Date.UTC(dateObj.getFullYear(), 0, 0)) / 86400000
   );
 
-  const dr = 1 + 0.033 * Math.cos((2*Math.PI/365) * J);
-  const delta = 0.409 * Math.sin((2*Math.PI/365) * J - 1.39);
+  const dr = 1 + 0.033 * Math.cos((2 * Math.PI / 365) * J);
+  const delta = 0.409 * Math.sin((2 * Math.PI / 365) * J - 1.39);
   const ws = Math.acos(clamp(-Math.tan(lat) * Math.tan(delta), -1, 1));
   const Gsc = 0.0820; // MJ/m²/min
 
-  return (24*60/Math.PI) * Gsc * dr *
-    (ws*Math.sin(lat)*Math.sin(delta) + Math.cos(lat)*Math.cos(delta)*Math.sin(ws));
+  return (24 * 60 / Math.PI) * Gsc * dr *
+    (ws * Math.sin(lat) * Math.sin(delta) +
+      Math.cos(lat) * Math.cos(delta) * Math.sin(ws));
 }
 
 // ET0 Hargreaves (mm/day)
-function et0_hargreaves_mm(Tmax, Tmin, Tmean, latDeg, dateObj){
+function et0_hargreaves_mm(Tmax, Tmin, Tmean, latDeg, dateObj) {
   const Ra = ra_mj_m2_day(latDeg, dateObj);
   const dT = Math.max(0, Number(Tmax) - Number(Tmin));
   const Tm = Number(Tmean);
@@ -107,30 +100,36 @@ function et0_hargreaves_mm(Tmax, Tmin, Tmean, latDeg, dateObj){
   return 0.0023 * Ra * (Tm + 17.8) * Math.sqrt(dT);
 }
 
-function gdd_day(Tmax, Tmin, base){
+function gdd_day(Tmax, Tmin, base) {
   const tmean = (Number(Tmax) + Number(Tmin)) / 2;
   return Math.max(0, tmean - Number(base));
 }
 
-// =========================
-// Day selector (mateix patró que home.js)
-// =========================
-function getUrlDayParam() {
-  try {
-    const u = new URL(location.href);
-    const v = u.searchParams.get("day");
-    return v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
-  } catch {
-    return null;
+function countHoursOver(rows, thr) {
+  let minutes = 0;
+  for (const r of rows) {
+    const v = vpd_kpa(Number(r?.temp_c), Number(r?.hum_pct));
+    if (Number.isFinite(v) && v > thr) minutes += 5; // 5 min per punt
   }
+  return minutes / 60;
 }
 
-function setUrlDayParam(dayKey) {
-  try {
-    const u = new URL(location.href);
-    u.searchParams.set("day", dayKey);
-    history.replaceState(null, "", u.toString());
-  } catch {}
+// ---------- day rows ----------
+function computeRowsForDay(allRows, dayKey, currentMaybe) {
+  const { start, end } = startEndMsFromDayKey(dayKey);
+
+  const rows = (Array.isArray(allRows) ? allRows : [])
+    .filter((r) => Number.isFinite(Number(r?.ts)) && r.ts >= start && r.ts <= end)
+    .slice()
+    .sort((a, b) => a.ts - b.ts);
+
+  if (currentMaybe && Number.isFinite(Number(currentMaybe?.ts)) &&
+      currentMaybe.ts >= start && currentMaybe.ts <= end) {
+    const lastTs = rows.length ? rows[rows.length - 1].ts : null;
+    if (!lastTs || currentMaybe.ts > lastTs) rows.push(currentMaybe);
+  }
+
+  return rows;
 }
 
 function buildDayListFromRows(rows, current) {
@@ -150,6 +149,22 @@ function labelForDay(dayKey) {
   if (dayKey === today) return `Avui (${pretty})`;
   if (dayKey === yesterday) return `Ahir (${pretty})`;
   return pretty;
+}
+
+function getUrlDayParam() {
+  try {
+    const u = new URL(location.href);
+    const v = u.searchParams.get("day");
+    return v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
+  } catch { return null; }
+}
+
+function setUrlDayParam(dayKey) {
+  try {
+    const u = new URL(location.href);
+    u.searchParams.set("day", dayKey);
+    history.replaceState(null, "", u.toString());
+  } catch {}
 }
 
 function setupDaySelector(dayKeys, initialKey, onChange) {
@@ -184,172 +199,74 @@ function setupDaySelector(dayKeys, initialKey, onChange) {
 
   prev.addEventListener("click", () => {
     const i = currentIndex();
-    if (i > 0) {
-      sel.value = dayKeys[i - 1];
-      sel.dispatchEvent(new Event("change"));
-    }
+    if (i > 0) { sel.value = dayKeys[i - 1]; sel.dispatchEvent(new Event("change")); }
   });
 
   next.addEventListener("click", () => {
     const i = currentIndex();
-    if (i >= 0 && i < dayKeys.length - 1) {
-      sel.value = dayKeys[i + 1];
-      sel.dispatchEvent(new Event("change"));
-    }
+    if (i >= 0 && i < dayKeys.length - 1) { sel.value = dayKeys[i + 1]; sel.dispatchEvent(new Event("change")); }
   });
 
   updateButtons();
   return sel.value;
 }
 
-// =========================
-// Rows per dia seleccionat
-// =========================
-function rowsForDay(allRows, dayKey, currentMaybe){
-  const { start, end } = startEndMsFromDayKey(dayKey);
-
-  const rDay = (Array.isArray(allRows) ? allRows : [])
-    .filter(r => Number.isFinite(Number(r?.ts)) && r.ts >= start && r.ts <= end)
-    .slice()
-    .sort((a, b) => a.ts - b.ts);
-
-  if (currentMaybe && Number.isFinite(Number(currentMaybe?.ts)) && currentMaybe.ts >= start && currentMaybe.ts <= end) {
-    const lastTs = rDay.length ? rDay[rDay.length - 1].ts : null;
-    if (!lastTs || currentMaybe.ts > lastTs) rDay.push(currentMaybe);
-  }
-
-  return rDay;
+// ---------- charts (reuse style like charts_day.js) ----------
+function destroyChart(ref) {
+  try { ref?.destroy?.(); } catch {}
+  return null;
 }
 
-// =========================
-// Charts (mateix “feeling” que charts_day.js)
-// =========================
-function destroyAgroCharts(){
-  try { window.__chartVpd?.destroy?.(); } catch {}
-  try { window.__chartDew?.destroy?.(); } catch {}
-  try { window.__chartAgroTemp?.destroy?.(); } catch {}
-  try { window.__chartEt?.destroy?.(); } catch {}
-  window.__chartVpd = window.__chartDew = window.__chartAgroTemp = window.__chartEt = null;
-}
+function buildLineChart(canvasId, labels, data, label, unit) {
+  const el = document.getElementById(canvasId);
+  if (!el || !window.Chart) return null;
 
-function commonBaseOptions(){
   const dpr = Math.min(2, (window.devicePixelRatio || 1));
-  return {
-    responsive: true,
-    maintainAspectRatio: false,
-    devicePixelRatio: dpr,
-    interaction: { mode: "nearest", intersect: false, axis: "x" },
-    scales: {
-      x: {
-        type: "category",
-        ticks: {
-          autoSkip: true,
-          maxTicksLimit: 14,
-          maxRotation: 45,
-          minRotation: 45,
-          padding: 6
-        },
-        grid: { drawTicks: true }
-      }
-    }
-  };
-}
 
-function tooltipForSeries(unit, rowsRef){
-  return {
-    displayColors: false,
-    callbacks: {
-      title: (items) => {
-        const idx = items?.[0]?.dataIndex;
-        const ts = (idx == null) ? null : rowsRef?.[idx]?.ts;
-        return ts ? fmtTimeWithH(ts) : "";
-      },
-      label: (ctx) => {
-        const v = ctx.parsed?.y;
-        if (v == null) return "—";
-        return `${Number(v).toFixed(2)} ${unit}`;
-      }
-    }
-  };
-}
-
-function tooltipEt(){
-  return {
-    displayColors: false,
-    callbacks: {
-      title: () => "",
-      label: (ctx) => {
-        const v = ctx.parsed?.y;
-        if (v == null) return "—";
-        const name = ctx.label || "";
-        return `${name}: ${Number(v).toFixed(2)} mm`;
-      }
-    }
-  };
-}
-
-function buildLineChart(canvasId, labels, data, unit, rowsRef){
-  const canvas = $(canvasId);
-  if (!canvas || typeof window.Chart === "undefined") return null;
-
-  return new Chart(canvas, {
+  return new Chart(el, {
     type: "line",
     data: {
       labels,
       datasets: [{
-        label: "",
+        label,
         data,
         tension: 0.25,
         pointRadius: 1,
         pointHoverRadius: 5,
         pointHitRadius: 10,
-        borderWidth: 1.6,
+        borderWidth: 1.8,
         fill: false
       }]
     },
-    options: { ...commonBaseOptions(), plugins: { legend: { display: false }, tooltip: tooltipForSeries(unit, rowsRef) } }
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      devicePixelRatio: dpr,
+      interaction: { mode: "nearest", intersect: false, axis: "x" },
+      plugins: {
+        legend: { display: true },
+        tooltip: {
+          displayColors: false,
+          callbacks: {
+            label: (ctx) => {
+              const v = ctx.parsed?.y;
+              if (v == null) return "—";
+              const n = Number(v);
+              return `${ctx.dataset?.label || ""}: ${Number.isFinite(n) ? n.toFixed(2) : "—"} ${unit || ""}`.trim();
+            }
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { autoSkip: true, maxTicksLimit: 12, maxRotation: 45, minRotation: 45 } },
+        y: { beginAtZero: false }
+      }
+    }
   });
 }
 
-function buildEtChart(et0, etc){
-  const canvas = $("chartEt");
-  if (!canvas || typeof window.Chart === "undefined") return null;
-
-  return new Chart(canvas, {
-    type: "line",
-    data: {
-      labels: ["ET0", "ETc"],
-      datasets: [{
-        label: "",
-        data: [
-          Number.isFinite(et0) ? et0 : null,
-          Number.isFinite(etc) ? etc : null
-        ],
-        tension: 0,
-        pointRadius: 3,
-        pointHoverRadius: 6,
-        pointHitRadius: 10,
-        borderWidth: 1.6,
-        fill: false
-      }]
-    },
-    options: { ...commonBaseOptions(), plugins: { legend: { display: false }, tooltip: tooltipEt() } }
-  });
-}
-
-function countHoursOver(rows, thr){
-  let minutes = 0;
-  for (const r of rows){
-    const v = vpd_kpa(Number(r?.temp_c), Number(r?.hum_pct));
-    if (Number.isFinite(v) && v > thr) minutes += 5; // 5-min samples
-  }
-  return minutes / 60;
-}
-
-// =========================
-// Main
-// =========================
-export function initAgricola(){
+// ---------- main ----------
+export function initAgricola() {
   const { HISTORY_URL, CURRENT_URL, HEARTBEAT_URL } = getApi();
 
   const state = {
@@ -358,8 +275,7 @@ export function initAgricola(){
     hb: null,
     selectedDay: null,
     timers: { cur: null, hist: null },
-    chartsReady: false,
-    io: null,
+    charts: { vpd: null, temp: null, dew: null },
   };
 
   function pickActualRow() {
@@ -369,74 +285,127 @@ export function initAgricola(){
     return { row: null, tag: "sense dades carregades" };
   }
 
-  function recomputeEtcOnly(){
+  function recomputeEtc() {
     const kc = Number($("kcSelect")?.value || 0.7);
     const et0 = Number($("kpiEt0")?.dataset?.num || NaN);
     const etc = Number.isFinite(et0) ? et0 * kc : NaN;
-
-    setText("kpiEtc", Number.isFinite(etc) ? fmt2f(etc) : "—");
-
-    // Rebuild ET chart only (cheap)
-    try { window.__chartEt?.destroy?.(); } catch {}
-    window.__chartEt = buildEtChart(et0, etc);
-    initChartFullscreen(FS_CANVAS_IDS); // idempotent
+    setText("kpiEtc", Number.isFinite(etc) ? fmt2(etc) : "—");
   }
 
-  $("kcSelect")?.addEventListener("change", recomputeEtcOnly);
-  $("gddBase")?.addEventListener("change", () => { renderAll(); });
+  function renderKPIsForDay(rowsDay, curRow, dayKey) {
+    const base = Number($("gddBase")?.value || 10);
 
-  function setupLazyChartsObserver(){
-    if (state.chartsReady) return;
+    // sèries
+    const labels = [];
+    const vpdSeries = [];
+    const tSeries = [];
+    const dewSeries = [];
 
-    const target = document.querySelector(".chart-box") || document.getElementById("daySelect");
-    if (!target) { state.chartsReady = true; return; }
+    let vpdMax = -Infinity;
 
-    if (!("IntersectionObserver" in window)) { state.chartsReady = true; return; }
-    if (state.io) return;
+    for (const r of rowsDay) {
+      const ts = Number(r?.ts);
+      const Tc = Number(r?.temp_c);
+      const RH = Number(r?.hum_pct);
+      const Td = Number(r?.dew_c);
 
-    state.io = new IntersectionObserver((entries) => {
-      const e = entries && entries[0];
-      if (!e || !e.isIntersecting) return;
+      if (!Number.isFinite(ts)) continue;
 
-      state.chartsReady = true;
-      try { state.io.disconnect(); } catch {}
-      state.io = null;
+      // label hora
+      labels.push(new Date(ts).toLocaleTimeString("ca-ES", { hour: "2-digit", minute: "2-digit" }));
 
-      renderCharts(); // ara sí
-    }, { root: null, rootMargin: "250px", threshold: 0.01 });
+      // temp
+      tSeries.push(Number.isFinite(Tc) ? Tc : null);
 
-    state.io.observe(target);
+      // dew
+      dewSeries.push(Number.isFinite(Td) ? Td : null);
+
+      // vpd
+      const v = vpd_kpa(Tc, RH);
+      vpdSeries.push(Number.isFinite(v) ? v : null);
+      if (Number.isFinite(v)) vpdMax = Math.max(vpdMax, v);
+    }
+
+    // Tmin/Tmax/Tmean (per ET0/GDD)
+    const temps = rowsDay.map(r => Number(r?.temp_c)).filter(Number.isFinite);
+    const mm = minMax(temps);
+    const Tmax = mm?.max ?? null;
+    const Tmin = mm?.min ?? null;
+    const Tmean = (Tmax != null && Tmin != null) ? (Tmax + Tmin) / 2 : null;
+
+    // data del dia seleccionat (no Date.now!)
+    const [yy, mmS, dd] = String(dayKey).split("-").map(Number);
+    const dateObj = new Date(yy, (mmS || 1) - 1, dd || 1);
+
+    const et0 = (Tmax != null && Tmin != null && Tmean != null)
+      ? et0_hargreaves_mm(Tmax, Tmin, Tmean, LAT_VALLS, dateObj)
+      : NaN;
+
+    const gdd = (Tmax != null && Tmin != null)
+      ? gdd_day(Tmax, Tmin, base)
+      : NaN;
+
+    // Instantani (del “curRow” real, no del dia seleccionat)
+    const Tnow = Number(curRow?.temp_c);
+    const RHnow = Number(curRow?.hum_pct);
+    const TdNow = Number(curRow?.dew_c);
+    const rainDayNow = Number(curRow?.rain_day_mm);
+
+    const vpdNow = vpd_kpa(Tnow, RHnow);
+
+    // Pintar KPIs
+    setText("kpiVpdNow", Number.isFinite(vpdNow) ? fmt2(vpdNow) : "—");
+    setText("kpiVpdMax", Number.isFinite(vpdMax) ? fmt2(vpdMax) : "—");
+
+    const kpiEt0 = $("kpiEt0");
+    if (kpiEt0) {
+      kpiEt0.textContent = Number.isFinite(et0) ? fmt2(et0) : "—";
+      kpiEt0.dataset.num = Number.isFinite(et0) ? String(et0) : "";
+    }
+
+    setText("kpiGdd", Number.isFinite(gdd) ? fmt2(gdd) : "—");
+    recomputeEtc();
+
+    // Spread T-Td (ara)
+    setText("kpiSpread",
+      (Number.isFinite(Tnow) && Number.isFinite(TdNow)) ? fmt1(Tnow - TdNow) : "—"
+    );
+
+    // Pluja (ara)
+    setText("kpiRainDay", Number.isFinite(rainDayNow) ? fmt1(rainDayNow) : "—");
+    setText("chipRain", Number.isFinite(rainDayNow) ? `${fmt1(rainDayNow)} mm` : "—");
+
+    // Punt de rosada (ara)
+    setText("chipDew", Number.isFinite(TdNow) ? `${fmt1(TdNow)} °C` : "—");
+
+    // Hores llindar (del dia seleccionat)
+    const h12 = countHoursOver(rowsDay, 1.2);
+    const h16 = countHoursOver(rowsDay, 1.6);
+    setText("chipVpd12", Number.isFinite(h12) ? `${fmt1(h12)} h` : "—");
+    setText("chipVpd16", Number.isFinite(h16) ? `${fmt1(h16)} h` : "—");
+
+    // Charts
+    state.charts.vpd = destroyChart(state.charts.vpd);
+    state.charts.temp = destroyChart(state.charts.temp);
+    state.charts.dew = destroyChart(state.charts.dew);
+
+    state.charts.vpd = buildLineChart("chartVpd", labels, vpdSeries, "VPD", "kPa");
+    state.charts.temp = buildLineChart("chartAgroTemp", labels, tSeries, "Temperatura", "°C");
+
+    // opcional (si tens canvas chartDew a l’HTML)
+    const dewCanvas = document.getElementById("chartDew");
+    if (dewCanvas) {
+      state.charts.dew = buildLineChart("chartDew", labels, dewSeries, "Punt de rosada", "°C");
+    }
+
+    // Fullscreen buttons
+    initChartFullscreen(FS_CANVAS_IDS);
   }
 
-  async function refreshCurrent(){
-    await loadCurrentAndHeartbeat(CURRENT_URL, HEARTBEAT_URL, state);
-    renderAll(false);
-  }
-
-  async function refreshHistory(){
-    await loadHistoryOnce(HISTORY_URL, state);
-
-    // Rebuild selector (com home) mantenint selecció
-    const dayKeys = buildDayListFromRows(state.historyRows, state.current);
-    const keepWanted = state.selectedDay || getUrlDayParam() || dayKeyFromTs(Date.now());
-    const keep = dayKeys.includes(keepWanted) ? keepWanted : (dayKeys[dayKeys.length - 1] || keepWanted);
-
-    const sel = setupDaySelector(dayKeys, keep, (k) => {
-      state.selectedDay = k;
-      if (!state.chartsReady) state.chartsReady = true;
-      renderAll(true);
-    });
-
-    state.selectedDay = sel || keep;
-
-    renderAll(true);
-  }
-
-  function renderAll(withCharts = true){
+  function renderAll() {
     const { row, tag } = pickActualRow();
     if (!row) {
       setSourceLine("Font: sense dades carregades");
-      setText("statusLine", "No es pot mostrar informació: falta history/current.");
       setText("lastUpdated", "Sense dades");
       return;
     }
@@ -445,162 +414,85 @@ export function initAgricola(){
     setText("lastUpdated", `Actualitzat: ${fmtDate(row.ts)}`);
     renderStatus(row.ts, state.hb);
 
-    if (withCharts) renderCharts();
+    // Dia seleccionat
+    const dayKey = state.selectedDay || dayKeyFromTs(Date.now());
+    const rowsDay = computeRowsForDay(state.historyRows, dayKey, (dayKey === dayKeyFromTs(Date.now())) ? state.current : null);
+
+    setText("dayLabel", rowsDay.length ? labelForDay(dayKey) : `${labelForDay(dayKey)} · sense dades`);
+    renderKPIsForDay(rowsDay, row, dayKey);
   }
 
-  function renderCharts(){
-    if (!state.chartsReady) return;
+  async function refreshCurrent() {
+    await loadCurrentAndHeartbeat(CURRENT_URL, HEARTBEAT_URL, state);
+    renderAll();
+  }
 
-    const hist = state.historyRows || [];
-    const dayKeys = buildDayListFromRows(hist, state.current);
+  async function refreshHistory() {
+    await loadHistoryOnce(HISTORY_URL, state);
 
-    // assegura selectedDay
+    const dayKeys = buildDayListFromRows(state.historyRows, state.current);
     const wanted = state.selectedDay || getUrlDayParam() || dayKeyFromTs(Date.now());
-    const dayKey = dayKeys.includes(wanted) ? wanted : (dayKeys[dayKeys.length - 1] || wanted);
-    state.selectedDay = dayKey;
+    const keep = dayKeys.includes(wanted) ? wanted : (dayKeys[dayKeys.length - 1] || wanted);
 
-    // etiqueta de dia (mateix estil que charts_day)
-    const dayTxt = fmtDayLong(dayKey);
-    const dayLabel = $("dayLabel");
-    if (dayLabel) dayLabel.textContent = dayTxt;
-
-    // dades del dia
-    const rDay = rowsForDay(hist, dayKey, state.current);
-
-    // sèries
-    const labels = rDay.map(r => fmtTime(r.ts));
-    const temp = rDay.map(r => (Number.isFinite(Number(r.temp_c)) ? Number(r.temp_c) : null));
-    const dew  = rDay.map(r => (Number.isFinite(Number(r.dew_c)) ? Number(r.dew_c) : null));
-    const vpd  = rDay.map(r => {
-      const Tc = Number(r?.temp_c);
-      const RH = Number(r?.hum_pct);
-      const vv = vpd_kpa(Tc, RH);
-      return Number.isFinite(vv) ? vv : null;
+    const sel = setupDaySelector(dayKeys, keep, (k) => {
+      state.selectedDay = k;
+      renderAll();
     });
 
-    // KPIs (instantanis del row “actual”)
-    const Tnow = Number(state.current?.temp_c ?? row?.temp_c);
-    const RHnow = Number(state.current?.hum_pct ?? row?.hum_pct);
-    const dewNow = Number(state.current?.dew_c ?? row?.dew_c);
-    const rainDay = Number(state.current?.rain_day_mm ?? row?.rain_day_mm);
-
-    const vpdNow = vpd_kpa(Tnow, RHnow);
-    setText("kpiVpdNow", Number.isFinite(vpdNow) ? fmt2f(vpdNow) : "—");
-    setText("chipDew", Number.isFinite(dewNow) ? `${fmt1(dewNow)} °C` : "—");
-    setText("kpiSpreadChip", (Number.isFinite(Tnow) && Number.isFinite(dewNow)) ? `${fmt1(Tnow - dewNow)} °C` : "—");
-    setText("kpiRainDayAgro", Number.isFinite(rainDay) ? fmt1(rainDay) : "—");
-
-    // agregats del dia (Tmin/Tmax, VPD max, hores)
-    const mm = minMax(temp);
-    const Tmin = mm?.min ?? null;
-    const Tmax = mm?.max ?? null;
-    const Tmean = (Tmin != null && Tmax != null) ? (Tmin + Tmax)/2 : null;
-
-    const vpdMax = (() => {
-      let m = null;
-      for (const x of vpd) if (x != null && Number.isFinite(x)) m = (m == null) ? x : Math.max(m, x);
-      return m;
-    })();
-
-    setText("kpiVpdMax", Number.isFinite(vpdMax) ? fmt2f(vpdMax) : "—");
-
-    const h12 = countHoursOver(rDay, 1.2);
-    const h16 = countHoursOver(rDay, 1.6);
-    setText("chipVpd12", Number.isFinite(h12) ? `${fmt1(h12)} h` : "—");
-    setText("chipVpd16", Number.isFinite(h16) ? `${fmt1(h16)} h` : "—");
-
-    // ET0/GDD del dia seleccionat
-    const base = Number($("gddBase")?.value || 10);
-    let dateObj = new Date();
-    try {
-      const [y, m, d] = dayKey.split("-").map(Number);
-      dateObj = new Date(y, m - 1, d);
-    } catch {}
-
-    const et0 = (Tmax != null && Tmin != null && Tmean != null)
-      ? et0_hargreaves_mm(Tmax, Tmin, Tmean, LAT_VALLS, dateObj)
-      : NaN;
-
-    const gdd = (Tmax != null && Tmin != null) ? gdd_day(Tmax, Tmin, base) : NaN;
-
-    const kpiEt0 = $("kpiEt0");
-    if (kpiEt0){
-      kpiEt0.textContent = Number.isFinite(et0) ? fmt2f(et0) : "—";
-      kpiEt0.dataset.num = Number.isFinite(et0) ? String(et0) : "";
-    }
-
-    setText("kpiGdd", Number.isFinite(gdd) ? fmt2f(gdd) : "—");
-
-    const kc = Number($("kcSelect")?.value || 0.7);
-    const etc = Number.isFinite(et0) ? et0 * kc : NaN;
-    setText("kpiEtc", Number.isFinite(etc) ? fmt2f(etc) : "—");
-
-    // TITLES (com charts_day)
-    if ($("chartVpdTitle")) $("chartVpdTitle").textContent = `VPD (kPa) · ${dayTxt}`;
-    if ($("chartDewTitle")) $("chartDewTitle").textContent = `Punt de rosada (°C) · ${dayTxt}`;
-    if ($("chartTempTitle")) $("chartTempTitle").textContent = `Temperatura (°C) · ${dayTxt}`;
-    if ($("chartEtTitle")) $("chartEtTitle").textContent = `ET0 / ETc (mm) · ${dayTxt}`;
-
-    // Charts render
-    destroyAgroCharts();
-    if (typeof window.Chart !== "undefined") {
-      window.__chartVpd = buildLineChart("chartVpd", labels, vpd, "kPa", rDay);
-      window.__chartDew = buildLineChart("chartDew", labels, dew, "°C", rDay);
-      window.__chartAgroTemp = buildLineChart("chartAgroTemp", labels, temp, "°C", rDay);
-      window.__chartEt = buildEtChart(et0, etc);
-    }
-
-    initChartFullscreen(FS_CANVAS_IDS); // injecta ⛶ als H2 (idempotent)
+    state.selectedDay = sel || keep;
+    renderAll();
   }
 
-  async function main(){
-    try {
-      if ($("year")) $("year").textContent = String(new Date().getFullYear());
+  function safeClearInterval(id) {
+    try { if (id) clearInterval(id); } catch {}
+  }
 
-      await Promise.all([
-        loadHistoryOnce(HISTORY_URL, state),
-        loadCurrentAndHeartbeat(CURRENT_URL, HEARTBEAT_URL, state),
-      ]);
+  async function main() {
+    if ($("year")) $("year").textContent = String(new Date().getFullYear());
 
-      // selector inicial
-      const dayKeys = buildDayListFromRows(state.historyRows || [], state.current);
-      const wanted = getUrlDayParam();
-      const initial = (wanted && dayKeys.includes(wanted))
-        ? wanted
-        : (state.current && Number.isFinite(state.current.ts))
-          ? dayKeyFromTs(state.current.ts)
-          : dayKeyFromTs(Date.now());
+    // listeners
+    $("kcSelect")?.addEventListener("change", recomputeEtc);
+    $("gddBase")?.addEventListener("change", () => renderAll());
 
-      const selected = setupDaySelector(dayKeys, initial, (k) => {
-        state.selectedDay = k;
-        if (!state.chartsReady) state.chartsReady = true;
-        renderAll(true);
+    await Promise.all([
+      loadHistoryOnce(HISTORY_URL, state),
+      loadCurrentAndHeartbeat(CURRENT_URL, HEARTBEAT_URL, state),
+    ]);
+
+    // selector dia
+    const hist = state.historyRows || [];
+    const dayKeys = buildDayListFromRows(hist, state.current);
+    const wanted = getUrlDayParam();
+    const initial = (wanted && dayKeys.includes(wanted))
+      ? wanted
+      : dayKeyFromTs(Date.now());
+
+    const selected = setupDaySelector(dayKeys, initial, (k) => {
+      state.selectedDay = k;
+      renderAll();
+    });
+
+    state.selectedDay = selected || initial;
+
+    renderAll();
+
+    // timers
+    safeClearInterval(state.timers.cur);
+    safeClearInterval(state.timers.hist);
+
+    state.timers.cur = setInterval(refreshCurrent, REFRESH_CURRENT_MS);
+    state.timers.hist = setInterval(refreshHistory, REFRESH_HISTORY_MS);
+
+    if (REFRESH_ON_VISIBLE) {
+      document.addEventListener("visibilitychange", async () => {
+        if (document.visibilityState !== "visible") return;
+        await refreshCurrent();
       });
-
-      state.selectedDay = selected || initial;
-
-      setupLazyChartsObserver();
-      renderAll(true);
-
-      // timers (com home)
-      try { if (state.timers.cur) clearInterval(state.timers.cur); } catch {}
-      try { if (state.timers.hist) clearInterval(state.timers.hist); } catch {}
-
-      state.timers.cur = setInterval(refreshCurrent, REFRESH_CURRENT_MS);
-      state.timers.hist = setInterval(refreshHistory, REFRESH_HISTORY_MS);
-
-      if (REFRESH_ON_VISIBLE) {
-        document.addEventListener("visibilitychange", async () => {
-          if (document.visibilityState !== "visible") return;
-          await refreshCurrent();
-        });
-      }
-    } catch (e) {
-      console.warn("Inicialització agrícola parcial (offline?)", e);
-      setupLazyChartsObserver();
-      renderAll(true);
     }
   }
 
-  main();
+  main().catch((e) => {
+    console.warn("Agrícola init parcial", e);
+    try { renderAll(); } catch {}
+  });
 }
