@@ -57,7 +57,7 @@
         <span class="pill" id="sourceLine">Font: —</span>
       </div>
 
-      <!-- KPIs (mateixa grid kpi) -->
+      <!-- KPIs -->
       <div class="kpi-grid">
         <div class="kpi">
           <div class="kpi-val" id="kpiVpdNow">—</div>
@@ -66,31 +66,32 @@
 
         <div class="kpi">
           <div class="kpi-val" id="kpiEt0">—</div>
-          <div class="kpi-lab">ET0 avui (mm)</div>
+          <div class="kpi-lab">ET0 (dia seleccionat) (mm)</div>
         </div>
 
         <div class="kpi">
           <div class="kpi-val" id="kpiEtc">—</div>
-          <div class="kpi-lab">ETc avui (mm)</div>
+          <div class="kpi-lab">ETc (dia seleccionat) (mm)</div>
         </div>
 
         <div class="kpi">
           <div class="kpi-val" id="kpiGdd">—</div>
-          <div class="kpi-lab">GDD avui</div>
+          <div class="kpi-lab">GDD (dia seleccionat)</div>
         </div>
 
         <div class="kpi kpi--wide-left">
           <div class="kpi-val" id="kpiVpdMax">—</div>
-          <div class="kpi-lab">VPD màxim avui (kPa)</div>
+          <div class="kpi-lab">VPD màxim (dia seleccionat) (kPa)</div>
         </div>
 
+        <!-- FIX: id que espera el JS nou -->
         <div class="kpi kpi--wide-right">
-          <div class="kpi-val" id="kpiRainDayAgro">—</div>
+          <div class="kpi-val" id="kpiRainDay">—</div>
           <div class="kpi-lab">Pluja diària (mm)</div>
         </div>
       </div>
 
-      <!-- Chips (mateix estil chips-grid) -->
+      <!-- Chips -->
       <div class="chips-grid">
         <div class="chip">
           <span>🌱 Kc</span>
@@ -117,13 +118,19 @@
         </div>
 
         <div class="chip"><span>💧 Punt de rosada</span><strong id="chipDew">—</strong></div>
-        <div class="chip"><span>ΔT (T–Td)</span><strong id="kpiSpreadChip">—</strong></div>
+
+        <!-- FIX: el JS nou omple kpiSpread, no kpiSpreadChip -->
+        <div class="chip"><span>ΔT (T–Td)</span><strong id="kpiSpread">—</strong></div>
+
         <div class="chip"><span>⏱️ Hores VPD&gt;1.2</span><strong id="chipVpd12">—</strong></div>
         <div class="chip"><span>⏱️ Hores VPD&gt;1.6</span><strong id="chipVpd16">—</strong></div>
+
+        <!-- Opcional: el JS nou també omple això -->
+        <div class="chip"><span>🌧️ Pluja</span><strong id="chipRain">—</strong></div>
       </div>
     </section>
 
-    <!-- Daybar (igual que home, perquè el layout sempre quedi igual) -->
+    <!-- Daybar (igual que home) -->
     <section class="card span2">
       <div class="daybar">
         <div class="daybar__left">
@@ -144,7 +151,7 @@
       </div>
     </section>
 
-    <!-- CHARTS (mateixa disposició que home: 1,1,span2,span2) -->
+    <!-- CHARTS -->
     <section class="card chart-box">
       <h2 id="chartVpdTitle">VPD</h2>
       <canvas id="chartVpd"></canvas>
@@ -160,9 +167,11 @@
       <canvas id="chartAgroTemp"></canvas>
     </section>
 
+    <!-- IMPORTANT:
+         El JS nou NO crea chartEt. Si el vols, s'ha d'implementar a agricola.js.
+         De moment deixo el bloc però sense canvas "obligatori" pel JS. -->
     <section class="card chart-box span2">
       <h2 id="chartEtTitle">ET0 / ETc (resum)</h2>
-      <canvas id="chartEt"></canvas>
       <p class="muted-line">ET0 via Hargreaves (sense radiació solar).</p>
     </section>
 
