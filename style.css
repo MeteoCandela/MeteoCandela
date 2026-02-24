@@ -1956,7 +1956,7 @@ html.fs-lock, body.fs-lock { overflow: hidden; }
 
   max-width: 100%;
   white-space: nowrap;
-  overflow: hidden;
+  overflow: hidden
   text-overflow: ellipsis;
 }
 
@@ -1965,4 +1965,80 @@ html.fs-lock, body.fs-lock { overflow: hidden; }
   #cardAgroCurrent .kpi{ padding: 12px 14px; }
   #cardAgroCurrent .kpi-val{ font-size: 28px; }
   #cardAgroCurrent .kpi-lab{ font-size: 12.5px; }
+}
+/* =========================
+   AGRÍCOLA — chips (mateix look que HOME, però millorat per selects)
+   ========================= */
+#cardAgroCurrent .chips-grid{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+#cardAgroCurrent .chip{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.04);
+
+  min-width: 0;
+}
+
+/* text esquerra */
+#cardAgroCurrent .chip > span{
+  font-size: 13.5px;
+  opacity: .82;
+
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* valor dreta (default) */
+#cardAgroCurrent .chip > strong{
+  flex: 0 0 auto;
+  max-width: 65%;
+  text-align: right;
+
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(255,255,255,.92);
+  font-variant-numeric: tabular-nums;
+
+  white-space: normal;
+  line-height: 1.15;
+}
+
+/* --- EXCEPCIÓ: quan el strong conté un select, no volem max-width ni salt de línia --- */
+#cardAgroCurrent .chip > strong:has(select){
+  max-width: none;
+  white-space: nowrap;
+}
+
+/* select dins del chip: que quedi “píndola” i no desquadri */
+#cardAgroCurrent .chip .select{
+  max-width: 220px;      /* ajusta si vols */
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.92);
+  font-size: 13px;
+  line-height: 1;
+}
+
+/* mòbil estret */
+@media (max-width: 420px){
+  #cardAgroCurrent .chip{ padding: 11px 12px; }
+  #cardAgroCurrent .chip > span{ font-size: 12.5px; }
+  #cardAgroCurrent .chip > strong{ font-size: 13.5px; max-width: 70%; }
+  #cardAgroCurrent .chip .select{ max-width: 190px; font-size: 12.5px; }
 }
