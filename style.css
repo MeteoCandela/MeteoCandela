@@ -1899,49 +1899,70 @@ html.fs-lock, body.fs-lock { overflow: hidden; }
   position: relative;
   z-index: 1;
 }
-/* Agrícola: graella com l'índex */
+/* =========================
+   AGRÍCOLA "ACTUAL" — KPIs/pills (SCOPAT com HOME)
+   ========================= */
 #cardAgroCurrent .kpi-grid{
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
-/* targetes KPI consistents */
 #cardAgroCurrent .kpi{
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
   border-radius: 18px;
-  padding: 14px 14px;
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.08);
+  padding: 12px 14px;
+  min-width: 0;
 }
 
-/* valor/label */
 #cardAgroCurrent .kpi-val{
-  font-size: 26px; /* posa el mateix que a l'índex */
-  line-height: 1;
-  letter-spacing: -0.5px;
+  font-size: 28px;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
 }
+
 #cardAgroCurrent .kpi-lab{
   margin-top: 6px;
-  font-size: 14px;
-  opacity: .85;
+  font-size: 13px;
+  opacity: .82;
 }
 
-/* Wide: recomanat -> full width (com "Min/Max avui" a l'índex, si ho tens) */
-#cardAgroCurrent .kpi--wide-left,
-#cardAgroCurrent .kpi--wide-right{
-  grid-column: 1 / -1;
-}
+/* Si vols mantenir “wide” com a HOME */
+#cardAgroCurrent .kpi--wide-left{ grid-column: 1; }
+#cardAgroCurrent .kpi--wide-right{ grid-column: 2; }
 
-/* mòbils estrets: 1 columna */
 @media (max-width: 380px){
-  #cardAgroCurrent .kpi-grid{ grid-template-columns: 1fr; }
+  #cardAgroCurrent .kpi--wide-left,
+  #cardAgroCurrent .kpi--wide-right{ grid-column: 1 / -1; }
 }
 
-/* now-source: que no “talli” visualment */
-#cardAgroCurrent .now-source{
-  margin: 10px 0 12px;
-}
-#cardAgroCurrent .now-source .pill{
+/* “pill” i línia de font, igual que HOME */
+#cardAgroCurrent .now-source{ margin: 6px 0 12px; }
+
+#cardAgroCurrent .pill{
   display: inline-flex;
   align-items: center;
+
+  font-size: 13px;
+  line-height: 1;
+
+  padding: 7px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.82);
+
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* microajustos mòbil (si et funciona bé a HOME, replica-ho) */
+@media (max-width: 420px){
+  #cardAgroCurrent .kpi{ padding: 12px 14px; }
+  #cardAgroCurrent .kpi-val{ font-size: 28px; }
+  #cardAgroCurrent .kpi-lab{ font-size: 12.5px; }
 }
