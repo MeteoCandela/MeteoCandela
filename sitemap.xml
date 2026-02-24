@@ -24,13 +24,21 @@
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
-
+  
+<!-- Agrícola -->
+  <url>
+    <loc>https://meteocandela.cat/agricola.html</loc>
+    <lastmod>2026-02-24</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
   <!-- Sobre -->
   <url>
     <loc>https://meteocandela.cat/sobre.html</loc>
     <lastmod>2026-02-09</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.4</priority>
   </url>
 
 </urlset>
