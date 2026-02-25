@@ -261,11 +261,10 @@ export function initAgricolaHistoric() {
   }
 
   function bindControls() {
-    $("rangeValue")?.addEventListener("change", renderKPIsAndCharts);
-    $("rangeUnit")?.addEventListener("change", renderKPIsAndCharts);
-    $("kcSelect")?.addEventListener("change", renderKPIsAndCharts);
-    $("gddBase")?.addEventListener("change", renderKPIsAndCharts);
-  }
+  $("rangeSelect")?.addEventListener("change", renderKPIsAndCharts);
+  $("kcSelect")?.addEventListener("change", renderKPIsAndCharts);
+  $("gddBase")?.addEventListener("change", renderKPIsAndCharts);
+}
 
   async function main() {
     if ($("year")) $("year").textContent = String(new Date().getFullYear());
