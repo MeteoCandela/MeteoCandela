@@ -96,6 +96,19 @@ function pickGddField(base) {
   return "gdd_base10";
 }
 
+function computeRangeDays() {
+  const v = Number($("rangeValue")?.value || 365);
+  const unit = $("rangeUnit")?.value || "days";
+
+  let rangeDays = v;
+  if (unit === "months") rangeDays = Math.round(v * 30.4375);
+  if (unit === "years")  rangeDays = Math.round(v * 365.25);
+
+  // clamp a les dades que tens (max 5 anys)
+  rangeDays = Math.max(1, Math.min(1825, rangeDays));
+  return rangeDays;
+}
+
 export function initAgricolaHistoric() {
   const { DAILY_SUMMARY_D1_URL } = getApi();
 
@@ -153,7 +166,7 @@ export function initAgricolaHistoric() {
   }
 
   function renderKPIsAndCharts() {
-    const rangeDays = Number($("rangeSelect")?.value || 365);
+    const rangeDays = computeRangeDays();
     const kc = Number($("kcSelect")?.value || 0.7);
     const base = $("gddBase")?.value || "10";
     const gddField = pickGddField(base);
@@ -245,7 +258,8 @@ export function initAgricolaHistoric() {
   }
 
   function bindControls() {
-    $("rangeSelect")?.addEventListener("change", renderKPIsAndCharts);
+    $("rangeValue")?.addEventListener("change", renderKPIsAndCharts);
+    $("rangeUnit")?.addEventListener("change", renderKPIsAndCharts);
     $("kcSelect")?.addEventListener("change", renderKPIsAndCharts);
     $("gddBase")?.addEventListener("change", renderKPIsAndCharts);
   }
