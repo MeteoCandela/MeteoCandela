@@ -69,7 +69,11 @@ async function boot() {
   m.initAgricola?.();
   break;
         }
-
+case "agricola_historic": {
+  const m = await import(`/pages/agricola_historic.js?v=${V}`);
+  m?.initAgricolaHistoric?.();
+  break;
+}
       default: {
         const m = await import(`/pages/home.js?v=${V}`);
         m.initHome?.();
