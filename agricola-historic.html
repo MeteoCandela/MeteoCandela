@@ -51,28 +51,35 @@
       </div>
 
       <div class="chips-grid">
-        <div class="chip">
-          <span>📅 Període</span>
-          <strong style="display:flex; gap:8px; align-items:center;">
-            <select id="rangeValue" class="select" aria-label="Quantitat">
-              <option value="30">30</option>
-              <option value="45">45</option>
-              <option value="60">60</option>
-              <option value="90">90</option>
-              <option value="120">120</option>
-              <option value="180">180</option>
-              <option value="365" selected>365</option>
-              <option value="730">730</option>
-              <option value="1825">1825</option>
-            </select>
+       <div class="chip">
+  <span>📅 Període</span>
+  <strong>
+    <select id="rangeSelect" class="select" aria-label="Període">
+      <optgroup label="Dies">
+        <option value="d:30">Últims 30 dies</option>
+        <option value="d:45">Últims 45 dies</option>
+        <option value="d:60">Últims 60 dies</option>
+        <option value="d:90">Últims 90 dies</option>
+        <option value="d:120">Últims 120 dies</option>
+        <option value="d:180">Últims 180 dies</option>
+      </optgroup>
 
-            <select id="rangeUnit" class="select" aria-label="Unitat">
-              <option value="days" selected>dies</option>
-              <option value="months">mesos</option>
-              <option value="years">anys</option>
-            </select>
-          </strong>
-        </div>
+      <optgroup label="Mesos (aprox.)">
+        <option value="m:1">Últim 1 mes</option>
+        <option value="m:3">Últims 3 mesos</option>
+        <option value="m:6">Últims 6 mesos</option>
+        <option value="m:9">Últims 9 mesos</option>
+      </optgroup>
+
+      <optgroup label="Anys (aprox.)">
+        <option value="y:1" selected>Últim 1 any</option>
+        <option value="y:2">Últims 2 anys</option>
+        <option value="y:5">Últims 5 anys</option>
+      </optgroup>
+    </select>
+  </strong>
+</div> 
+     
 
         <div class="chip">
           <span>🌱 Kc</span>
