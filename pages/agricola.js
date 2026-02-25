@@ -11,13 +11,16 @@ import {
 import { loadHistoryOnce, loadCurrentAndHeartbeat } from "../lib/api.js";
 import { initChartFullscreen } from "../lib/fullscreen_chart.js";
 
-const REFRESH_CURRENT_MS = 60 * 1000;       // 1 min
-const REFRESH_HISTORY_MS = 60 * 60 * 1000;  // 60 min
+const REFRESH_CURRENT_MS = 60 * 1000;     // 1 min
+const REFRESH_HISTORY_MS = 60 * 60 * 1000; // 60 min
 const REFRESH_ON_VISIBLE = true;
 
 const LAT_VALLS = 41.29;
 
-// Fullscreen charts (ids del teu agrícola.html nou)
+// Selector curt (avui/ahir). Pots posar 3 si vols (avui+2 anteriors).
+const DAY_SELECTOR_MAX_DAYS = 2;
+
+// Fullscreen charts
 const FS_CANVAS_IDS = ["chartVpd", "chartDew", "chartAgroTemp", "chartEt"];
 
 // ---------- helpers UI ----------
@@ -145,9 +148,15 @@ function buildDayListFromRows(rows, current) {
   for (const r of (rows || [])) {
     if (r && Number.isFinite(r.ts)) set.add(dayKeyFromTs(r.ts));
   }
+  // avui sempre present
   set.add(dayKeyFromTs(Date.now()));
   if (current && Number.isFinite(current.ts)) set.add(dayKeyFromTs(current.ts));
   return Array.from(set).sort();
+}
+
+function keepLastNDays(dayKeys, n = 2) {
+  const keys = (dayKeys || []).slice().sort();
+  return keys.slice(Math.max(0, keys.length - n));
 }
 
 function labelForDay(dayKey) {
@@ -352,7 +361,6 @@ export function initAgricola() {
     const etc = Number.isFinite(et0) ? et0 * kc : NaN;
     setText("kpiEtc", Number.isFinite(etc) ? fmt2(etc) : "—");
 
-    // si existeix chartEt, el refem perquè reflecteixi Kc
     if (document.getElementById("chartEt")) {
       state.charts.et = destroyChart(state.charts.et);
       state.charts.et = buildBarChartET("chartEt", et0, etc);
@@ -380,7 +388,6 @@ export function initAgricola() {
       const Td = Number(r?.dew_c);
 
       rowsRef.push({ ts });
-
       labels.push(fmtTimeHHMM(ts));
 
       tSeries.push(Number.isFinite(Tc) ? Tc : null);
@@ -391,14 +398,13 @@ export function initAgricola() {
       if (Number.isFinite(v)) vpdMax = Math.max(vpdMax, v);
     }
 
-    // Tmin/Tmax/Tmean (per ET0/GDD) del DIA SELECCIONAT
+    // Tmin/Tmax/Tmean del DIA SELECCIONAT (per ET0/GDD)
     const temps = rowsDay.map(r => Number(r?.temp_c)).filter(Number.isFinite);
     const mmT = minMax(temps);
     const Tmax = mmT?.max ?? null;
     const Tmin = mmT?.min ?? null;
     const Tmean = (Tmax != null && Tmin != null) ? (Tmax + Tmin) / 2 : null;
 
-    // data del dia seleccionat
     const [yy, mmS, dd] = String(dayKey).split("-").map(Number);
     const dateObj = new Date(yy, (mmS || 1) - 1, dd || 1);
 
@@ -415,7 +421,6 @@ export function initAgricola() {
     const RHnow = Number(curRow?.hum_pct);
     const TdNow = Number(curRow?.dew_c);
     const rainDayNow = Number(curRow?.rain_day_mm);
-
     const vpdNow = vpd_kpa(Tnow, RHnow);
 
     // KPIs
@@ -429,19 +434,13 @@ export function initAgricola() {
     }
 
     setText("kpiGdd", Number.isFinite(gdd) ? fmt2(gdd) : "—");
-
-    // Spread (ara) -> id nou
     setText("kpiSpreadChip",
       (Number.isFinite(Tnow) && Number.isFinite(TdNow)) ? fmt1(Tnow - TdNow) : "—"
     );
-
-    // Pluja (ara) -> id nou
     setText("kpiRainDayAgro", Number.isFinite(rainDayNow) ? fmt1(rainDayNow) : "—");
-
-    // Rosada (ara)
     setText("chipDew", Number.isFinite(TdNow) ? `${fmt1(TdNow)} °C` : "—");
 
-    // Hores llindar (del dia seleccionat)
+    // Hores llindar (aprox. per punts 5')
     const h12 = countHoursOver(rowsDay, 1.2);
     const h16 = countHoursOver(rowsDay, 1.6);
     setText("chipVpd12", Number.isFinite(h12) ? `${fmt1(h12)} h` : "—");
@@ -462,7 +461,6 @@ export function initAgricola() {
     state.charts.dew = buildLineChart("chartDew", labels, dewSeries, "Punt de rosada", "°C", rowsRef);
     state.charts.temp = buildLineChart("chartAgroTemp", labels, tSeries, "Temperatura", "°C", rowsRef);
 
-    // ET bar
     if (document.getElementById("chartEt")) {
       state.charts.et = buildBarChartET("chartEt", et0, etc);
     }
@@ -504,7 +502,9 @@ export function initAgricola() {
   async function refreshHistory() {
     await loadHistoryOnce(HISTORY_URL, state);
 
-    const dayKeys = buildDayListFromRows(state.historyRows, state.current);
+    const dayKeysAll = buildDayListFromRows(state.historyRows, state.current);
+    const dayKeys = keepLastNDays(dayKeysAll, DAY_SELECTOR_MAX_DAYS);
+
     const wanted = state.selectedDay || getUrlDayParam() || dayKeyFromTs(Date.now());
     const keep = dayKeys.includes(wanted) ? wanted : (dayKeys[dayKeys.length - 1] || wanted);
 
@@ -532,13 +532,13 @@ export function initAgricola() {
       loadCurrentAndHeartbeat(CURRENT_URL, HEARTBEAT_URL, state),
     ]);
 
-    const hist = state.historyRows || [];
-    const dayKeys = buildDayListFromRows(hist, state.current);
+    const dayKeysAll = buildDayListFromRows(state.historyRows, state.current);
+    const dayKeys = keepLastNDays(dayKeysAll, DAY_SELECTOR_MAX_DAYS);
 
     const wanted = getUrlDayParam();
     const initial = (wanted && dayKeys.includes(wanted))
       ? wanted
-      : dayKeyFromTs(Date.now());
+      : (dayKeys[dayKeys.length - 1] || dayKeyFromTs(Date.now()));
 
     const selected = setupDaySelector(dayKeys, initial, (k) => {
       state.selectedDay = k;
@@ -567,4 +567,4 @@ export function initAgricola() {
     console.warn("Agrícola init parcial", e);
     try { renderAll(); } catch {}
   });
-}
+            }
