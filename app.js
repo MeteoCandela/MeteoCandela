@@ -1,11 +1,15 @@
 // app.js — entrypoint únic (ESM)
+import { getBase } from "./lib/env.js";
 export const V = "2026-02-19-001";
+
+const BASE = getBase();
+const p = (x) => `${BASE}${x}`;
 
 async function initPushIfPresent() {
   try {
     const btn = document.getElementById("btnPush");
     if (!btn) return;
-    const push = await import(`/lib/push.js?v=${V}`);
+    const push = await import(p(`/lib/push.js?v=${V}`));
     push?.initPushBell?.();
   } catch (e) {
     console.warn("push init fail", e);
@@ -15,67 +19,58 @@ async function initPushIfPresent() {
 async function boot() {
   const page = document.body?.dataset?.page || "home";
 
-  // Install FAB
   try {
-    const install = await import(`/lib/install.js?v=${V}`);
+    const install = await import(p(`/lib/install.js?v=${V}`));
     install?.initInstallFab?.();
   } catch (e) {
     console.warn("install.js no carregat", e);
   }
 
-  // Pages
   try {
     switch (page) {
       case "home": {
-        const m = await import(`/pages/home.js?v=${V}`);
+        const m = await import(p(`/pages/home.js?v=${V}`));
         m.initHome?.();
-
-        // Meteocat badge (només a home)
         try {
-          const b = await import(`/lib/meteocat_badge.js?v=${V}`);
+          const b = await import(p(`/lib/meteocat_badge.js?v=${V}`));
           b?.initMeteocatBadge?.();
         } catch (e) {
           console.warn("meteocat badge fail", e);
         }
         break;
       }
-
       case "previsio": {
-        const m = await import(`/pages/previsio.js?v=${V}`);
+        const m = await import(p(`/pages/previsio.js?v=${V}`));
         m.initPrevisio?.();
         break;
       }
-
       case "avisos": {
-        const m = await import(`/pages/avisos.js?v=${V}`);
+        const m = await import(p(`/pages/avisos.js?v=${V}`));
         m.initAvisos?.();
         break;
       }
-
       case "historic": {
-        const m = await import(`/pages/historic.js?v=${V}`);
+        const m = await import(p(`/pages/historic.js?v=${V}`));
         m.initHistoric?.();
         break;
       }
-
       case "sobre": {
-        const m = await import(`/pages/sobre.js?v=${V}`);
+        const m = await import(p(`/pages/sobre.js?v=${V}`));
         m.initSobre?.();
         break;
       }
-        
       case "agricola": {
-  const m = await import(`/pages/agricola.js?v=${V}`);
-  m.initAgricola?.();
-  break;
-        }
-case "agricola_historic": {
-  const m = await import(`/pages/agricola_historic.js?v=${V}`);
-  m?.initAgricolaHistoric?.();
-  break;
-}
+        const m = await import(p(`/pages/agricola.js?v=${V}`));
+        m.initAgricola?.();
+        break;
+      }
+      case "agricola_historic": {
+        const m = await import(p(`/pages/agricola_historic.js?v=${V}`));
+        m.initAgricolaHistoric?.();
+        break;
+      }
       default: {
-        const m = await import(`/pages/home.js?v=${V}`);
+        const m = await import(p(`/pages/home.js?v=${V}`));
         m.initHome?.();
       }
     }
@@ -85,17 +80,13 @@ case "agricola_historic": {
     if (s) s.textContent = `Error JS: ${e?.message || e}`;
   }
 
-  // Push (després de la pàgina)
   await initPushIfPresent();
 }
 
-// =========================
-// Register Service Worker (PWA)
-// =========================
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
-      .register("/sw.js")
+      .register(p("/sw.js"))
       .then((reg) => console.log("SW registrat:", reg.scope))
       .catch((err) => console.error("SW error:", err));
   });
