@@ -3,7 +3,7 @@ import { $ } from "../lib/dom.js";
 import { getApi } from "../lib/env.js";
 import { fmt1, fmtDate } from "../lib/format.js";
 import { loadDailySummaryD1 } from "../lib/api.js";
-
+const { DAILY_SUMMARY_D1_URL } = getApi();
 const REFRESH_MS = 6 * 60 * 60 * 1000; // 6h (D1 no cal cada minut)
 
 function setText(id, txt) {
