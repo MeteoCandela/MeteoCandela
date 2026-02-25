@@ -1,3 +1,4 @@
+<!-- agricola-historic.html -->
 <!doctype html>
 <html lang="ca">
 <head>
@@ -20,7 +21,6 @@
   <link rel="manifest" href="./site.webmanifest">
 
   <link rel="stylesheet" href="./style.css?v=2026-02-19-001">
-
   <script defer src="./vendor/chart.umd.min.js"></script>
 </head>
 
@@ -43,7 +43,8 @@
       </nav>
     </section>
 
-    <section class="card span2">
+    <!-- CARD: Resum i període (SCOPED) -->
+    <section class="card span2" id="cardAgroHistoric">
       <div class="card-head">
         <h2>Resum i període</h2>
         <div class="pill" id="sourceLine">Font: D1 (resum diari)</div>
@@ -52,13 +53,23 @@
       <div class="chips-grid">
         <div class="chip">
           <span>📅 Període</span>
-          <strong>
-            <select id="rangeSelect" class="select" aria-label="Període">
-              <option value="30">Últims 30 dies</option>
-              <option value="90">Últims 90 dies</option>
-              <option value="365" selected>Últims 365 dies</option>
-              <option value="730">Últims 2 anys</option>
-              <option value="1825">Últims 5 anys</option>
+          <strong style="display:flex; gap:8px; align-items:center;">
+            <select id="rangeValue" class="select" aria-label="Quantitat">
+              <option value="30">30</option>
+              <option value="45">45</option>
+              <option value="60">60</option>
+              <option value="90">90</option>
+              <option value="120">120</option>
+              <option value="180">180</option>
+              <option value="365" selected>365</option>
+              <option value="730">730</option>
+              <option value="1825">1825</option>
+            </select>
+
+            <select id="rangeUnit" class="select" aria-label="Unitat">
+              <option value="days" selected>dies</option>
+              <option value="months">mesos</option>
+              <option value="years">anys</option>
             </select>
           </strong>
         </div>
