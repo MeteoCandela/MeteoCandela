@@ -1,9 +1,9 @@
 // pages/agricola_historic.js
 import { $ } from "../lib/dom.js";
 import { getApi } from "../lib/env.js";
-import { fmt1, fmtDate } from "../lib/format.js";
+import { fmt1 } from "../lib/format.js";
 import { loadDailySummaryD1 } from "../lib/api.js";
-const { DAILY_SUMMARY_D1_URL } = getApi();
+
 const REFRESH_MS = 6 * 60 * 60 * 1000; // 6h (D1 no cal cada minut)
 
 function setText(id, txt) {
@@ -55,10 +55,7 @@ function buildLineChart(canvasId, labels, datasets, yBeginAtZero = false) {
       maintainAspectRatio: false,
       devicePixelRatio: dpr,
       interaction: { mode: "nearest", intersect: false, axis: "x" },
-      plugins: {
-        legend: { display: true },
-        tooltip: { displayColors: false }
-      },
+      plugins: { legend: { display: true }, tooltip: { displayColors: false } },
       scales: {
         x: { ticks: { autoSkip: true, maxTicksLimit: 14, maxRotation: 45, minRotation: 45 } },
         y: { beginAtZero: yBeginAtZero }
@@ -77,20 +74,13 @@ function buildBarChart(canvasId, labels, datasetLabel, data) {
     type: "bar",
     data: {
       labels,
-      datasets: [{
-        label: datasetLabel,
-        data,
-        borderWidth: 1
-      }]
+      datasets: [{ label: datasetLabel, data, borderWidth: 1 }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       devicePixelRatio: dpr,
-      plugins: {
-        legend: { display: true },
-        tooltip: { displayColors: false }
-      },
+      plugins: { legend: { display: true }, tooltip: { displayColors: false } },
       scales: {
         x: { ticks: { autoSkip: true, maxTicksLimit: 14, maxRotation: 45, minRotation: 45 } },
         y: { beginAtZero: true }
@@ -107,13 +97,7 @@ function pickGddField(base) {
 }
 
 export function initAgricolaHistoric() {
-  const api = getApi();
-
-  // Fallback si no tens encara DAILY_SUMMARY_D1_URL a env.js
-  const DAILY_SUMMARY_D1_URL =
-    api?.DAILY_SUMMARY_D1_URL ||
-    api?.DAILY_D1_URL ||
-    `${location.origin}/api/daily-summary-d1-array`;
+  const { DAILY_SUMMARY_D1_URL } = getApi();
 
   const state = {
     rows: [],
@@ -122,7 +106,6 @@ export function initAgricolaHistoric() {
   };
 
   function renderStatus() {
-    // D1: mostra “última actualització” segons últim dia present
     const last = state.rows.length ? state.rows[state.rows.length - 1] : null;
     if (!last) {
       setText("lastUpdated", "Sense dades D1");
@@ -133,103 +116,12 @@ export function initAgricolaHistoric() {
     setText("statusLine", "Resum diari (D1). Període configurable.");
   }
 
-  function renderKPIsAndCharts() {
-    const rangeDays = Number($("rangeSelect")?.value || 365);
-    const kc = Number($("kcSelect")?.value || 0.7);
-    const base = $("gddBase")?.value || "10";
-    const gddField = pickGddField(base);
-
-    // agafa només els últims N dies disponibles
-    const rows = state.rows.slice(Math.max(0, state.rows.length - rangeDays));
-
-    const labels = rows.map(r => dayLabel(r.date));
-
-    const et0 = rows.map(r => safeNum(r.et0_hargreaves_mm));
-    const etc = et0.map(v => (v == null ? null : Number((v * kc).toFixed(2))));
-    const gdd = rows.map(r => safeNum(r[gddField]));
-    const rain = rows.map(r => safeNum(r.rain_mm));
-
-    const h12 = rows.map(r => safeNum(r.hours_vpd_gt_120));
-    const h16 = rows.map(r => safeNum(r.hours_vpd_gt_160));
-
-    // KPIs acumulats (ignorant nulls)
-    function sum(arr) {
-      return arr.reduce((acc, v) => acc + (Number.isFinite(Number(v)) ? Number(v) : 0), 0);
-    }
-    const et0Sum = sum(et0);
-    const etcSum = sum(etc);
-    const rainSum = sum(rain);
-    const gddSum = sum(gdd);
-    const vpd16Days = rows.reduce((acc, r) => acc + ((safeNum(r.hours_vpd_gt_160) || 0) > 0 ? 1 : 0), 0);
-
-    setText("kpiEt0Sum", Number.isFinite(et0Sum) ? fmt2(et0Sum) : "—");
-    setText("kpiEtcSum", Number.isFinite(etcSum) ? fmt2(etcSum) : "—");
-    setText("kpiRainSum", Number.isFinite(rainSum) ? fmt1(rainSum) : "—");
-    setText("kpiGddSum", Number.isFinite(gddSum) ? fmt2(gddSum) : "—");
-    setText("kpiVpd16Days", String(vpd16Days));
-
-    const last = state.rows.length ? state.rows[state.rows.length - 1] : null;
-    setText("kpiLastDay", last?.date ? dayLabel(last.date) : "—");
-
-    // Charts
-    state.charts.et = destroyChart(state.charts.et);
-    state.charts.gdd = destroyChart(state.charts.gdd);
-    state.charts.vpd = destroyChart(state.charts.vpd);
-    state.charts.rain = destroyChart(state.charts.rain);
-
-    state.charts.et = buildLineChart("chartEtDaily", labels, [
-      { label: "ET0 (mm)", data: et0, tension: 0.25, pointRadius: 0, borderWidth: 1.8, fill: false },
-      { label: "ETc (mm)", data: etc, tension: 0.25, pointRadius: 0, borderWidth: 1.8, fill: false }
-    ], true);
-
-    state.charts.gdd = buildLineChart("chartGddDaily", labels, [
-      { label: `GDD base ${base} (diari)`, data: gdd, tension: 0.25, pointRadius: 0, borderWidth: 1.8, fill: false }
-    ], true);
-
-    state.charts.vpd = buildLineChart("chartVpdHours", labels, [
-      { label: "Hores VPD > 1.2", data: h12, tension: 0.25, pointRadius: 0, borderWidth: 1.8, fill: false },
-      { label: "Hores VPD > 1.6", data: h16, tension: 0.25, pointRadius: 0, borderWidth: 1.8, fill: false }
-    ], true);
-
-    state.charts.rain = buildBarChart("chartRainDaily", labels, "Pluja (mm/dia)", rain);
-
-    // Clic per detall (sobre qualsevol chart line)
-    const bindDetail = (chartRef) => {
-      if (!chartRef) return;
-      chartRef.options.onClick = (_evt, activeEls) => {
-        const idx = activeEls?.[0]?.index;
-        if (idx == null) return;
-        const r = rows[idx];
-        if (!r) return;
-        renderDetail(r, kc, base);
-      };
-      chartRef.update();
-    };
-
-    bindDetail(state.charts.et);
-    bindDetail(state.charts.gdd);
-    bindDetail(state.charts.vpd);
-    // per bar chart, també:
-    if (state.charts.rain) {
-      state.charts.rain.options.onClick = (_evt, activeEls) => {
-        const idx = activeEls?.[0]?.index;
-        if (idx == null) return;
-        const r = rows[idx];
-        if (!r) return;
-        renderDetail(r, kc, base);
-      };
-      state.charts.rain.update();
-    }
-
-    // detail per defecte: últim dia del subset
-    if (rows.length) renderDetail(rows[rows.length - 1], kc, base);
-  }
-
   function renderDetail(r, kc, base) {
     setText("detailDate", r?.date ? dayLabel(r.date) : "—");
 
     const et0 = safeNum(r?.et0_hargreaves_mm);
     const etc = (et0 == null) ? null : et0 * kc;
+
     const gddField = pickGddField(base);
     const gdd = safeNum(r?.[gddField]);
     const rain = safeNum(r?.rain_mm);
@@ -252,19 +144,99 @@ export function initAgricolaHistoric() {
       (tmin == null && tmax == null && tavg == null)
         ? "—"
         : `${tmin == null ? "—" : fmt1(tmin)} / ${tmax == null ? "—" : fmt1(tmax)} / ${tavg == null ? "—" : fmt1(tavg)}`;
-
     setText("dTemp", tTxt);
 
     const vTxt =
       `${vavg == null ? "—" : fmt2(vavg)} / ${vmax == null ? "—" : fmt2(vmax)} · ` +
       `${h12 == null ? "—" : fmt1(h12)} · ${h16 == null ? "—" : fmt1(h16)}`;
-
     setText("dVpd", vTxt);
   }
 
+  function renderKPIsAndCharts() {
+    const rangeDays = Number($("rangeSelect")?.value || 365);
+    const kc = Number($("kcSelect")?.value || 0.7);
+    const base = $("gddBase")?.value || "10";
+    const gddField = pickGddField(base);
+
+    const rows = state.rows.slice(Math.max(0, state.rows.length - rangeDays));
+    const labels = rows.map(r => dayLabel(r.date));
+
+    const et0 = rows.map(r => safeNum(r.et0_hargreaves_mm));
+    const etc = et0.map(v => (v == null ? null : Number((v * kc).toFixed(2))));
+    const gdd = rows.map(r => safeNum(r[gddField]));
+    const rain = rows.map(r => safeNum(r.rain_mm));
+    const h12 = rows.map(r => safeNum(r.hours_vpd_gt_120));
+    const h16 = rows.map(r => safeNum(r.hours_vpd_gt_160));
+
+    const sum = (arr) => arr.reduce((acc, v) => acc + (Number.isFinite(Number(v)) ? Number(v) : 0), 0);
+
+    const et0Sum = sum(et0);
+    const etcSum = sum(etc);
+    const rainSum = sum(rain);
+    const gddSum = sum(gdd);
+    const vpd16Days = rows.reduce((acc, r) => acc + (((safeNum(r.hours_vpd_gt_160) || 0) > 0) ? 1 : 0), 0);
+
+    setText("kpiEt0Sum", Number.isFinite(et0Sum) ? fmt2(et0Sum) : "—");
+    setText("kpiEtcSum", Number.isFinite(etcSum) ? fmt2(etcSum) : "—");
+    setText("kpiRainSum", Number.isFinite(rainSum) ? fmt1(rainSum) : "—");
+    setText("kpiGddSum", Number.isFinite(gddSum) ? fmt2(gddSum) : "—");
+    setText("kpiVpd16Days", String(vpd16Days));
+
+    const last = state.rows.length ? state.rows[state.rows.length - 1] : null;
+    setText("kpiLastDay", last?.date ? dayLabel(last.date) : "—");
+
+    state.charts.et = destroyChart(state.charts.et);
+    state.charts.gdd = destroyChart(state.charts.gdd);
+    state.charts.vpd = destroyChart(state.charts.vpd);
+    state.charts.rain = destroyChart(state.charts.rain);
+
+    state.charts.et = buildLineChart("chartEtDaily", labels, [
+      { label: "ET0 (mm)", data: et0, tension: 0.25, pointRadius: 0, borderWidth: 1.8, fill: false },
+      { label: "ETc (mm)", data: etc, tension: 0.25, pointRadius: 0, borderWidth: 1.8, fill: false }
+    ], true);
+
+    state.charts.gdd = buildLineChart("chartGddDaily", labels, [
+      { label: `GDD base ${base} (diari)`, data: gdd, tension: 0.25, pointRadius: 0, borderWidth: 1.8, fill: false }
+    ], true);
+
+    state.charts.vpd = buildLineChart("chartVpdHours", labels, [
+      { label: "Hores VPD > 1.2", data: h12, tension: 0.25, pointRadius: 0, borderWidth: 1.8, fill: false },
+      { label: "Hores VPD > 1.6", data: h16, tension: 0.25, pointRadius: 0, borderWidth: 1.8, fill: false }
+    ], true);
+
+    state.charts.rain = buildBarChart("chartRainDaily", labels, "Pluja (mm/dia)", rain);
+
+    const bindDetail = (chartRef) => {
+      if (!chartRef) return;
+      chartRef.options.onClick = (_evt, activeEls) => {
+        const idx = activeEls?.[0]?.index;
+        if (idx == null) return;
+        const r = rows[idx];
+        if (!r) return;
+        renderDetail(r, kc, base);
+      };
+      chartRef.update();
+    };
+
+    bindDetail(state.charts.et);
+    bindDetail(state.charts.gdd);
+    bindDetail(state.charts.vpd);
+
+    if (state.charts.rain) {
+      state.charts.rain.options.onClick = (_evt, activeEls) => {
+        const idx = activeEls?.[0]?.index;
+        if (idx == null) return;
+        const r = rows[idx];
+        if (!r) return;
+        renderDetail(r, kc, base);
+      };
+      state.charts.rain.update();
+    }
+
+    if (rows.length) renderDetail(rows[rows.length - 1], kc, base);
+  }
+
   async function refresh() {
-    // days: demana una mica més del que el selector pot necessitar
-    // (p.ex. si tens 5 anys disponible, demanar 1825).
     const wantedMax = 1825;
     const rows = await loadDailySummaryD1(DAILY_SUMMARY_D1_URL, wantedMax);
     state.rows = toSortedRows(rows);
@@ -273,9 +245,9 @@ export function initAgricolaHistoric() {
   }
 
   function bindControls() {
-    $("rangeSelect")?.addEventListener("change", () => renderKPIsAndCharts());
-    $("kcSelect")?.addEventListener("change", () => renderKPIsAndCharts());
-    $("gddBase")?.addEventListener("change", () => renderKPIsAndCharts());
+    $("rangeSelect")?.addEventListener("change", renderKPIsAndCharts);
+    $("kcSelect")?.addEventListener("change", renderKPIsAndCharts);
+    $("gddBase")?.addEventListener("change", renderKPIsAndCharts);
   }
 
   async function main() {
@@ -291,4 +263,4 @@ export function initAgricolaHistoric() {
     console.warn("Agrícola històric init parcial", e);
     setText("lastUpdated", "Error carregant D1");
   });
-        }
+}
