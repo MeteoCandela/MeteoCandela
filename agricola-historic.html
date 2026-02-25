@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <meta name="theme-color" content="#0b1220">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MeteoValls">
+
+  <title>MeteoValls · Agrícola històric · Valls (Alt Camp)</title>
+  <meta name="description" content="Històric agrícola diari (D1): ET0, ETc, GDD, VPD i pluja a Valls (Alt Camp).">
+  <link rel="canonical" href="https://meteocandela.cat/agricola-historic.html">
+  <meta name="robots" content="index,follow">
+
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="./favicon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+  <link rel="manifest" href="./site.webmanifest">
+
+  <link rel="stylesheet" href="./style.css?v=2026-02-19-001">
+
+  <script defer src="./vendor/chart.umd.min.js"></script>
+</head>
+
+<body data-page="agricola_historic">
+  <header class="hero">
+    <div class="hero__overlay"></div>
+    <div class="hero__content">
+      <h1>MeteoValls · Agrícola històric</h1>
+      <p id="lastUpdated" aria-live="polite">Carregant…</p>
+      <p id="statusLine" class="status" aria-live="polite">—</p>
+    </div>
+  </header>
+
+  <main class="grid">
+
+    <section class="card span2">
+      <nav class="quick-nav" aria-label="Navegació principal">
+        <a href="/index.html" class="quick-nav__btn">🏠 Inici</a>
+        <a href="/agricola.html" class="quick-nav__btn">🌿 Agrícola (temps real)</a>
+        <a href="/historic.html" class="quick-nav__btn">📊 Històric</a>
+        <a href="/previsio.html" class="quick-nav__btn">⛅ Previsió</a>
+      </nav>
+    </section>
+
+    <section class="card span2">
+      <div class="card-head">
+        <h2>Resum i període</h2>
+        <div class="pill" id="sourceLine">Font: D1 (resum diari)</div>
+      </div>
+
+      <div class="chips-grid">
+        <div class="chip">
+          <span>📅 Període</span>
+          <strong>
+            <select id="rangeSelect" class="select" aria-label="Període">
+              <option value="30">Últims 30 dies</option>
+              <option value="90">Últims 90 dies</option>
+              <option value="365" selected>Últims 365 dies</option>
+              <option value="730">Últims 2 anys</option>
+              <option value="1825">Últims 5 anys</option>
+            </select>
+          </strong>
+        </div>
+
+        <div class="chip">
+          <span>🌱 Kc</span>
+          <strong>
+            <select id="kcSelect" class="select" aria-label="Kc cultiu">
+              <option value="0.30">0.30 (sòl nu / hivern)</option>
+              <option value="0.45">0.45 (vinya inici)</option>
+              <option value="0.70" selected>0.70 (vinya mitja)</option>
+              <option value="0.85">0.85 (horta activa)</option>
+              <option value="1.00">1.00 (referència)</option>
+            </select>
+          </strong>
+        </div>
+
+        <div class="chip">
+          <span>🌡️ Base GDD</span>
+          <strong>
+            <select id="gddBase" class="select" aria-label="Base GDD">
+              <option value="5">5 °C</option>
+              <option value="10" selected>10 °C</option>
+              <option value="12">12 °C</option>
+            </select>
+          </strong>
+        </div>
+      </div>
+
+      <div class="kpi-grid" style="margin-top:12px;">
+        <div class="kpi">
+          <div class="kpi-val" id="kpiEt0Sum">—</div>
+          <div class="kpi-lab">ET0 acumulada (mm)</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-val" id="kpiEtcSum">—</div>
+          <div class="kpi-lab">ETc acumulada (mm)</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-val" id="kpiRainSum">—</div>
+          <div class="kpi-lab">Pluja acumulada (mm)</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-val" id="kpiGddSum">—</div>
+          <div class="kpi-lab">GDD acumulats</div>
+        </div>
+
+        <div class="kpi kpi--wide-left">
+          <div class="kpi-val" id="kpiVpd16Days">—</div>
+          <div class="kpi-lab">Dies amb VPD&gt;1.6 (hores &gt; 0)</div>
+        </div>
+
+        <div class="kpi kpi--wide-right">
+          <div class="kpi-val" id="kpiLastDay">—</div>
+          <div class="kpi-lab">Últim dia amb dades (D1)</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card chart-box span2">
+      <h2>ET0 / ETc (diari)</h2>
+      <canvas id="chartEtDaily"></canvas>
+    </section>
+
+    <section class="card chart-box span2">
+      <h2>GDD (diari)</h2>
+      <canvas id="chartGddDaily"></canvas>
+    </section>
+
+    <section class="card chart-box span2">
+      <h2>VPD (hores per dia)</h2>
+      <canvas id="chartVpdHours"></canvas>
+    </section>
+
+    <section class="card chart-box span2">
+      <h2>Pluja (mm/dia)</h2>
+      <canvas id="chartRainDaily"></canvas>
+    </section>
+
+    <section class="card span2" id="detailCard">
+      <div class="card-head">
+        <h2>Detall del dia</h2>
+        <div class="pill" id="detailDate">—</div>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-val" id="dEt0">—</div>
+          <div class="kpi-lab">ET0 (mm)</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-val" id="dEtc">—</div>
+          <div class="kpi-lab">ETc (mm)</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-val" id="dGdd">—</div>
+          <div class="kpi-lab">GDD</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-val" id="dRain">—</div>
+          <div class="kpi-lab">Pluja (mm)</div>
+        </div>
+
+        <div class="kpi kpi--wide-left">
+          <div class="kpi-val" id="dTemp">—</div>
+          <div class="kpi-lab">Tmin / Tmax / Tavg (°C)</div>
+        </div>
+
+        <div class="kpi kpi--wide-right">
+          <div class="kpi-val" id="dVpd">—</div>
+          <div class="kpi-lab">VPD avg / max (kPa) · h&gt;1.2 · h&gt;1.6</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <span>© <span id="year"></span> MeteoValls</span>
+  </footer>
+
+  <script type="module" src="./app.js?v=2026-02-19-001"></script>
+</body>
+</html>
