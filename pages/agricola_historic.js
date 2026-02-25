@@ -169,7 +169,7 @@ export function initAgricolaHistoric() {
   }
 
   function renderKPIsAndCharts() {
-    const rangeDays = computeRangeDays();
+    const rangeDays = computeRangeDaysFromSelect();
     const kc = Number($("kcSelect")?.value || 0.7);
     const base = $("gddBase")?.value || "10";
     const gddField = pickGddField(base);
