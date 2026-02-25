@@ -96,17 +96,20 @@ function pickGddField(base) {
   return "gdd_base10";
 }
 
-function computeRangeDays() {
-  const v = Number($("rangeValue")?.value || 365);
-  const unit = $("rangeUnit")?.value || "days";
+function computeRangeDaysFromSelect() {
+  const raw = String($("rangeSelect")?.value || "y:1"); // default 1 any
+  const [unit, nStr] = raw.split(":");
+  const n = Number(nStr);
 
-  let rangeDays = v;
-  if (unit === "months") rangeDays = Math.round(v * 30.4375);
-  if (unit === "years")  rangeDays = Math.round(v * 365.25);
+  let days = 365; // fallback
+  if (Number.isFinite(n) && n > 0) {
+    if (unit === "d") days = Math.round(n);
+    else if (unit === "m") days = Math.round(n * 30.4375);
+    else if (unit === "y") days = Math.round(n * 365.25);
+  }
 
-  // clamp a les dades que tens (max 5 anys)
-  rangeDays = Math.max(1, Math.min(1825, rangeDays));
-  return rangeDays;
+  // clamp (tu tens max 5 anys a D1)
+  return Math.max(1, Math.min(1825, days));
 }
 
 export function initAgricolaHistoric() {
