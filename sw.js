@@ -10,13 +10,20 @@ const SCOPE = new URL(self.registration.scope).pathname.replace(/\/$/, ""); // "
 // Helper per prefixar paths dins l'scope
 const inScope = (p) => `${SCOPE}${p.startsWith("/") ? p : `/${p}`}`;
 
-// Precache: IMPORTANT -> paths ABSOLUTS dins el mateix origin + scope
+// ✅ Robust: comprova si un pathname és dins l'scope
+function isInScopePath(pathname) {
+  if (!SCOPE) return pathname.startsWith("/"); // root
+  return pathname === SCOPE || pathname.startsWith(SCOPE + "/");
+}
+
 const PRECACHE_URLS = [
   inScope("/"),
   inScope("/index.html"),
   inScope("/previsio.html"),
   inScope("/historic.html"),
   inScope("/sobre.html"),
+  inScope("/agricola.html"),
+  inScope("/agricola_historic.html"),
   inScope("/site.webmanifest"),
   inScope("/style.css"),
   inScope("/vendor/chart.umd.min.js"),
@@ -28,7 +35,6 @@ const PRECACHE_URLS = [
 ];
 
 function isApi(url) {
-  // API base sempre sota el mateix scope
   return url.pathname.startsWith(inScope("/api/"));
 }
 
@@ -78,7 +84,9 @@ async function precache() {
 
 async function cleanup() {
   const keys = await caches.keys();
-  await Promise.all(keys.map((k) => (k.startsWith(CACHE_PREFIX) && k !== CACHE_NAME ? caches.delete(k) : null)));
+  await Promise.all(
+    keys.map((k) => (k.startsWith(CACHE_PREFIX) && k !== CACHE_NAME ? caches.delete(k) : null))
+  );
 }
 
 async function networkFirst(req, cacheKey) {
@@ -143,15 +151,15 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // Només interceptem dins l'scope
-  if (!url.pathname.startsWith(SCOPE || "/")) return;
+  // ✅ Només interceptem dins l'scope (robust)
+  if (!isInScopePath(url.pathname)) return;
 
   if (isApi(url)) {
     event.respondWith(fetch(req)); // network-only
     return;
   }
 
-  // Per cacheKey usem url.pathname (ja inclou SCOPE)
+  // cacheKey = pathname (inclou SCOPE)
   if (isHtml(req)) {
     event.respondWith(networkFirst(req, url.pathname));
     return;
@@ -200,9 +208,12 @@ self.addEventListener("push", (event) => {
       (raw ? raw.slice(0, 200) : "Alerta Meteorològica");
 
     const tag = (data && data.tag) ? String(data.tag) : "push";
-    const clickPath = (data && data.url) ? String(data.url) : "/";
 
-    const clickUrl = new URL(inScope(clickPath), origin).toString();
+    // ✅ URL robust: si ve absolut, respecta'l; si ve path, aplica scope.
+    const clickVal = (data && data.url) ? String(data.url) : "/";
+    const clickUrl = /^https?:\/\//i.test(clickVal)
+      ? clickVal
+      : new URL(inScope(clickVal), origin).toString();
 
     try {
       const ackUrl = new URL(inScope("/api/push/ack"), origin).toString();
@@ -236,7 +247,8 @@ self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
   const origin = self.location.origin;
-  const targetUrl = event.notification?.data?.url || new URL(inScope("/"), origin).toString();
+  const fallback = new URL(inScope("/"), origin).toString();
+  const targetUrl = event.notification?.data?.url || fallback;
 
   event.waitUntil((async () => {
     const allClients = await clients.matchAll({ type: "window", includeUncontrolled: true });
