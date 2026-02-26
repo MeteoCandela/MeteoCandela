@@ -1,6 +1,6 @@
 // app.js — entrypoint únic (ESM)
 import { getBase } from "./lib/env.js";
-export const V = "2026-02-19-001";
+export const V = "2026-02-20-001";
 
 const BASE = getBase();
 const p = (x) => `${BASE}${x}`;
@@ -70,7 +70,7 @@ async function boot() {
         break;
       }
         case "calendari": {
-  const m = await import(`/pages/calendari.js?v=${V}`);
+  const m = await import(p(`/pages/calendari.js?v=${V}`));
   m?.initCalendariPage?.();
   break;
 }
