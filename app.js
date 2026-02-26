@@ -70,10 +70,11 @@ async function boot() {
         break;
       }
         case "calendari": {
-        const m = await import(`/calendari.js?v=${V}`);
-        m?.initCalendariPage?.();
-        break;
-        }
+  const m = await import(`/pages/calendari.js?v=${V}`);
+  m?.initCalendariPage?.();
+  break;
+}
+        
       default: {
         const m = await import(p(`/pages/home.js?v=${V}`));
         m.initHome?.();
