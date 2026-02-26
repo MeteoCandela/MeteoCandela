@@ -2,365 +2,92 @@
 <html lang="ca">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Calendari Hort Valls (Alt Camp) — Quinzenes</title>
-  <meta name="description" content="Calendari de sembra/trasplantament/collita per quinzenes — Valls (Alt Camp). Cercador, filtres i vista mòbil." />
-  <style>
-    :root{
-      --bg:#0b0f14;
-      --panel:#111827;
-      --panel2:#0f172a;
-      --text:#e5e7eb;
-      --muted:#9ca3af;
-      --border:rgba(255,255,255,.10);
-
-      --si:#60a5fa;   /* Sembra interior */
-      --se:#34d399;   /* Sembra exterior */
-      --tr:#fbbf24;   /* Trasplantament */
-      --co:#f472b6;   /* Collita */
-      --p:#a78bfa;    /* Protecció (P) */
-      --warn:#fb7185; /* Sensible fred (SF) */
-    }
-    @media (prefers-color-scheme: light){
-      :root{
-        --bg:#f7f7fb;
-        --panel:#ffffff;
-        --panel2:#ffffff;
-        --text:#0b1220;
-        --muted:#4b5563;
-        --border:rgba(0,0,0,.12);
-      }
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
-      background:var(--bg);
-      color:var(--text);
-    }
-    a{color:inherit}
-    .wrap{max-width:1200px;margin:0 auto;padding:12px 12px 28px}
-    header{
-      position:sticky; top:0; z-index:10;
-      background:linear-gradient(to bottom, var(--bg) 70%, transparent);
-      backdrop-filter:saturate(1.2) blur(8px);
-      padding:12px 0 10px;
-    }
-    .title{
-      display:flex; gap:10px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap;
-    }
-    h1{font-size:18px;margin:0;line-height:1.2}
-    .sub{font-size:12px;color:var(--muted);margin-top:3px}
-
-    .controls{
-      margin-top:10px;
-      display:grid;
-      grid-template-columns: 1fr;
-      gap:10px;
-    }
-    @media (min-width: 820px){
-      .controls{grid-template-columns: 1.4fr .9fr .7fr .7fr}
-    }
-    input, select, button{
-      width:100%;
-      padding:10px 12px;
-      border-radius:12px;
-      border:1px solid var(--border);
-      background:var(--panel);
-      color:var(--text);
-      font-size:14px;
-      outline:none;
-    }
-    button{cursor:pointer}
-    button:hover{filter:brightness(1.05)}
-    .pillrow{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:10px}
-    .pill{
-      display:inline-flex; gap:8px; align-items:center;
-      padding:7px 10px; border-radius:999px;
-      background:var(--panel);
-      border:1px solid var(--border);
-      font-size:12px;
-      color:var(--muted);
-      user-select:none;
-    }
-    .dot{width:10px;height:10px;border-radius:3px; display:inline-block}
-    .dot.si{background:var(--si)}
-    .dot.se{background:var(--se)}
-    .dot.tr{background:var(--tr)}
-    .dot.co{background:var(--co)}
-    .dot.p {background:var(--p)}
-    .dot.sf{background:var(--warn)}
-
-    .meta{
-      display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;
-      margin:10px 0 8px;
-      color:var(--muted);
-      font-size:12px;
-    }
-
-    .list{display:flex; flex-direction:column; gap:10px}
-    details.card{
-      background:var(--panel2);
-      border:1px solid var(--border);
-      border-radius:16px;
-      overflow:hidden;
-    }
-    summary{
-      list-style:none;
-      cursor:pointer;
-      padding:12px 12px;
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:10px;
-    }
-    summary::-webkit-details-marker{display:none}
-    .left{
-      min-width: 0;
-      display:flex;
-      flex-direction:column;
-      gap:4px;
-    }
-    .name{
-      font-weight:650;
-      font-size:15px;
-      line-height:1.2;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .tags{display:flex; gap:6px; flex-wrap:wrap}
-    .tag{
-      font-size:11px;
-      padding:3px 8px;
-      border-radius:999px;
-      border:1px solid var(--border);
-      color:var(--muted);
-      background:rgba(255,255,255,.03);
-    }
-    .group{
-      font-size:11px; color:var(--muted);
-      white-space:nowrap;
-    }
-
-    .body{
-      padding:0 12px 12px;
-    }
-    .notes{
-      font-size:12px;
-      color:var(--muted);
-      margin:8px 0 10px;
-      line-height:1.35;
-    }
-
-    /* Grid */
-    .gridwrap{
-      overflow:auto;
-      -webkit-overflow-scrolling: touch;
-      border-radius:14px;
-      border:1px solid var(--border);
-      background:rgba(255,255,255,.02);
-    }
-    .grid{
-      min-width: 860px;
-      display:grid;
-      grid-template-columns: 180px repeat(24, 1fr);
-      gap:0;
-      align-items:stretch;
-    }
-    .gcell{
-      border-right:1px solid var(--border);
-      border-bottom:1px solid var(--border);
-      padding:8px 6px;
-      font-size:12px;
-      color:var(--muted);
-      background:transparent;
-      white-space:nowrap;
-    }
-    .gcell.head{
-      position:sticky; top:0;
-      background:var(--panel2);
-      color:var(--text);
-      z-index:3;
-      font-weight:600;
-    }
-    .gcell.lefthead{
-      position:sticky; left:0;
-      z-index:4;
-      background:var(--panel2);
-    }
-    .gcell.rowlabel{
-      position:sticky; left:0;
-      z-index:2;
-      background:var(--panel2);
-      color:var(--text);
-      font-weight:600;
-    }
-    .q{
-      text-align:center;
-      font-size:11px;
-      padding:8px 0;
-    }
-    .bar{
-      padding:0;
-      height:34px;
-      position:relative;
-      background:transparent;
-    }
-    .seg{
-      position:absolute;
-      top:6px;
-      bottom:6px;
-      border-radius:10px;
-      opacity:.92;
-      border:1px solid rgba(255,255,255,.18);
-    }
-    @media (prefers-color-scheme: light){
-      .seg{border:1px solid rgba(0,0,0,.12)}
-    }
-    .seg.si{background:var(--si)}
-    .seg.se{background:var(--se)}
-    .seg.tr{background:var(--tr)}
-    .seg.co{background:var(--co)}
-    .seg.p{background:var(--p); opacity:.55}
-
-    .hint{
-      font-size:12px;color:var(--muted);
-      margin-top:10px;
-      line-height:1.35;
-    }
-
-    .small{
-      font-size:11px;color:var(--muted)
-    }
-
-    .footer{
-      margin-top:14px;
-      font-size:12px;
-      color:var(--muted);
-      line-height:1.35;
-    }
-    .kbd{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      padding:2px 6px; border-radius:8px; border:1px solid var(--border); background:rgba(255,255,255,.03);
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calendari de cultius | MeteoCandela</title>
+  <meta name="description" content="Calendari de cultius de l'Alt Camp per quinzenes amb filtres, taula, targetes i vista mòbil." />
+  <link rel="stylesheet" href="/calendari-style.css" />
 </head>
-
-<body>
-  <div class="wrap">
-    <header>
-      <div class="title">
-        <div>
-          <h1>Calendari hortícola — Valls (Alt Camp) — per quinzenes</h1>
-          <div class="sub">SI (sembra interior) · SE (sembra exterior) · TR (trasplantament) · CO (collita). Dades orientatives; ajusta per microclima i protecció.</div>
+<body data-page="calendari">
+  <main class="container page-calendari">
+    <section class="hero card span2">
+      <div class="hero__main">
+        <p class="eyebrow">MeteoCandela · Hort</p>
+        <h1>Calendari de cultius de l'Alt Camp</h1>
+        <p class="hero__lead">Calendari orientatiu per quinzenes per a Valls i entorn, pensat per a consulta ràpida en escriptori i mòbil. Les finestres poden avançar o retardar-se segons gelades, vent, protecció i microclima.</p>
+        <div class="hero__meta" id="mcMetaPills"></div>
+      </div>
+      <aside class="hero__side">
+        <h2>Llegenda</h2>
+        <div class="legend-grid" id="mcLegendTags"></div>
+        <div class="legend-grid legend-grid--phases">
+          <div class="legend-chip"><span class="swatch swatch--si"></span> Sembra interior</div>
+          <div class="legend-chip"><span class="swatch swatch--se"></span> Sembra exterior</div>
+          <div class="legend-chip"><span class="swatch swatch--tr"></span> Trasplantament</div>
+          <div class="legend-chip"><span class="swatch swatch--co"></span> Collita</div>
         </div>
-        <div class="small" id="now"></div>
+      </aside>
+    </section>
+
+    <section class="card span2 calendari-toolbar">
+      <div class="toolbar-grid">
+        <label class="field field--search">
+          <span>Cerca</span>
+          <input id="mcQ" class="input" type="search" placeholder="Tomàquet, brassicàcies, reg..." />
+        </label>
+
+        <label class="field">
+          <span>Família</span>
+          <select id="mcFamily" class="select"></select>
+        </label>
+
+        <label class="field">
+          <span>Etiqueta</span>
+          <select id="mcTag" class="select"></select>
+        </label>
+
+        <label class="field">
+          <span>Fase</span>
+          <select id="mcPhase" class="select"></select>
+        </label>
+
+        <label class="field">
+          <span>Quinzena</span>
+          <select id="mcHalf" class="select"></select>
+        </label>
+
+        <div class="field field--actions">
+          <span>Accions</span>
+          <div class="toolbar-actions">
+            <button id="mcClear" class="btn secondary" type="button">Neteja filtres</button>
+            <button id="mcToggleNotes" class="btn secondary" type="button">Amaga notes</button>
+          </div>
+        </div>
       </div>
+    </section>
 
-      <div class="controls">
-        <input id="q" type="search" placeholder="Cerca cultiu… (ex: tomàquet, coliflor, pastanaga)" autocomplete="off" />
-        <select id="group">
-          <option value="">Tots els grups</option>
-        </select>
-        <select id="phase">
-          <option value="">Totes les fases</option>
-          <option value="SI">Només SI</option>
-          <option value="SE">Només SE</option>
-          <option value="TR">Només TR</option>
-          <option value="CO">Només CO</option>
-        </select>
-        <button id="expand">Expandir/Contraure tot</button>
+    <section class="stats-grid span2" id="mcStats"></section>
+
+    <section class="card span2">
+      <div class="view-switch" role="tablist" aria-label="Vistes del calendari">
+        <button class="seg active" data-mc-view-btn="cards" type="button">Targetes</button>
+        <button class="seg" data-mc-view-btn="families" type="button">Per famílies</button>
+        <button class="seg" data-mc-view-btn="table" type="button">Taula</button>
+        <button class="seg" data-mc-view-btn="gantt" type="button">Gantt</button>
+        <button class="seg" data-mc-view-btn="mobile" type="button">Mòbil</button>
       </div>
+    </section>
 
-      <div class="pillrow" aria-label="Llegenda">
-        <span class="pill"><span class="dot si"></span>SI</span>
-        <span class="pill"><span class="dot se"></span>SE</span>
-        <span class="pill"><span class="dot tr"></span>TR</span>
-        <span class="pill"><span class="dot co"></span>CO</span>
-        <span class="pill"><span class="dot p"></span>(P) amb protecció</span>
-        <span class="pill"><span class="dot sf"></span>SF sensible al fred</span>
-      </div>
+    <section id="mcViewCards" class="mc-view active span2"></section>
+    <section id="mcViewFamilies" class="mc-view span2"></section>
+    <section id="mcViewTable" class="mc-view span2"></section>
+    <section id="mcViewGantt" class="mc-view span2"></section>
+    <section id="mcViewMobile" class="mc-view span2"></section>
 
-      <div class="meta">
-        <div id="count"></div>
-        <div class="small">Tip: obre un cultiu i fes scroll horitzontal a la graella.</div>
-      </div>
-    </header>
+    <section class="card span2 info-note">
+      <p>Aquest calendari és orientatiu. En cultius sensibles, una quinzena de diferència és compatible amb anys més freds o més càlids, orientació de la parcel·la, disponibilitat de manta o túnel i tipus de sòl.</p>
+    </section>
+  </main>
 
-    <main>
-      <div class="list" id="list"></div>
-
-      <div class="footer">
-        <div><b>Notes d’ús</b></div>
-        <div>— Les barres representen <b>quinzenes</b> (G1…D2). Els ticks superiors són l’inici de mes.</div>
-        <div>— Si algun cultiu té diversos períodes (p. ex. enciam), veuràs més d’una barra per fase.</div>
-        <div>— “(P)” s’indica a les notes; si vols, puc afegir una <i>capa violeta</i> automàtica quan aparegui “P” a notes.</div>
-      </div>
-    </main>
-  </div>
-
-<script>
-  // --- codi quinzenes (1..24) ---
-  const ORDER = ["G1","G2","F1","F2","Mç1","Mç2","A1","A2","Mg1","Mg2","Jn1","Jn2","Jl1","Jl2","Ag1","Ag2","S1","S2","O1","O2","N1","N2","D1","D2"];
-  const POS = Object.fromEntries(ORDER.map((k,i)=>[k,i+1]));
-  const MONTH_LABELS = [
-    ["Gen",1],["Feb",3],["Mar",5],["Abr",7],["Mai",9],["Jun",11],
-    ["Jul",13],["Ago",15],["Set",17],["Oct",19],["Nov",21],["Des",23]
-  ];
-
-  // --- dades (del teu CSV) ---
-  const DATA = [
-    {"cultiu":"Tomàquet","SI_ini":"F1","SI_fi":"Mç2","SE_ini":"","SE_fi":"","TR_ini":"A2","TR_fi":"Mg2","CO_ini":"Jn2","CO_fi":"O2","icones":"SF;RG;VN","notes":"A1 possible amb protecció (P). Tutoratge; mulch; reg regular."},
-    {"cultiu":"Pebrot","SI_ini":"F1","SI_fi":"Mç2","SE_ini":"","SE_fi":"","TR_ini":"Mg1","TR_fi":"Mg2","CO_ini":"Jl1","CO_fi":"O2","icones":"SF;RG;VN","notes":"A2 possible amb protecció (P) i microclima arrecerat. Molt sensible al fred."},
-    {"cultiu":"Albergínia","SI_ini":"F1","SI_fi":"Mç2","SE_ini":"","SE_fi":"","TR_ini":"Mg1","TR_fi":"Jn1","CO_ini":"Jl1","CO_fi":"O2","icones":"SF;RG;VN","notes":"A2 possible amb protecció (P). Necessita calor sostinguda."},
-    {"cultiu":"Tomàquet de penjar","SI_ini":"F1","SI_fi":"Mç2","SE_ini":"","SE_fi":"","TR_ini":"A2","TR_fi":"Mg2","CO_ini":"Jl1","CO_fi":"O2","icones":"SF;RG;VN","notes":"Mateix calendari; collita orientada a conservació."},
-    {"cultiu":"Carbassó","SI_ini":"Mç2","SI_fi":"A2","SE_ini":"A2","SE_fi":"Jn1","TR_ini":"A2","TR_fi":"Jn1","CO_ini":"Jn2","CO_fi":"S2","icones":"SF;RG","notes":"A1 possible amb P. Vigilar oïdi; collir sovint."},
-    {"cultiu":"Cogombre","SI_ini":"A1","SI_fi":"A2","SE_ini":"Mg1","SE_fi":"Jn1","TR_ini":"Mg1","TR_fi":"Jn1","CO_ini":"Jn2","CO_fi":"S2","icones":"SF;RG","notes":"Tutoratge si enfiladís; sensible al fred."},
-    {"cultiu":"Meló","SI_ini":"A1","SI_fi":"A2","SE_ini":"Mg1","SE_fi":"Mg2","TR_ini":"Mg1","TR_fi":"Mg2","CO_ini":"Jl2","CO_fi":"S2","icones":"SF;RG","notes":"Reg controlat; reduir a final per dolçor."},
-    {"cultiu":"Síndria","SI_ini":"A1","SI_fi":"A2","SE_ini":"Mg1","SE_fi":"Mg2","TR_ini":"Mg1","TR_fi":"Mg2","CO_ini":"Ag1","CO_fi":"S2","icones":"SF;RG","notes":"Molt termòfila; sòl drenat."},
-    {"cultiu":"Carbassa","SI_ini":"A1","SI_fi":"A2","SE_ini":"Mg1","SE_fi":"Jn1","TR_ini":"Mg1","TR_fi":"Jn1","CO_ini":"S2","CO_fi":"N2","icones":"SF;RG","notes":"Molt espai; collir amb pell dura."},
-    {"cultiu":"Carbassó d'hivern","SI_ini":"A1","SI_fi":"A2","SE_ini":"Mg1","SE_fi":"Jn1","TR_ini":"Mg1","TR_fi":"Jn1","CO_ini":"S2","CO_fi":"N2","icones":"SF;RG","notes":"Varietats de guarda; similar a carbassa."},
-    {"cultiu":"Mongeta tendra","SI_ini":"A2","SI_fi":"Mg2","SE_ini":"A2","SE_fi":"Jl2","TR_ini":"Mg1","TR_fi":"Jn1","CO_ini":"Jn2","CO_fi":"O1","icones":"SF","notes":"Escalonar sembres cada 2–3 setmanes; germina amb sòl calent."},
-    {"cultiu":"Mongeta seca","SI_ini":"","SI_fi":"","SE_ini":"Mg1","SE_fi":"Jn2","TR_ini":"","TR_fi":"","CO_ini":"S1","CO_fi":"O2","icones":"","notes":"Sembra per gra; assecat a planta si el temps ho permet."},
-    {"cultiu":"Pèsol","SI_ini":"","SI_fi":"","SE_ini":"O1","SE_fi":"F2","TR_ini":"","TR_fi":"","CO_ini":"Mç1","CO_fi":"Mg2","icones":"","notes":"Tutoratge; ideal tardor-hivern. Mç1 possible amb varietat primerenca."},
-    {"cultiu":"Fava","SI_ini":"","SI_fi":"","SE_ini":"O1","SE_fi":"G2","TR_ini":"","TR_fi":"","CO_ini":"Mç2","CO_fi":"Jn1","icones":"","notes":"Molt adequada a hivern; tutoratge en varietats altes."},
-    {"cultiu":"Enciam","SI_ini":"F1;Ag2","SI_fi":"Jn1;O2","SE_ini":"Mç1;S1","SE_fi":"Mg2;O2","TR_ini":"Mç2;S2","TR_fi":"Jn2;N1","CO_ini":"A2;O1","CO_fi":"Jl2;D2","icones":"OM","notes":"A ple estiu (Jn2–Ag1) ombra/varietats d’estiu per evitar espigat. D1–G2 possible amb P."},
-    {"cultiu":"Espinac","SI_ini":"","SI_fi":"","SE_ini":"S1","SE_fi":"Mç2","TR_ini":"","TR_fi":"","CO_ini":"O1","CO_fi":"A2","icones":"OM","notes":"Evitar estiu; A1 possible amb P segons any."},
-    {"cultiu":"Bleda","SI_ini":"F1;Ag1","SI_fi":"A2;S2","SE_ini":"Mç1;Ag2","SE_fi":"Jn1;S2","TR_ini":"A1;S1","TR_fi":"Jn2;O2","CO_ini":"Mg1","CO_fi":"D2","icones":"OM","notes":"G1–F2 possible amb P en hivern fred."},
-    {"cultiu":"Canonges","SI_ini":"","SI_fi":"","SE_ini":"S2","SE_fi":"N2","TR_ini":"","TR_fi":"","CO_ini":"N2","CO_fi":"Mç2","icones":"","notes":"A1 possible amb P; creixement lent."},
-    {"cultiu":"Rúcula","SI_ini":"","SI_fi":"","SE_ini":"F2;S1","SE_fi":"Jn1;N1","TR_ini":"","TR_fi":"","CO_ini":"Mç1;S2","CO_fi":"Jn2;D2","icones":"OM","notes":"Bon cultiu escalonat; tendeix a espigar amb calor."},
-    {"cultiu":"Escarola","SI_ini":"Ag2","SI_fi":"O2","SE_ini":"S1","SE_fi":"O2","TR_ini":"S2","TR_fi":"N1","CO_ini":"N1","CO_fi":"F2","icones":"","notes":"Mç1 possible amb P. Bona per tardor-hivern."},
-    {"cultiu":"Endívia (arrel + forçat)","SI_ini":"","SI_fi":"","SE_ini":"Mg1","SE_fi":"Jn2","TR_ini":"","TR_fi":"","CO_ini":"S1","CO_fi":"O1","icones":"","notes":"Arrel: CO S1–O1. Forçat: CO O1–D2 (segons maneig)."},
-    {"cultiu":"Col (repols)","SI_ini":"F2;Jl2","SI_fi":"A2;S2","SE_ini":"","SE_fi":"","TR_ini":"A2;S1","TR_fi":"Jn1;N2","CO_ini":"Jn1;N1","CO_fi":"Jl2;Mç2","icones":"","notes":"A1 possible amb P. Producció principal tardor-hivern."},
-    {"cultiu":"Coliflor","SI_ini":"Jn2;G2","SI_fi":"S1;F2","SE_ini":"","SE_fi":"","TR_ini":"Ag1","TR_fi":"O1","CO_ini":"N1","CO_fi":"Mç2","icones":"","notes":"Primerenca amb P (G2–F2). Evitar pics de calor."},
-    {"cultiu":"Bròcoli","SI_ini":"Jl2","SI_fi":"S2","SE_ini":"","SE_fi":"","TR_ini":"Ag2","TR_fi":"N1","CO_ini":"N2","CO_fi":"A2","icones":"","notes":"Collir cap principal i rebrots."},
-    {"cultiu":"Bròquil (brotonera)","SI_ini":"Ag1","SI_fi":"S2","SE_ini":"","SE_fi":"","TR_ini":"S1","TR_fi":"O2","CO_ini":"N1","CO_fi":"A2","icones":"","notes":"Varietat dependent; molt d’hivern-inici primavera."},
-    {"cultiu":"Col de Brussel·les","SI_ini":"Mç2","SI_fi":"A2","SE_ini":"","SE_fi":"","TR_ini":"Mg1","TR_fi":"Jn1","CO_ini":"N1","CO_fi":"F2","icones":"","notes":"Mç1 possible amb P. Necessita cicle llarg."},
-    {"cultiu":"Kale / col arrissada","SI_ini":"Mç2;Jl2","SI_fi":"A2;S2","SE_ini":"","SE_fi":"","TR_ini":"Mg1;S1","TR_fi":"Jn1;N1","CO_ini":"O1","CO_fi":"Mç2","icones":"","notes":"A1 possible amb P. Rústica."},
-    {"cultiu":"Pastanaga","SI_ini":"","SI_fi":"","SE_ini":"F2;Ag2","SE_fi":"Jn2;O2","TR_ini":"","TR_fi":"","CO_ini":"Mg1","CO_fi":"N2","icones":"","notes":"Millor sòl fi; aclarida."},
-    {"cultiu":"Remolatxa","SI_ini":"","SI_fi":"","SE_ini":"F2;Ag2","SE_fi":"Jn2;O2","TR_ini":"","TR_fi":"","CO_ini":"Mg1","CO_fi":"N2","icones":"","notes":"Primavera i tardor ideals."},
-    {"cultiu":"Nap","SI_ini":"","SI_fi":"","SE_ini":"S1;F2","SE_fi":"N2;Mç2","TR_ini":"","TR_fi":"","CO_ini":"O1;A2","CO_fi":"G2;Mg2","icones":"","notes":"Cicle ràpid en temps fresc."},
-    {"cultiu":"Rave","SI_ini":"","SI_fi":"","SE_ini":"F2;S1","SE_fi":"Jn2;N2","TR_ini":"","TR_fi":"","CO_ini":"Mç1;S2","CO_fi":"Jl2;D2","icones":"","notes":"Escalonar sembres; evita calor intensa."},
-    {"cultiu":"Xirivia","SI_ini":"","SI_fi":"","SE_ini":"Mç1","SE_fi":"Jn1","TR_ini":"","TR_fi":"","CO_ini":"S1","CO_fi":"F2","icones":"","notes":"Cicle llarg; aguanta fred; Mç1 possible amb P."},
-    {"cultiu":"Patata","SI_ini":"","SI_fi":"","SE_ini":"","SE_fi":"","TR_ini":"F2","TR_fi":"Mç2","CO_ini":"Jn1","CO_fi":"Jl1","icones":"","notes":"Ag1–Ag2 plantació tardana amb CO N1–N2. Risc gelada si massa d’hora."},
-    {"cultiu":"Patata tardana","SI_ini":"","SI_fi":"","SE_ini":"Ag1","SE_fi":"Ag2","TR_ini":"","TR_fi":"","CO_ini":"N1","CO_fi":"N2","icones":"","notes":"Cicle tardà; necessita reg i control míldiu."},
-    {"cultiu":"Ceba bulb","SI_ini":"G2","SI_fi":"Mç2","SE_ini":"","SE_fi":"","TR_ini":"F2","TR_fi":"A2","CO_ini":"Jn1","CO_fi":"Ag2","icones":"","notes":"Varietat determinant; curat en sec per guardar."},
-    {"cultiu":"Ceba tendra","SI_ini":"S1;G2","SI_fi":"N1;Mç2","SE_ini":"","SE_fi":"","TR_ini":"O1;F2","TR_fi":"D1;A2","CO_ini":"N1","CO_fi":"Mg1","icones":"","notes":"Cicle per ceba tendra; ajustar segons varietat."},
-    {"cultiu":"All","SI_ini":"","SI_fi":"","SE_ini":"","SE_fi":"","TR_ini":"O1","TR_fi":"G2","CO_ini":"Jn1","CO_fi":"Jl2","icones":"","notes":"Evitar excés d’aigua al final; rotació."},
-    {"cultiu":"Porro","SI_ini":"F1;Ag1","SI_fi":"A2;S2","SE_ini":"","SE_fi":"","TR_ini":"Mg1;O1","TR_fi":"Jl2;N1","CO_ini":"O1","CO_fi":"Mç2","icones":"","notes":"A1 possible amb P. Aporcar per blanquejar."},
-    {"cultiu":"Api","SI_ini":"F1","SI_fi":"A1","SE_ini":"","SE_fi":"","TR_ini":"A2","TR_fi":"Jn1","CO_ini":"Jl1","CO_fi":"N2","icones":"RG","notes":"Exigent d’aigua; pateix calor extrema."},
-    {"cultiu":"Fonoll","SI_ini":"","SI_fi":"","SE_ini":"Ag2","SE_fi":"O2","TR_ini":"","TR_fi":"","CO_ini":"N1","CO_fi":"F2","icones":"","notes":"Mç1 possible amb P. Millor a tardor-hivern."},
-    {"cultiu":"Blat de moro dolç","SI_ini":"","SI_fi":"","SE_ini":"A2","SE_fi":"Jn1","TR_ini":"","TR_fi":"","CO_ini":"Jl2","CO_fi":"S2","icones":"SF;RG","notes":"Sembra en blocs per pol·linització; reg clau."},
-    {"cultiu":"Gira-sol","SI_ini":"","SI_fi":"","SE_ini":"Mç2","SE_fi":"Mg2","TR_ini":"","TR_fi":"","CO_ini":"Ag1","CO_fi":"S2","icones":"","notes":"Baix manteniment; espai i sol."},
-    {"cultiu":"Alfàbrega","SI_ini":"Mç2","SI_fi":"Mg2","SE_ini":"","SE_fi":"","TR_ini":"Mg1","TR_fi":"Jn1","CO_ini":"Jn1","CO_fi":"S2","icones":"SF","notes":"No fred; ideal amb tomàquet."},
-    {"cultiu":"Julivert","SI_ini":"","SI_fi":"","SE_ini":"F1;S1","SE_fi":"Jn2;N2","TR_ini":"","TR_fi":"","CO_ini":"A1","CO_fi":"D2","icones":"","notes":"G1–F2 possible amb P; germinació lenta."},
-    {"cultiu":"Cilantre","SI_ini":"","SI_fi":"","SE_ini":"F2;S1","SE_fi":"Mg2;O2","TR_ini":"","TR_fi":"","CO_ini":"Mç2;S2","CO_fi":"Jn1;N1","icones":"","notes":"A calor espiga; millor primavera/tardor."},
-    {"cultiu":"Anet","SI_ini":"","SI_fi":"","SE_ini":"Mç1;S1","SE_fi":"Jn1;O1","TR_ini":"","TR_fi":"","CO_ini":"A2;S2","CO_fi":"Jl2;N2","icones":"","notes":"Fàcil; escalonar."},
-    {"cultiu":"Farigola (plantació)","SI_ini":"","SI_fi":"","SE_ini":"Mç1","SE_fi":"Mg2","TR_ini":"","TR_fi":"","CO_ini":"Mg1","CO_fi":"O2","icones":"","notes":"Perenne; collita principal primavera-estiu."},
-    {"cultiu":"Romaní (plantació)","SI_ini":"","SI_fi":"","SE_ini":"Mç1","SE_fi":"Mg2","TR_ini":"","TR_fi":"","CO_ini":"Mg1","CO_fi":"O2","icones":"","notes":"Perenne; podes lleugeres."},
-    {"cultiu":"Sàlvia (plantació)","SI_ini":"","SI_fi":"","SE_ini":"Mç1","SE_fi":"Mg2","TR_ini":"","TR_fi":"","CO_ini":"Mg1","CO_fi":"O2","icones":"","notes":"Perenne; collita principal primavera-estiu."},
-    {"cultiu":"Orenga (plantació)","SI_ini":"","SI_fi":"","SE_ini":"Mç1","SE_fi":"Mg2","TR_ini":"","TR_fi":"","CO_ini":"Mg1","CO_fi":"O2","icones":"","notes":"Perenne; millor en sol i drenatge."},
-    {"cultiu":"Menta (plantació)","SI_ini":"","SI_fi":"","SE_ini":"Mç1","SE_fi":"Jn1","TR_ini":"","TR_fi":"","CO_ini":"Mg1","CO_fi":"O2","icones":"RG","notes":"S’expandeix; millor en test o delimitada."},
-    {"cultiu":"Calçot (plantació bulb)","SI_ini":"","SI_fi":"","SE_ini":"Ag1","SE_fi":"S2","TR_ini":"","TR_fi":"","CO_ini":"N1","CO_fi":"Mç2","icones":"","notes":"Aporcats S2–N1 (diverses vegades). Pics D1–F2."},
-    {"cultiu":"Ceba mare per calçot (si la produeixes)","SI_ini":"G2","SI_fi":"Mç2","SE_ini":"","SE_fi":"","TR_ini":"F2","TR_fi":"A2"
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
