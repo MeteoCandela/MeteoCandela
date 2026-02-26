@@ -1,5 +1,4 @@
 <!doctype html>
-
 <html lang="ca">
 <head>
   <meta charset="utf-8" />
@@ -21,79 +20,83 @@
           Les finestres poden variar segons any, gelades, vent, protecció i microclima.
         </p>
         <div class="hero-calendari__meta" id="mcMetaPills"></div>
-      </div><aside class="hero-calendari__side">
-    <h2>Llegenda</h2>
-    <div class="legend-grid" id="mcLegendTags"></div>
-    <div class="legend-grid legend-grid--phases">
-      <div class="legend-chip"><span class="swatch swatch--si"></span> Sembra interior</div>
-      <div class="legend-chip"><span class="swatch swatch--se"></span> Sembra exterior</div>
-      <div class="legend-chip"><span class="swatch swatch--tr"></span> Trasplantament</div>
-      <div class="legend-chip"><span class="swatch swatch--co"></span> Collita</div>
-    </div>
-  </aside>
-</section>
-
-<section class="card span2 calendari-toolbar">
-  <div class="toolbar-grid">
-    <label class="field field--search">
-      <span>Cerca</span>
-      <input id="mcQ" class="input" type="search" placeholder="Tomàquet, brassicàcies, reg..." />
-    </label>
-
-    <label class="field">
-      <span>Família</span>
-      <select id="mcFamily" class="select"></select>
-    </label>
-
-    <label class="field">
-      <span>Etiqueta</span>
-      <select id="mcTag" class="select"></select>
-    </label>
-
-    <label class="field">
-      <span>Fase</span>
-      <select id="mcPhase" class="select"></select>
-    </label>
-
-    <label class="field">
-      <span>Quinzena</span>
-      <select id="mcHalf" class="select"></select>
-    </label>
-
-    <div class="field field--actions">
-      <span>Accions</span>
-      <div class="toolbar-actions">
-        <button id="mcClear" class="btn secondary" type="button">Neteja filtres</button>
-        <button id="mcToggleNotes" class="btn secondary" type="button">Amaga notes</button>
       </div>
-    </div>
-  </div>
-</section>
 
-<section class="stats-grid span2" id="mcStats"></section>
+      <aside class="hero-calendari__side">
+        <h2>Llegenda</h2>
+        <div class="legend-grid" id="mcLegendTags"></div>
+        <div class="legend-grid legend-grid--phases">
+          <div class="legend-chip"><span class="swatch swatch--si"></span> Sembra interior</div>
+          <div class="legend-chip"><span class="swatch swatch--se"></span> Sembra exterior</div>
+          <div class="legend-chip"><span class="swatch swatch--tr"></span> Trasplantament</div>
+          <div class="legend-chip"><span class="swatch swatch--co"></span> Collita</div>
+        </div>
+      </aside>
+    </section>
 
-<section class="card span2">
-  <div class="view-switch" role="tablist" aria-label="Vistes del calendari">
-    <button class="seg active" data-mc-view-btn="cards" type="button">Targetes</button>
-    <button class="seg" data-mc-view-btn="families" type="button">Per famílies</button>
-    <button class="seg" data-mc-view-btn="table" type="button">Taula</button>
-    <button class="seg" data-mc-view-btn="gantt" type="button">Gantt</button>
-    <button class="seg" data-mc-view-btn="mobile" type="button">Mòbil</button>
-  </div>
-</section>
+    <section class="card span2 calendari-toolbar">
+      <div class="toolbar-grid">
+        <label class="field field--search">
+          <span>Cerca</span>
+          <input id="mcQ" class="input" type="search" placeholder="Tomàquet, brassicàcies, reg..." />
+        </label>
 
-<section id="mcViewCards" class="mc-view active span2"></section>
-<section id="mcViewFamilies" class="mc-view span2"></section>
-<section id="mcViewTable" class="mc-view span2"></section>
-<section id="mcViewGantt" class="mc-view span2"></section>
-<section id="mcViewMobile" class="mc-view span2"></section>
+        <label class="field">
+          <span>Família</span>
+          <select id="mcFamily" class="select"></select>
+        </label>
 
-<section class="card span2 info-note">
-  <p>
-    Aquest calendari és orientatiu. En cultius sensibles, una quinzena de diferència és compatible amb anys més freds o més càlids,
-    orientació de la parcel·la, disponibilitat de manta o túnel i tipus de sòl.
-  </p>
-</section>
+        <label class="field">
+          <span>Etiqueta</span>
+          <select id="mcTag" class="select"></select>
+        </label>
 
-  </main>  <script type="module" src="/app.js"></script></body>
+        <label class="field">
+          <span>Fase</span>
+          <select id="mcPhase" class="select"></select>
+        </label>
+
+        <label class="field">
+          <span>Quinzena</span>
+          <select id="mcHalf" class="select"></select>
+        </label>
+
+        <div class="field field--actions">
+          <span>Accions</span>
+          <div class="toolbar-actions">
+            <button id="mcClear" class="btn secondary" type="button">Neteja filtres</button>
+            <button id="mcToggleNotes" class="btn secondary" type="button">Amaga notes</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="stats-grid span2" id="mcStats"></section>
+
+    <section class="card span2">
+      <div class="view-switch" role="tablist" aria-label="Vistes del calendari">
+        <button class="seg active" data-mc-view-btn="cards" type="button">Targetes</button>
+        <button class="seg" data-mc-view-btn="families" type="button">Per famílies</button>
+        <button class="seg" data-mc-view-btn="table" type="button">Taula</button>
+        <button class="seg" data-mc-view-btn="gantt" type="button">Gantt</button>
+        <button class="seg" data-mc-view-btn="mobile" type="button">Mòbil</button>
+      </div>
+    </section>
+
+    <section id="mcViewCards" class="mc-view active span2"></section>
+    <section id="mcViewFamilies" class="mc-view span2"></section>
+    <section id="mcViewTable" class="mc-view span2"></section>
+    <section id="mcViewGantt" class="mc-view span2"></section>
+    <section id="mcViewMobile" class="mc-view span2"></section>
+
+    <section class="card span2 info-note">
+      <p>
+        Aquest calendari és orientatiu. En cultius sensibles, una quinzena de diferència és compatible amb anys més freds o més càlids,
+        orientació de la parcel·la, disponibilitat de manta o túnel i tipus de sòl.
+      </p>
+    </section>
+  </main>
+
+  <script type="module" src="/app.js"></script>
+</body>
 </html>
