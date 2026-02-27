@@ -71,7 +71,7 @@
 .page-calendari .q.se,.page-calendari .gq.se{background:#3dd598}
 .page-calendari .q.tr,.page-calendari .gq.tr{background:#ffcc4d}
 .page-calendari .q.co,.page-calendari .gq.co{background:#ff6fae}
-.page-calendari .q.mix,.page-calendari .gq.mix{background:linear-gradient(90deg,#5aa9ff 0 25%,#3dd598 25% 50%,#ffcc4d 50% 75%,#ff6fae 75% 100%)}
+/*.page-calendari .q.mix,.page-calendari .gq.mix{background:linear-gradient(90deg,#5aa9ff 0 25%,#3dd598 25% 50%,#ffcc4d 50% 75%,#ff6fae 75% 100%)}*/
 .page-calendari .q.current,.page-calendari .gq.current{outline:2px solid rgba(255,255,255,.75);outline-offset:1px}
 
 .page-calendari .mc-details{margin-top:12px;border:1px solid rgba(255,255,255,.12);border-radius:16px;background:rgba(255,255,255,.03)}
