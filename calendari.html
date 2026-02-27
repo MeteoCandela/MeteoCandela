@@ -14,17 +14,24 @@
     <section class="card span2 hero-calendari">
       <div class="hero-calendari__main">
         <p class="eyebrow">MeteoCandela · Hort</p>
-        <h1>Calendari de cultius de l'Alt Camp</h1>
+        <!-- El JS actualitza automàticament la quinzena aquí -->
+        <h1 id="mcTitle">Calendari de cultius de l'Alt Camp</h1>
+
         <p class="hero-calendari__lead">
           Calendari orientatiu per quinzenes per a Valls i entorn, amb filtres ràpids i vistes adaptades a escriptori i mòbil.
           Les finestres poden variar segons any, gelades, vent, protecció i microclima.
         </p>
+
+        <!-- Mantinc el contenidor però el CSS el deixa ocult (i el JS no l'omple) -->
         <div class="hero-calendari__meta" id="mcMetaPills"></div>
       </div>
 
       <aside class="hero-calendari__side">
         <h2>Llegenda</h2>
+
+        <!-- Tags de llegenda (ocult per CSS) -->
         <div class="legend-grid" id="mcLegendTags"></div>
+
         <div class="legend-grid legend-grid--phases">
           <div class="legend-chip"><span class="swatch swatch--si"></span> Sembra interior</div>
           <div class="legend-chip"><span class="swatch swatch--se"></span> Sembra exterior</div>
@@ -71,6 +78,7 @@
       </div>
     </section>
 
+    <!-- Stats eliminades (CSS l'amaga i el JS no el renderitza) -->
     <section class="stats-grid span2" id="mcStats"></section>
 
     <section class="card span2">
