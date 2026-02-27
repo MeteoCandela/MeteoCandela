@@ -230,20 +230,26 @@ function mcMiniBar(c, qCurrent){
   const months = MC_MONTHS.map(m=>`<div>${m}</div>`).join("");
   let bars = "";
 
-  for(let q=1;q<=24;q++){
-    const active = [];
-    if(mcInRange(q, s.SI)) active.push("si");
-    if(mcInRange(q, s.SE)) active.push("se");
-    if(mcInRange(q, s.TR)) active.push("tr");
-    if(mcInRange(q, s.CO)) active.push("co");
+  for (let q = 1; q <= 24; q++) {
+  const active = [];
+  if (mcInRange(q, s.SI)) active.push("si");
+  if (mcInRange(q, s.SE)) active.push("se");
+  if (mcInRange(q, s.TR)) active.push("tr");
+  if (mcInRange(q, s.CO)) active.push("co");
 
-    let cls = "q";
-    if(active.length===1) cls += " " + active[0];
-    else if(active.length>1) cls += " mix";
-    if(q===qCurrent) cls += " current";
+  let cls = "q";
+  let style = "";
 
-    bars += `<div class="${cls}" title="${MC_ORDER[q-1]}"></div>`;
+  if (active.length === 1) {
+    cls += " " + active[0];
+  } else if (active.length > 1) {
+    style = ` style="${mcMixStyle(active)}"`;
   }
+
+  if (q === qCurrent) cls += " current";
+
+  bars += `<div class="${cls}"${style} title="${MC_ORDER[q-1]}"></div>`;
+}
 
   return `<div class="mini"><div class="months">${months}</div><div class="bargrid">${bars}</div></div>`;
 }
