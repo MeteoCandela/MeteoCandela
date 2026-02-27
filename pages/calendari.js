@@ -37,15 +37,35 @@ function mcTodayISO(){
 
 function mcParseIntervals(a,b){
   if(!a || !b) return [];
+
   const A = String(a).split(";").map(s=>s.trim()).filter(Boolean);
   const B = String(b).split(";").map(s=>s.trim()).filter(Boolean);
+
   let aList = A, bList = B;
   if(aList.length===1 && bList.length>1) aList = Array(bList.length).fill(aList[0]);
   if(bList.length===1 && aList.length>1) bList = Array(aList.length).fill(bList[0]);
+
+  const FIRST = MC_ORDER[0];                  // G1
+  const LAST  = MC_ORDER[MC_ORDER.length-1];  // D2
+
   const out = [];
+
   for(let i=0;i<Math.min(aList.length,bList.length);i++){
-    if(MC_POS[aList[i]] && MC_POS[bList[i]]) out.push([MC_POS[aList[i]], MC_POS[bList[i]], aList[i], bList[i]]);
+    const startCode = aList[i];
+    const endCode   = bList[i];
+    const s = MC_POS[startCode];
+    const e = MC_POS[endCode];
+    if(!s || !e) continue;
+
+    if (s <= e) {
+      out.push([s, e, startCode, endCode]);
+    } else {
+      // Travessa l'any: split en 2 segments
+      out.push([s, 24, startCode, LAST]);   // de start fins D2
+      out.push([1, e, FIRST, endCode]);     // de G1 fins end
+    }
   }
+
   return out;
 }
 
