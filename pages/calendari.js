@@ -10,7 +10,25 @@ const MC_DATA = [{"cultiu":"Tomàquet","familia":"Solanàcies","tipus":"fruit","
 const MC_ORDER = ["G1","G2","F1","F2","Mç1","Mç2","A1","A2","Mg1","Mg2","Jn1","Jn2","Jl1","Jl2","Ag1","Ag2","S1","S2","O1","O2","N1","N2","D1","D2"];
 const MC_MONTHS = ["Gen","Feb","Mar","Abr","Mai","Jun","Jul","Ago","Set","Oct","Nov","Des"];
 const MC_POS = Object.fromEntries(MC_ORDER.map((k,i)=>[k,i+1]));
+const MC_PHASE_COLORS = {
+  si: "#5aa9ff",
+  se: "#3dd598",
+  tr: "#ffcc4d",
+  co: "#ff6fae",
+};
 
+function mcMixStyle(phases){
+  // phases = ["si","tr"] etc.
+  const cols = phases.map(p => MC_PHASE_COLORS[p]).filter(Boolean);
+  if (cols.length <= 1) return "";
+  const n = cols.length;
+  const stops = cols.map((c, i) => {
+    const a = (i * 100) / n;
+    const b = ((i + 1) * 100) / n;
+    return `${c} ${a}% ${b}%`;
+  }).join(", ");
+  return `background:linear-gradient(90deg, ${stops});`;
+}
 // -------------------- Dates/quinzenes helpers --------------------
 function mcTodayISO(){
   const d = new Date();
