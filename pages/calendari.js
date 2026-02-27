@@ -442,10 +442,17 @@ function initCalendari(){
         if(mcInRange(q, s.TR)) active.push("tr");
         if(mcInRange(q, s.CO)) active.push("co");
         let cls = "gq";
-        if(active.length===1) cls += " " + active[0];
-        else if(active.length>1) cls += " mix";
-        if(q===qCurrent) cls += " current";
-        cells += `<span class="${cls}" title="${MC_ORDER[q-1]}"></span>`;
+let style = "";
+
+if (active.length === 1) {
+  cls += " " + active[0];
+} else if (active.length > 1) {
+  style = ` style="${mcMixStyle(active)}"`;
+}
+
+if (q === qCurrent) cls += " current";
+
+cells += `<span class="${cls}"${style} title="${MC_ORDER[q-1]}"></span>`;
       }
       return `
         <div class="gantt-row">
