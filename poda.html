@@ -1,0 +1,122 @@
+<section class="prune-card">
+  <h2>Calendari anual de poda</h2>
+  <p class="muted">
+    Guia orientativa. Ajusta segons clima (zona càlida/freda) i estat de la planta.
+  </p>
+
+  <div class="prune-grid" id="pruneGrid"></div>
+
+  <div class="legend">
+    <span class="lg lg-winter">Hivern / estructural</span>
+    <span class="lg lg-bloom">Floració</span>
+    <span class="lg lg-summer">Estiu / control</span>
+    <span class="lg lg-touch">Retoc estètic</span>
+  </div>
+</section>
+
+<style>
+  .prune-card{
+    padding:16px;border:1px solid rgba(0,0,0,.12);border-radius:14px;
+    max-width:1100px;margin:0 auto;
+  }
+  .muted{opacity:.75}
+  .legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .lg{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid rgba(0,0,0,.12)}
+  .lg::before{content:"";width:10px;height:10px;border-radius:999px;display:inline-block}
+  .lg-winter::before{background:#4f83ff}
+  .lg-bloom::before{background:#4cd37a}
+  .lg-summer::before{background:#ffbf3d}
+  .lg-touch::before{background:#ff7a3d}
+
+  .prune-grid{margin-top:14px;overflow:auto;border-radius:12px;border:1px solid rgba(0,0,0,.10)}
+  .pg{
+    min-width:820px;
+    display:grid;
+    grid-template-columns: 220px repeat(12, 1fr);
+    gap:0;
+  }
+  .cell{
+    padding:10px;border-bottom:1px solid rgba(0,0,0,.08);border-right:1px solid rgba(0,0,0,.08);
+    font-size:14px;line-height:1.15;background:#fff;
+  }
+  .head{font-weight:700;background:rgba(0,0,0,.03)}
+  .rowhead{font-weight:700;background:rgba(0,0,0,.02)}
+  .dot{display:flex;align-items:center;justify-content:center}
+  .box{
+    width:22px;height:22px;border-radius:6px;border:1px solid rgba(0,0,0,.10);
+    background:#fff;
+  }
+  .k-winter{background:#4f83ff}
+  .k-bloom{background:#4cd37a}
+  .k-summer{background:#ffbf3d}
+  .k-touch{background:#ff7a3d}
+
+  @media (max-width:720px){
+    .prune-card{padding:12px}
+  }
+</style>
+
+<script>
+  // Mesos (capçalera)
+  const months = ["Gen","Feb","Mar","Abr","Mai","Jun","Jul","Ago","Set","Oct","Nov","Des"];
+
+  // Graella: 1 = pintar casella
+  // (He traduït el patró del text mensual: hivern fort, abril mínim, estiu i retocs tardor)
+  const rows = [
+    {
+      label: "Hivern / estructural",
+      key: "k-winter",
+      on:  [1,1,1,0,0,0,0,0,0,0,1,1]
+    },
+    {
+      label: "Floració (arbustos/enfiladisses)",
+      key: "k-bloom",
+      on:  [0,1,1,0,1,1,0,0,0,0,0,0]
+    },
+    {
+      label: "Estiu / control de vigor",
+      key: "k-summer",
+      on:  [0,0,0,0,0,0,1,1,1,0,0,0]
+    },
+    {
+      label: "Retoc estètic (bardisses/geranis)",
+      key: "k-touch",
+      on:  [0,0,1,0,1,1,0,0,1,1,0,0]
+    }
+  ];
+
+  function render(){
+    const host = document.getElementById("pruneGrid");
+    const grid = document.createElement("div");
+    grid.className = "pg";
+
+    // capçalera
+    grid.appendChild(cell("Tipus de poda", "cell head"));
+    months.forEach(m => grid.appendChild(cell(m, "cell head")));
+
+    // files
+    rows.forEach(r => {
+      grid.appendChild(cell(r.label, "cell rowhead"));
+      r.on.forEach(v => {
+        const c = document.createElement("div");
+        c.className = "cell dot";
+        const b = document.createElement("div");
+        b.className = "box" + (v ? (" " + r.key) : "");
+        c.appendChild(b);
+        grid.appendChild(c);
+      });
+    });
+
+    host.innerHTML = "";
+    host.appendChild(grid);
+  }
+
+  function cell(txt, cls){
+    const d = document.createElement("div");
+    d.className = cls;
+    d.textContent = txt;
+    return d;
+  }
+
+  render();
+</script>
