@@ -70,10 +70,10 @@ async function boot() {
         break;
       }
         case "poda": {
-        const m = await import(p(`/pages/poda.js?v=${V}`));
-        m.initPoda?.();
-        break;
-        }
+  const m = await import(p(`/pages/poda.js?v=${V}`));
+  m.initPoda?.();
+  break;
+}
         case "calendari": {
   const m = await import(p(`/pages/calendari.js?v=${V}`));
   m?.initCalendariPage?.();
