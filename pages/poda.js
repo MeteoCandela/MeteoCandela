@@ -49,6 +49,221 @@ const PRUNE_DATA = {
     { id:"hedges", name:"Bardisses (xiprer/photinia/llorer)", type:"bardissa",
       windows:{ winter_structural:[0,0,1,0,0,0,0,0,0,0,0,0], green_summer:[0,0,0,0,1,1,0,0,0,0,0,0], touchup:[0,0,0,0,0,0,0,0,1,1,0,0]},
       notes:["Retall principal març; retocs maig–juny i set–oct."]
+     // --- AFEGEIX A PRUNE_DATA.plants ---
+[
+  {
+    id: "fig",
+    name: "Figuera",
+    type: "fruiter_mediterrani",
+    windows: {
+      winter_structural: [0,0,1,1,0,0,0,0,0,0,0,0], // mar-abr
+      green_summer:      [0,0,0,0,0,1,1,0,0,0,0,0]  // jun-jul (suau)
+    },
+    notes: [
+      "Poda principal a finals d’hivern/inici primavera (març–abril), evitant gelades tardanes.",
+      "A l’estiu, només aclarides suaus i xupons."
+    ]
+  },
+  {
+    id: "pomegranate",
+    name: "Magraner",
+    type: "fruiter_mediterrani",
+    windows: {
+      winter_structural: [0,0,1,1,0,0,0,0,0,0,0,0],
+      green_summer:      [0,0,0,0,0,1,1,1,0,0,0,0]
+    },
+    notes: [
+      "Poda de formació i aclarida mar–abr; elimina rebrots basals.",
+      "En verd (jun–ago): control de vigor i aireig."
+    ]
+  },
+  {
+    id: "apricot",
+    name: "Albercoquer",
+    type: "fruiter_os",
+    windows: {
+      winter_structural: [0,1,1,0,0,0,0,0,0,0,0,0], // feb-mar
+      green_summer:      [0,0,0,0,0,1,1,1,0,0,0,0]  // jun-ago (postcollita sovint)
+    },
+    notes: [
+      "Poda d’hivern preferentment feb–mar (minimitza risc de gel).",
+      "Poda en verd postcollita per reduir malalties de fusta."
+    ]
+  },
+  {
+    id: "plum",
+    name: "Prunera (separada)",
+    type: "fruiter_os",
+    windows: {
+      winter_structural: [0,1,1,0,0,0,0,0,0,0,0,0],
+      green_summer:      [0,0,0,0,0,1,1,1,1,0,0,0]
+    },
+    notes: [
+      "Evita podes fortes amb fred; feb–mar millor que gener.",
+      "A l’estiu i fins setembre: podes lleugeres i aireig."
+    ]
+  },
+  {
+    id: "cherry",
+    name: "Cirerer (separat)",
+    type: "fruiter_os",
+    windows: {
+      winter_structural: [0,0,0,0,0,0,0,0,0,0,0,0], // millor evitar poda d’hivern intensa
+      green_summer:      [0,0,0,0,0,1,1,1,1,0,0,0]
+    },
+    notes: [
+      "Millor poda en verd i postcollita (jun–set) per minimitzar gomosi i fongs.",
+      "En hivern, només sanejament mínim si cal."
+    ]
+  },
+  {
+    id: "peach",
+    name: "Presseguer / Nectarina",
+    type: "fruiter_os",
+    windows: {
+      winter_structural: [0,1,1,0,0,0,0,0,0,0,0,0],
+      green_summer:      [0,0,0,0,1,1,1,1,0,0,0,0]
+    },
+    notes: [
+      "Poda principal feb–mar (formació i fructificació).",
+      "En verd (mai–ago): aclarida de brots i control de vigor."
+    ]
+  },
+  {
+    id: "persimmon",
+    name: "Caqui",
+    type: "fruiter_perenne",
+    windows: {
+      winter_structural: [0,0,1,1,0,0,0,0,0,0,0,0],
+      green_summer:      [0,0,0,0,0,1,1,0,0,0,0,0]
+    },
+    notes: [
+      "Poda de formació mar–abr; vigila branques carregades (fràgils).",
+      "A l’estiu, només retocs suaus."
+    ]
+  },
+  {
+    id: "walnut",
+    name: "Noguera",
+    type: "fruiter_llavor",
+    windows: {
+      winter_structural: [0,0,0,0,0,0,0,0,0,0,0,0], // evitar hivern
+      green_summer:      [0,0,0,0,1,1,1,0,0,0,0,0]
+    },
+    notes: [
+      "Evita poda d’hivern (sangrat). Millor finals primavera–estiu (mai–juliol).",
+      "Retalls moderats i talls nets."
+    ]
+  },
+  {
+    id: "mulberry",
+    name: "Morera",
+    type: "ornamental",
+    windows: {
+      winter_structural: [0,1,1,0,0,0,0,0,0,0,0,0],
+      touchup:           [0,0,0,0,0,1,1,0,0,0,0,0]
+    },
+    notes: [
+      "Poda de formació i control feb–mar.",
+      "A l’estiu, retocs suaus si molesta (ombra/branques)."
+    ]
+  },
+
+  // --- Arbustos aromàtics mediterranis (molt comuns) ---
+  {
+    id: "lavender",
+    name: "Lavanda",
+    type: "arbust_aromatic",
+    windows: {
+      touchup:      [0,0,0,1,1,0,0,0,0,0,0,0], // abr-mai (postfloració segons varietat)
+      green_summer: [0,0,0,0,0,0,1,0,0,0,0,0]  // jul (retoc suau si cal)
+    },
+    notes: [
+      "Retalla després de florir (primavera) sense entrar a fusta vella.",
+      "Evita poda forta a l’hivern."
+    ]
+  },
+  {
+    id: "rosemary",
+    name: "Romaní",
+    type: "arbust_aromatic",
+    windows: {
+      touchup: [0,0,0,1,1,1,0,0,0,0,0,0]
+    },
+    notes: [
+      "Retocs de forma a primavera (abr–jun).",
+      "Evita tallar massa fusta vella."
+    ]
+  },
+  {
+    id: "sage",
+    name: "Sàlvia",
+    type: "arbust_aromatic",
+    windows: {
+      touchup: [0,0,0,1,1,0,0,0,0,0,0,0]
+    },
+    notes: [
+      "Poda lleugera a primavera (abr–mai) per rejovenir.",
+      "Evita excés de poda a l’hivern."
+    ]
+  },
+
+  // --- Enfiladisses ornamentals ---
+  {
+    id: "wisteria",
+    name: "Glicina",
+    type: "ornamental",
+    windows: {
+      winter_structural: [1,1,0,0,0,0,0,0,0,0,0,0], // gen-feb (estructura)
+      green_summer:      [0,0,0,0,0,1,1,1,0,0,0,0]  // jun-ago (retall brots llargs)
+    },
+    notes: [
+      "Poda d’estructura a l’hivern (gen–feb) i retall de brots llargs a l’estiu.",
+      "Millora floració i control del volum."
+    ]
+  },
+  {
+    id: "bougainvillea",
+    name: "Buganvíl·lia",
+    type: "ornamental",
+    windows: {
+      winter_structural: [0,0,1,1,0,0,0,0,0,0,0,0], // mar-abr
+      touchup:           [0,0,0,0,1,1,1,0,0,0,0,0]  // mai-jul
+    },
+    notes: [
+      "Poda quan baixa el risc de fred (mar–abr).",
+      "Retocs suaus en temporada per estimular floració."
+    ]
+  },
+
+  // --- Bardisses habituals ---
+  {
+    id: "privet",
+    name: "Lligustrum (bardissa)",
+    type: "bardissa",
+    windows: {
+      green_summer: [0,0,0,0,1,1,1,0,0,0,0,0], // mai-jul
+      touchup:      [0,0,0,0,0,0,0,0,1,1,0,0]  // set-oct
+    },
+    notes: [
+      "Retalls principals a final primavera i inici d’estiu.",
+      "Un últim retoc a set–oct per frenar rebrot de tardor."
+    ]
+  },
+  {
+    id: "pittosporum",
+    name: "Pitospor (Pittosporum)",
+    type: "bardissa",
+    windows: {
+      green_summer: [0,0,0,0,1,1,0,0,0,0,0,0],
+      touchup:      [0,0,0,0,0,0,0,0,1,0,0,0]
+    },
+    notes: [
+      "Retall de forma maig–juny; evita podes fortes amb calor.",
+      "Retoc suau al setembre si cal."
+    ]
+  }
+]
     }
   ],
 };
