@@ -394,9 +394,29 @@ function renderGrid({ plantId="", type="", summary=null } = {}){
 
   for (const p of plants){
     const left = document.createElement("div");
-    left.className = "cell rowhead";
-    left.innerHTML = `<div>${escapeHtml(p.name)}<div class="muted" style="font-weight:400;font-size:12px;margin-top:6px">${escapeHtml(p.notes?.[0]||"")}</div></div>`;
-    grid.appendChild(left);
+left.className = "cell rowhead";
+
+const note = (p.notes && p.notes.length) ? p.notes.join(" ") : "";
+
+left.innerHTML = `
+  <div class="plant-title">
+    <div class="plant-name">${escapeHtml(p.name)}</div>
+    ${note ? `<button type="button" class="plant-info-btn" aria-expanded="false">Info</button>` : ""}
+  </div>
+  ${note ? `<div class="plant-note">${escapeHtml(note)}</div>` : ""}
+`;
+
+grid.appendChild(left);
+
+// toggle
+if (note) {
+  const btn = left.querySelector(".plant-info-btn");
+  btn.addEventListener("click", () => {
+    const open = left.classList.toggle("is-open");
+    btn.setAttribute("aria-expanded", open ? "true" : "false");
+    btn.textContent = open ? "Tanca" : "Info";
+  });
+}
 
     for (let mi=0; mi<12; mi++){
       const c = cell("cell dot");
