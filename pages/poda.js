@@ -49,12 +49,8 @@ const PRUNE_DATA = {
     { id:"hedges", name:"Bardisses (xiprer/photinia/llorer)", type:"bardissa",
       windows:{ winter_structural:[0,0,1,0,0,0,0,0,0,0,0,0], green_summer:[0,0,0,0,1,1,0,0,0,0,0,0], touchup:[0,0,0,0,0,0,0,0,1,1,0,0]},
       notes:["Retall principal març; retocs maig–juny i set–oct."]
-     // --- AFEGEIX A PRUNE_DATA.plants ---
-[
-  {
-    id: "fig",
-    name: "Figuera",
-    type: "fruiter_mediterrani",
+    },
+   { id: "fig", name: "Figuera",type: "fruiter_mediterrani",
     windows: {
       winter_structural: [0,0,1,1,0,0,0,0,0,0,0,0], // mar-abr
       green_summer:      [0,0,0,0,0,1,1,0,0,0,0,0]  // jun-jul (suau)
