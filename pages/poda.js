@@ -206,7 +206,7 @@ const PRUNE_DATA = {
 
     // --- Aromàtiques ---
     {
-      id:"lavender", name:"Lavanda", type:"arbust_aromatic",
+      id:"lavender", name:"Espígol", type:"arbust_aromatic",
       windows:{
         touchup:[0,0,0,1,1,0,0,0,0,0,0,0],
         green_summer:[0,0,0,0,0,0,1,0,0,0,0,0]
