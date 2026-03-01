@@ -1,4 +1,3 @@
-<!-- poda.html -->
 <!doctype html>
 <html lang="ca">
 <head>
@@ -6,11 +5,18 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Calendari anual de poda — Alt Camp (Valls)</title>
   <meta name="description" content="Calendari anual de poda per l’Alt Camp (Valls) amb semàfor segons predicció AEMET." />
-  <link rel="stylesheet" href="/poda.css" />
+
+  <!-- IMPORTANT: paths relatius -->
+  <link rel="stylesheet" href="./poda.css" />
 </head>
 <body>
 
-<section class="prune-card" id="pruneApp" data-muni="43161">
+<section
+  class="prune-card"
+  id="pruneApp"
+  data-muni="43161"
+  data-api=""  <!-- opcional: posa "https://meteocandela.cat/api" si cal -->
+>
   <header class="prune-head">
     <div class="prune-head__left">
       <h2>Calendari anual de poda — Alt Camp (Valls)</h2>
@@ -62,6 +68,7 @@
   </details>
 </section>
 
-<script type="module" src="/poda.js"></script>
+<!-- IMPORTANT: path relatiu -->
+<script type="module" src="./poda.js"></script>
 </body>
 </html>
