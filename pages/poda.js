@@ -270,7 +270,14 @@ function minFinite(arr){ const xs = arr.filter(Number.isFinite); return xs.lengt
 function maxFinite(arr){ const xs = arr.filter(Number.isFinite); return xs.length ? Math.max(...xs) : null; }
 function sumFinite(arr){ const xs = arr.filter(Number.isFinite); return xs.length ? xs.reduce((a,b)=>a+b,0) : 0; }
 
-function escapeHtml(s){ return String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;" }[c])); }
+function escapeHtml(s){
+  return String(s ?? "").replace(/[&<>"]/g, c => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+  }[c]));
+}
 
 function fillPlantFilter(){
   const sel = $("plantFilter");
