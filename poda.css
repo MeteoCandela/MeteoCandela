@@ -1,100 +1,75 @@
-/* poda.css — MeteoValls coherent (dark, pills, grid readable) */
+/* poda.css — v2 (mòbil-first) */
 
-.prune-card{
-  width:100%;
-}
+.prune-card{ width:100%; }
 
-/* Controls: en mòbil, 2 selects a la mateixa fila + botó a sota */
-.prune-head{
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-}
+/* Controls: 1 select ample + 2a fila (tipus + botó) */
+.prune-head{ display:flex; flex-direction:column; gap:12px; }
 
 .prune-controls{
   display:grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap:10px;
-  align-items:center;
+}
+.prune-controls .select{ width:100%; min-width:0; }
+.prune-controls .btn{ width:100%; }
+
+@media (min-width: 720px){
+  .prune-controls{
+    grid-template-columns: 280px 280px auto;
+    align-items:center;
+  }
+  .prune-controls .btn{ width:auto; justify-self:start; }
 }
 
-.prune-controls .btn{
-  grid-column: 1 / -1;
-  justify-self: start;
-}
+/* Meteo pill slot */
+.prune-meteo{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
 
-/* Integra amb la teva UI: pill i select de style.css */
-.prune-controls .select{
-  width:100%;
-  min-width:0;
-}
-
-.prune-controls .btn{
-  width:100%;
-}
-
-/* Meteo badge */
-.prune-meteo{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  align-items:center;
-}
-
-/* Llegenda: compacta */
+/* Llegenda compacta */
 .prune-legend{
   display:flex;
   gap:10px;
   flex-wrap:wrap;
-  margin-top:8px;
+  margin-top:6px;
 }
-
 .lg{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  padding:6px 10px;
-  border-radius:999px;
+  display:inline-flex; align-items:center; gap:8px;
+  padding:6px 10px; border-radius:999px;
   border:1px solid rgba(255,255,255,.12);
   background:rgba(255,255,255,.04);
-  font-size:13px;
-  line-height:1;
+  font-size:13px; line-height:1;
 }
-.lg::before{
-  content:"";
-  width:10px;height:10px;
-  border-radius:999px;
-  display:inline-block;
-}
+.lg::before{ content:""; width:10px; height:10px; border-radius:999px; display:inline-block; }
 .lg-winter::before{ background:#4f83ff; }
 .lg-summer::before{ background:#ffbf3d; }
 .lg-touch::before { background:#ff7a3d; }
 
-/* Grid wrapper */
+/* Wrapper: més “card” i scroll suau */
 .prune-grid{
   margin-top:12px;
   border-radius:14px;
   border:1px solid rgba(255,255,255,.10);
-  background:rgba(0,0,0,.18);
+  background:rgba(0,0,0,.16);
 
-  min-height:220px;
   overflow:auto;
   -webkit-overflow-scrolling:touch;
+
+  /* evita que la graella “es mengi” tota la pantalla */
+  max-height: 62vh;
 }
 
-/* Excel-like grid */
+/* Grid */
 .pg{
-  min-width:980px; /* una mica més ample perquè respirin mesos */
+  min-width: 920px;
   display:grid;
-  grid-template-columns: 240px repeat(12, 1fr);
+  grid-template-columns: 200px repeat(12, 1fr); /* ← col. planta més estreta */
   gap:0;
 }
 
-/* Cells */
+/* Cells base */
 .cell{
   padding:10px 10px;
-  border-bottom:1px solid rgba(255,255,255,.08);
-  border-right:1px solid rgba(255,255,255,.08);
+  border-bottom:1px solid rgba(255,255,255,.07);
+  border-right:1px solid rgba(255,255,255,.07);
   font-size:14px;
   line-height:1.15;
   background:transparent;
@@ -104,7 +79,6 @@
 /* Header sticky top */
 .head{
   font-weight:800;
-  letter-spacing:.2px;
   background:rgba(255,255,255,.07);
   position:sticky;
   top:0;
@@ -112,7 +86,7 @@
   backdrop-filter: blur(6px);
 }
 
-/* Row header sticky left */
+/* Row header sticky left + ombra per separar */
 .rowhead{
   font-weight:800;
   background:rgba(255,255,255,.06);
@@ -120,67 +94,40 @@
   left:0;
   z-index:2;
   backdrop-filter: blur(6px);
+  box-shadow: 8px 0 14px rgba(0,0,0,.35);
 }
 
-/* Rowhead content: evita solapaments */
-.rowhead > div{
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-  min-width:0;
-}
+/* Nota de planta: màxim 2 línies */
 .rowhead .muted{
   opacity:.72;
+  font-weight:500;
+  font-size:12px;
+  display:-webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow:hidden;
 }
 
-/* Dots / boxes */
-.dot{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
+/* Centrat */
+.dot{ display:flex; align-items:center; justify-content:center; }
 
+/* Boxes: una mica més grans + més contrast */
 .box{
-  width:22px;
-  height:22px;
-  border-radius:7px;
-  border:1px solid rgba(255,255,255,.16);
+  width:24px;
+  height:24px;
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,.18);
   background:rgba(255,255,255,.06);
-  box-shadow: 0 1px 0 rgba(0,0,0,.18);
+  box-shadow: 0 1px 0 rgba(0,0,0,.25);
 }
-
-/* Colors */
-.k-winter{ background:#4f83ff; border-color:rgba(255,255,255,.20); }
-.k-summer{ background:#ffbf3d; border-color:rgba(255,255,255,.22); }
-.k-touch { background:#ff7a3d; border-color:rgba(255,255,255,.22); }
+.k-winter{ background:#4f83ff; border-color:rgba(255,255,255,.22); }
+.k-summer{ background:#ffbf3d; border-color:rgba(255,255,255,.26); }
+.k-touch { background:#ff7a3d; border-color:rgba(255,255,255,.26); }
 .k-off   { background:rgba(255,255,255,.06); }
-
-.k-dim{ opacity:.28; }
+.k-dim   { opacity:.28; }
 
 /* Notes */
-.prune-notes{
-  margin-top:12px;
-}
-.prune-notes summary{
-  cursor:pointer;
-  font-weight:800;
-}
-.prune-notes ul{
-  margin:10px 0 0 18px;
-}
-.prune-notes li{
-  margin:6px 0;
-}
-
-/* Tablet/desktop: controls en línia */
-@media (min-width: 860px){
-  .prune-controls{
-    grid-template-columns: 260px 260px auto;
-    align-items:center;
-  }
-  .prune-controls .btn{
-    grid-column:auto;
-    width:auto;
-    justify-self:start;
-  }
-}
+.prune-notes{ margin-top:12px; }
+.prune-notes summary{ cursor:pointer; font-weight:800; }
+.prune-notes ul{ margin:10px 0 0 18px; }
+.prune-notes li{ margin:6px 0; }
