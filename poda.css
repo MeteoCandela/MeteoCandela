@@ -179,3 +179,25 @@
 .rowhead:not(.is-open) .plant-note{
   mask-image: linear-gradient(to right, #000 75%, transparent);
 }
+/* Millora sticky left perquè el botó Info no “floti” raro */
+.rowhead{
+  overflow:hidden; /* talla efectes quan es desplaça */
+}
+
+.rowhead .plant-title{
+  position:relative;
+}
+
+/* Botó Info: més discret + no crida tant */
+.rowhead .plant-info-btn{
+  padding:6px 10px;
+  border-radius:999px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.12);
+  opacity:.9;
+}
+
+/* Quan es fa scroll horitzontal, dona un “tall” visual net */
+.rowhead{
+  box-shadow: 10px 0 18px rgba(0,0,0,.45);
+}
