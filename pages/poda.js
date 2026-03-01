@@ -1,4 +1,11 @@
-// pages/poda.js
+// pages/poda.js (ESM) — Calendari anual de poda + semàfor AEMET (Alt Camp)
+// - Compatible amb el teu lib/env.js (getApi() retorna objecte amb FORECAST_URL, BASE, API_BASE)
+// - Funciona en:
+//    * GitHub Pages (/MeteoCandela)  -> crida a /MeteoCandela/api/* (Cloudflare Worker via proxy)
+//    * meteocandela.cat (root)       -> crida a /api/* (Cloudflare Worker)
+// - Notes expandibles per planta (Info/Tanca)
+// - Robustesa: mostra error al title del pill quan falla
+
 import { getApi } from "../lib/env.js";
 
 const months = ["Gen","Feb","Mar","Abr","Mai","Jun","Jul","Ago","Set","Oct","Nov","Des"];
@@ -13,6 +20,7 @@ const PRUNE_DATA = {
     touchup: "Retocs estètics",
   },
   plants: [
+    // --- Base ---
     {
       id:"olive", name:"Olivera", type:"fruit_mediterrani",
       windows:{
@@ -101,8 +109,8 @@ const PRUNE_DATA = {
     {
       id:"fig", name:"Figuera", type:"fruiter_mediterrani",
       windows:{
-        winter_structural:[0,0,1,1,0,0,0,0,0,0,0,0], // mar-abr
-        green_summer:[0,0,0,0,0,1,1,0,0,0,0,0]       // jun-jul (suau)
+        winter_structural:[0,0,1,1,0,0,0,0,0,0,0,0],
+        green_summer:[0,0,0,0,0,1,1,0,0,0,0,0]
       },
       notes:[
         "Poda principal a finals d’hivern/inici primavera (març–abril), evitant gelades tardanes.",
@@ -136,8 +144,8 @@ const PRUNE_DATA = {
     {
       id:"apricot", name:"Albercoquer", type:"fruiter_os",
       windows:{
-        winter_structural:[0,1,1,0,0,0,0,0,0,0,0,0], // feb-mar
-        green_summer:[0,0,0,0,0,1,1,1,0,0,0,0]       // jun-ago
+        winter_structural:[0,1,1,0,0,0,0,0,0,0,0,0],
+        green_summer:[0,0,0,0,0,1,1,1,0,0,0,0]
       },
       notes:[
         "Poda d’hivern preferentment feb–mar (minimitza risc de gel).",
@@ -158,7 +166,7 @@ const PRUNE_DATA = {
     {
       id:"cherry", name:"Cirerer (separat)", type:"fruiter_os",
       windows:{
-        winter_structural:[0,0,0,0,0,0,0,0,0,0,0,0], // evitar hivern intens
+        winter_structural:[0,0,0,0,0,0,0,0,0,0,0,0],
         green_summer:[0,0,0,0,0,1,1,1,1,0,0,0]
       },
       notes:[
@@ -182,7 +190,7 @@ const PRUNE_DATA = {
     {
       id:"walnut", name:"Noguera", type:"fruiter_llavor",
       windows:{
-        winter_structural:[0,0,0,0,0,0,0,0,0,0,0,0], // evitar hivern
+        winter_structural:[0,0,0,0,0,0,0,0,0,0,0,0],
         green_summer:[0,0,0,0,1,1,1,0,0,0,0,0]
       },
       notes:[
@@ -235,8 +243,8 @@ const PRUNE_DATA = {
     {
       id:"wisteria", name:"Glicina", type:"ornamental",
       windows:{
-        winter_structural:[1,1,0,0,0,0,0,0,0,0,0,0], // gen-feb
-        green_summer:[0,0,0,0,0,1,1,1,0,0,0,0]       // jun-ago
+        winter_structural:[1,1,0,0,0,0,0,0,0,0,0,0],
+        green_summer:[0,0,0,0,0,1,1,1,0,0,0,0]
       },
       notes:[
         "Poda d’estructura a l’hivern (gen–feb) i retall de brots llargs a l’estiu.",
@@ -246,8 +254,8 @@ const PRUNE_DATA = {
     {
       id:"bougainvillea", name:"Buganvíl·lia", type:"ornamental",
       windows:{
-        winter_structural:[0,0,1,1,0,0,0,0,0,0,0,0], // mar-abr
-        touchup:[0,0,0,0,1,1,1,0,0,0,0,0]            // mai-jul
+        winter_structural:[0,0,1,1,0,0,0,0,0,0,0,0],
+        touchup:[0,0,0,0,1,1,1,0,0,0,0,0]
       },
       notes:[
         "Poda quan baixa el risc de fred (mar–abr).",
@@ -419,17 +427,27 @@ function gradePruning(s){
   return { status:"yes", text:"✅ Condicions bones" };
 }
 
-function renderBadge(summary){
+function renderBadge(summary, errMsg = ""){
   const slot = $("pruneMeteo");
   if (!slot) return;
 
   if (!summary?.date) {
-    slot.innerHTML = `<span class="pill">Predicció no disponible</span>`;
+    const t = errMsg ? ` title="${escapeAttr(errMsg)}"` : "";
+    slot.innerHTML = `<span class="pill"${t}>Predicció no disponible</span>`;
     return;
   }
 
   const g = gradePruning(summary);
   slot.innerHTML = `<span class="pill">${escapeHtml(g.text)}</span>`;
+}
+
+function escapeAttr(s){
+  return String(s ?? "").replace(/[&<>"]/g, (c) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+  }[c])).replace(/\n/g, " ");
 }
 
 // -----------------------------
@@ -486,6 +504,15 @@ function renderGrid({ plantId="", type="", summary=null } = {}){
       const btn = left.querySelector(".plant-info-btn");
       if (btn) {
         btn.addEventListener("click", () => {
+          // opcional: només una oberta a la vegada
+          document.querySelectorAll(".rowhead.is-open").forEach((el) => {
+            if (el !== left) {
+              el.classList.remove("is-open");
+              const b = el.querySelector(".plant-info-btn");
+              if (b) { b.setAttribute("aria-expanded","false"); b.textContent = "Info"; }
+            }
+          });
+
           const open = left.classList.toggle("is-open");
           btn.setAttribute("aria-expanded", open ? "true" : "false");
           btn.textContent = open ? "Tanca" : "Info";
@@ -505,6 +532,7 @@ function renderGrid({ plantId="", type="", summary=null } = {}){
         const key = prio.find(x=>activeKeys.includes(x)) || activeKeys[0];
         b.className = `box ${boxClassForKey(key)}`;
 
+        // semàfor només al mes actual
         if (summary && mi === monthNow){
           const g = gradePruning(summary);
           if (g.status === "no") b.classList.add("k-dim");
@@ -519,24 +547,40 @@ function renderGrid({ plantId="", type="", summary=null } = {}){
   host.innerHTML = "";
   host.appendChild(grid);
 
-  // “repaint” Android (força reflow)
+  // repaint Android (força reflow)
   host.style.display = "none";
-  host.offsetHeight; // eslint-disable-line no-unused-expressions
+  host.offsetHeight; // force
   host.style.display = "";
 }
 
 // -----------------------------
-// API forecast
+// API forecast (IMPORTANT: usa el teu getApi() object)
 // -----------------------------
+async function fetchJson(url){
+  const res = await fetch(url, { cache: "no-store" });
+  const txt = await res.text();
+  let data = null;
+  try { data = txt ? JSON.parse(txt) : null; } catch { data = null; }
+  if (!res.ok) {
+    const msg = (data && (data.error || data.detail))
+      ? `${data.error || "error"} ${data.detail || ""}`.trim()
+      : txt.slice(0, 180);
+    throw new Error(`HTTP ${res.status}: ${msg}`);
+  }
+  return data;
+}
+
 async function fetchForecast(muniId){
-  const API0 = getApi();
-  const API = String(API0 || "").replace(/\/$/, ""); // evita "//api"
-  const url = `${API}/api/forecast?muni=${encodeURIComponent(muniId)}`;
+  // getApi() -> { FORECAST_URL: ".../api/forecast", ... }
+  const api = getApi?.() || {};
+  const ORIGIN = window.location.origin;
+  const FORECAST_URL = api.FORECAST_URL || "/api/forecast";
 
-  const r = await fetch(url, { cache:"no-store" });
-  if (!r.ok) throw new Error(`forecast http ${r.status}`);
+  const url = new URL(FORECAST_URL, ORIGIN);
+  url.searchParams.set("m", String(muniId || "43161")); // Worker canònic
+  url.searchParams.set("t", String(Date.now()));        // anti-cache
 
-  return r.json();
+  return fetchJson(url.toString());
 }
 
 // -----------------------------
@@ -550,6 +594,7 @@ export async function initPoda(){
 
   fillPlantFilter();
   renderGrid({}); // inicial: sense meteo
+  renderBadge(null);
 
   const getFilters = () => ({
     plantId: $("plantFilter")?.value || "",
@@ -573,8 +618,8 @@ export async function initPoda(){
       const summary = summarizeForPruning(norm);
       window.__PODA_SUMMARY__ = summary;
       apply(summary);
-    } catch {
-      safeSetHtml("pruneMeteo", `<span class="pill">⛔ Predicció no disponible</span>`);
+    } catch (e) {
+      renderBadge(null, e?.message || String(e));
       apply(null);
     }
   });
@@ -586,7 +631,8 @@ export async function initPoda(){
     const summary = summarizeForPruning(norm);
     window.__PODA_SUMMARY__ = summary;
     apply(summary);
-  } catch {
+  } catch (e) {
+    renderBadge(null, e?.message || String(e));
     apply(null);
   }
 }
