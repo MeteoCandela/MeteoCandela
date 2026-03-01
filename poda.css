@@ -217,3 +217,41 @@
   height:22px;
   border-radius:7px;
 }
+/* 1) Assegura capes i que siguin OPACES (no transparents) */
+.prune-grid{ position:relative; }
+
+.pg .cell{
+  position:relative;
+}
+
+/* Capçalera superior (mesos) */
+.pg .head{
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: #2b313b;            /* ← opac (ajusta si vols) */
+  backdrop-filter: none !important;
+}
+
+/* Primera columna (Planta) sticky left */
+.pg .rowhead{
+  position: sticky;
+  left: 0;
+  z-index: 60;                     /* per sobre de la resta */
+  background: #2b313b;             /* ← opac (mateix que head) */
+  backdrop-filter: none !important;
+  overflow: hidden;                 /* talla el que “floti” */
+  box-shadow: 10px 0 18px rgba(0,0,0,.45); /* separació neta */
+}
+
+/* Cel·la top-left (intersecció Planta + mesos): màxima prioritat */
+.pg .head.rowhead,
+.pg .rowhead.head{
+  z-index: 80;
+  background: #2b313b;
+}
+
+/* 2) Opcional: evita “bleed” per GPU en alguns Android */
+.pg{
+  transform: translateZ(0);
+}
