@@ -1,92 +1,186 @@
-/* poda.css — només específic per la pàgina poda */
+/* poda.css — MeteoValls coherent (dark, pills, grid readable) */
 
-.prune-card { width:100%; }
+.prune-card{
+  width:100%;
+}
 
+/* Controls: en mòbil, 2 selects a la mateixa fila + botó a sota */
 .prune-head{
   display:flex;
   flex-direction:column;
-  gap:10px;
+  gap:12px;
 }
 
 .prune-controls{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:10px;
+  align-items:center;
+}
+
+.prune-controls .btn{
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+/* Integra amb la teva UI: pill i select de style.css */
+.prune-controls .select{
+  width:100%;
+  min-width:0;
+}
+
+.prune-controls .btn{
+  width:100%;
+}
+
+/* Meteo badge */
+.prune-meteo{
   display:flex;
   gap:10px;
   flex-wrap:wrap;
   align-items:center;
 }
 
-.prune-meteo{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-
-.prune-legend{ display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+/* Llegenda: compacta */
+.prune-legend{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:8px;
+}
 
 .lg{
-  display:inline-flex; align-items:center; gap:8px;
-  padding:6px 10px; border-radius:999px;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 10px;
+  border-radius:999px;
   border:1px solid rgba(255,255,255,.12);
   background:rgba(255,255,255,.04);
   font-size:13px;
+  line-height:1;
 }
-.lg::before{ content:""; width:10px; height:10px; border-radius:999px; display:inline-block; }
+.lg::before{
+  content:"";
+  width:10px;height:10px;
+  border-radius:999px;
+  display:inline-block;
+}
 .lg-winter::before{ background:#4f83ff; }
 .lg-summer::before{ background:#ffbf3d; }
-.lg-touch::before{ background:#ff7a3d; }
+.lg-touch::before { background:#ff7a3d; }
 
-/* CLAU: min-height + scroll horitzontal (mòbil) */
+/* Grid wrapper */
 .prune-grid{
   margin-top:12px;
-  border-radius:12px;
+  border-radius:14px;
   border:1px solid rgba(255,255,255,.10);
-  background:rgba(0,0,0,.20);
+  background:rgba(0,0,0,.18);
 
-  min-height:160px;
-  overflow-x:auto;
-  overflow-y:hidden;
+  min-height:220px;
+  overflow:auto;
   -webkit-overflow-scrolling:touch;
 }
 
+/* Excel-like grid */
 .pg{
-  min-width:920px;
+  min-width:980px; /* una mica més ample perquè respirin mesos */
   display:grid;
-  grid-template-columns: 260px repeat(12, 1fr);
+  grid-template-columns: 240px repeat(12, 1fr);
   gap:0;
 }
 
+/* Cells */
 .cell{
-  padding:10px;
+  padding:10px 10px;
   border-bottom:1px solid rgba(255,255,255,.08);
   border-right:1px solid rgba(255,255,255,.08);
   font-size:14px;
   line-height:1.15;
   background:transparent;
+  color:rgba(255,255,255,.92);
 }
 
+/* Header sticky top */
 .head{
-  font-weight:700;
-  background:rgba(255,255,255,.06);
-  position:sticky; top:0; z-index:3;
-}
-.rowhead{
-  font-weight:700;
-  background:rgba(255,255,255,.04);
-  position:sticky; left:0; z-index:2;
+  font-weight:800;
+  letter-spacing:.2px;
+  background:rgba(255,255,255,.07);
+  position:sticky;
+  top:0;
+  z-index:3;
+  backdrop-filter: blur(6px);
 }
 
-.dot{ display:flex; align-items:center; justify-content:center; }
+/* Row header sticky left */
+.rowhead{
+  font-weight:800;
+  background:rgba(255,255,255,.06);
+  position:sticky;
+  left:0;
+  z-index:2;
+  backdrop-filter: blur(6px);
+}
+
+/* Rowhead content: evita solapaments */
+.rowhead > div{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  min-width:0;
+}
+.rowhead .muted{
+  opacity:.72;
+}
+
+/* Dots / boxes */
+.dot{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
 
 .box{
-  width:22px; height:22px;
-  border-radius:6px;
-  border:1px solid rgba(255,255,255,.12);
+  width:22px;
+  height:22px;
+  border-radius:7px;
+  border:1px solid rgba(255,255,255,.16);
   background:rgba(255,255,255,.06);
+  box-shadow: 0 1px 0 rgba(0,0,0,.18);
 }
 
-.k-winter{ background:#4f83ff; border-color:rgba(255,255,255,.18); }
-.k-summer{ background:#ffbf3d; border-color:rgba(255,255,255,.18); }
-.k-touch { background:#ff7a3d; border-color:rgba(255,255,255,.18); }
+/* Colors */
+.k-winter{ background:#4f83ff; border-color:rgba(255,255,255,.20); }
+.k-summer{ background:#ffbf3d; border-color:rgba(255,255,255,.22); }
+.k-touch { background:#ff7a3d; border-color:rgba(255,255,255,.22); }
 .k-off   { background:rgba(255,255,255,.06); }
-.k-dim   { opacity:.30; }
 
-.prune-notes{ margin-top:12px; }
-.prune-notes summary{ cursor:pointer; font-weight:700; }
-.prune-notes ul{ margin:10px 0 0 18px; }
-.prune-notes li{ margin:6px 0; }
+.k-dim{ opacity:.28; }
+
+/* Notes */
+.prune-notes{
+  margin-top:12px;
+}
+.prune-notes summary{
+  cursor:pointer;
+  font-weight:800;
+}
+.prune-notes ul{
+  margin:10px 0 0 18px;
+}
+.prune-notes li{
+  margin:6px 0;
+}
+
+/* Tablet/desktop: controls en línia */
+@media (min-width: 860px){
+  .prune-controls{
+    grid-template-columns: 260px 260px auto;
+    align-items:center;
+  }
+  .prune-controls .btn{
+    grid-column:auto;
+    width:auto;
+    justify-self:start;
+  }
+}
