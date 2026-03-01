@@ -1,10 +1,4 @@
 // pages/poda.js (ESM) — Calendari anual de poda + semàfor AEMET (Alt Camp)
-// - Compatible amb el teu lib/env.js (getApi() retorna objecte amb FORECAST_URL, BASE, API_BASE)
-// - Funciona en:
-//    * GitHub Pages (/MeteoCandela)  -> crida a /MeteoCandela/api/* (Cloudflare Worker via proxy)
-//    * meteocandela.cat (root)       -> crida a /api/* (Cloudflare Worker)
-// - Notes expandibles per planta (Info/Tanca)
-// - Robustesa: mostra error al title del pill quan falla
 
 import { getApi } from "../lib/env.js";
 
@@ -298,7 +292,6 @@ const numOrNull = (x) => {
   const n = Number(x);
   return Number.isFinite(n) ? n : null;
 };
-
 const isFiniteNum = (x) => Number.isFinite(x);
 
 function minFinite(arr){
@@ -322,6 +315,14 @@ function escapeHtml(s){
     '"': "&quot;",
   }[c]));
 }
+function escapeAttr(s){
+  return String(s ?? "").replace(/[&<>"]/g, (c) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+  }[c])).replace(/\n/g, " ");
+}
 
 function safeSetHtml(id, html){
   const el = $(id);
@@ -329,7 +330,6 @@ function safeSetHtml(id, html){
   el.innerHTML = html;
   return true;
 }
-
 function safeOn(id, evt, fn){
   const el = $(id);
   if (!el) return false;
@@ -359,7 +359,6 @@ function activityKeysForPlant(p){
   if (p.windows?.touchup) keys.push("touchup");
   return keys;
 }
-
 function boxClassForKey(k){
   if (k === "winter_structural") return "k-winter";
   if (k === "green_summer") return "k-summer";
@@ -441,15 +440,6 @@ function renderBadge(summary, errMsg = ""){
   slot.innerHTML = `<span class="pill">${escapeHtml(g.text)}</span>`;
 }
 
-function escapeAttr(s){
-  return String(s ?? "").replace(/[&<>"]/g, (c) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-  }[c])).replace(/\n/g, " ");
-}
-
 // -----------------------------
 // UI: grid anual + notes plegables
 // -----------------------------
@@ -481,7 +471,11 @@ function renderGrid({ plantId="", type="", summary=null } = {}){
     return d;
   };
 
-  grid.appendChild(head("Planta"));
+  // ✅ TOP-LEFT = head + rowhead (sticky top + sticky left)
+  const tl = head("Planta");
+  tl.classList.add("rowhead");
+  grid.appendChild(tl);
+
   months.forEach(m => grid.appendChild(head(m)));
 
   for (const p of plants){
@@ -504,8 +498,8 @@ function renderGrid({ plantId="", type="", summary=null } = {}){
       const btn = left.querySelector(".plant-info-btn");
       if (btn) {
         btn.addEventListener("click", () => {
-          // opcional: només una oberta a la vegada
-          document.querySelectorAll(".rowhead.is-open").forEach((el) => {
+          // només una oberta a la vegada
+          grid.querySelectorAll(".rowhead.is-open").forEach((el) => {
             if (el !== left) {
               el.classList.remove("is-open");
               const b = el.querySelector(".plant-info-btn");
@@ -547,14 +541,14 @@ function renderGrid({ plantId="", type="", summary=null } = {}){
   host.innerHTML = "";
   host.appendChild(grid);
 
-  // repaint Android (força reflow)
+  // repaint Android
   host.style.display = "none";
-  host.offsetHeight; // force
+  host.offsetHeight;
   host.style.display = "";
 }
 
 // -----------------------------
-// API forecast (IMPORTANT: usa el teu getApi() object)
+// API forecast
 // -----------------------------
 async function fetchJson(url){
   const res = await fetch(url, { cache: "no-store" });
@@ -571,14 +565,13 @@ async function fetchJson(url){
 }
 
 async function fetchForecast(muniId){
-  // getApi() -> { FORECAST_URL: ".../api/forecast", ... }
   const api = getApi?.() || {};
   const ORIGIN = window.location.origin;
   const FORECAST_URL = api.FORECAST_URL || "/api/forecast";
 
   const url = new URL(FORECAST_URL, ORIGIN);
-  url.searchParams.set("m", String(muniId || "43161")); // Worker canònic
-  url.searchParams.set("t", String(Date.now()));        // anti-cache
+  url.searchParams.set("m", String(muniId || "43161"));
+  url.searchParams.set("t", String(Date.now()));
 
   return fetchJson(url.toString());
 }
@@ -593,7 +586,7 @@ export async function initPoda(){
   const muniId = root.dataset.muni || "43161";
 
   fillPlantFilter();
-  renderGrid({}); // inicial: sense meteo
+  renderGrid({}); // inicial
   renderBadge(null);
 
   const getFilters = () => ({
