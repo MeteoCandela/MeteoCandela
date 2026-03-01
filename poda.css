@@ -201,3 +201,19 @@
 .rowhead{
   box-shadow: 10px 0 18px rgba(0,0,0,.45);
 }
+/* Compacta la fila */
+.pg .rowhead{
+  padding:10px 10px;
+}
+
+.rowhead .plant-note{
+  margin-top:6px;
+  font-size:12px;
+}
+
+/* caixa més petita per reduir alçada visual */
+.box{
+  width:22px;
+  height:22px;
+  border-radius:7px;
+}
