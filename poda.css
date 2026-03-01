@@ -131,3 +131,51 @@
 .prune-notes summary{ cursor:pointer; font-weight:800; }
 .prune-notes ul{ margin:10px 0 0 18px; }
 .prune-notes li{ margin:6px 0; }
+/* Notes expandibles dins la cel·la rowhead */
+.rowhead .plant-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.rowhead .plant-name{
+  font-weight:800;
+  min-width:0;
+}
+
+.rowhead .plant-info-btn{
+  flex:0 0 auto;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.06);
+  color:rgba(255,255,255,.92);
+  border-radius:999px;
+  padding:6px 10px;
+  font-size:12px;
+  line-height:1;
+}
+
+.rowhead .plant-note{
+  margin-top:8px;
+  opacity:.75;
+  font-weight:500;
+  font-size:12px;
+
+  /* plegat per defecte */
+  display:-webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow:hidden;
+}
+
+.rowhead.is-open .plant-note{
+  /* obert: deixa créixer */
+  display:block;
+  overflow:visible;
+  -webkit-line-clamp: unset;
+}
+
+/* Opcional: petit “fade” quan està plegat (queda fi) */
+.rowhead:not(.is-open) .plant-note{
+  mask-image: linear-gradient(to right, #000 75%, transparent);
+}
