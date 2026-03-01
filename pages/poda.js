@@ -257,9 +257,7 @@ const PRUNE_DATA = {
     notes: [
       "Retall de forma maig–juny; evita podes fortes amb calor.",
       "Retoc suau al setembre si cal."
-    ]
-  }
-]
+      ]
     }
   ],
 };
