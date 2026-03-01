@@ -1,7 +1,6 @@
 // poda.js (ESM) — Calendari anual de poda (Alt Camp) + semàfor meteo AEMET
-// Requisits:
-// - Endpoint que retorna l'objecte Forecast com el teu exemple:
-//   GET /api/forecast?muni=43161  -> { daily:[], hourly:[], ... }
+// Endpoint esperat:
+//   GET /api/forecast?muni=43161  -> Forecast { daily:[], hourly:[], ... }
 
 const months = ["Gen","Feb","Mar","Abr","Mai","Jun","Jul","Ago","Set","Oct","Nov","Des"];
 
@@ -150,14 +149,22 @@ const PRUNE_DATA = {
   ],
 };
 
-// -------------------- Meteo (Forecast AEMET) --------------------
+// -------------------- DOM helpers --------------------
+const $ = (id) => document.getElementById(id);
 
+function safeEl(id) {
+  const el = $(id);
+  if (!el) throw new Error(`Missing element #${id}`);
+  return el;
+}
+
+// -------------------- Forecast parsing / summary --------------------
 function normalizeForecast(raw) {
   const daily = (raw?.daily || []).map((d) => ({
     date: d.date,
     tmin: numOrNull(d.tmin_c),
     tmax: numOrNull(d.tmax_c),
-    pop: numOrNull(d.pop_pct),
+    pop:  numOrNull(d.pop_pct),
     wind: numOrNull(d.wind_kmh),
     gust: numOrNull(d.gust_kmh),
     sky: d.sky || null,
@@ -167,13 +174,10 @@ function normalizeForecast(raw) {
     date: h.date,
     hour: h.hour,
     temp: numOrNull(h.temp_c),
-    pop: numOrNull(h.pop_pct),
+    pop:  numOrNull(h.pop_pct),
     rain: numOrNull(h.rain_mm),
     wind: numOrNull(h.wind_kmh),
     gust: numOrNull(h.gust_kmh),
-    hum: numOrNull(h.hum_pct),
-    sky: h.sky || null,
-    ts_local: h.ts_local || null,
   }));
 
   return { daily, hourly };
@@ -186,30 +190,25 @@ function summarizeForPruning(norm) {
   const next3 = (norm.daily || []).slice(0, 3);
   const tmin3d = minFinite(next3.map((d) => d.tmin));
   const tmaxToday = finiteOrNull(d0.tmax);
-  const popToday = finiteOrNull(d0.pop);
+  const popDaily = finiteOrNull(d0.pop);
 
   const hToday = today ? (norm.hourly || []).filter((h) => h.date === today) : [];
 
-  // Vent / ratxa: màxim entre hourly i daily
   const windMax = maxFinite([...hToday.map((h) => h.wind), finiteOrNull(d0.wind)]);
   const gustMax = maxFinite([...hToday.map((h) => h.gust), finiteOrNull(d0.gust)]);
   const windRef = isFiniteNum(gustMax) ? gustMax : windMax;
 
-  // Pluja efectiva (mm) si hourly té mm
   const rainMmToday = sumFinite(hToday.map((h) => h.rain));
   const hasRain = rainMmToday > 0;
 
-  // POP “màxima horària” d'avui (per si daily pop és rar)
-  const popMaxHourly = maxFinite(hToday.map((h) => h.pop));
-  const popRef = isFiniteNum(popToday) ? popToday : popMaxHourly;
+  const popHourlyMax = maxFinite(hToday.map((h) => h.pop));
+  const popRef = isFiniteNum(popDaily) ? popDaily : popHourlyMax;
 
   return {
     date: today,
     tmin3d,
     tmaxToday,
     popToday: popRef,
-    windMax,
-    gustMax,
     windRef,
     rainMmToday,
     hasRain,
@@ -217,6 +216,7 @@ function summarizeForPruning(norm) {
   };
 }
 
+// -------------------- Semàfor meteo --------------------
 function gradePruning(summary) {
   const blocks = [];
 
@@ -251,14 +251,12 @@ function gradeByActivity(summary, activityId) {
   const base = gradePruning(summary);
 
   if (activityId === "touchup") {
-    // Si només hi ha bloqueig per POP alta (sense pluja efectiva), permet retoc mínim
     if (base.status === "no" && !summary.hasRain && (summary.popToday ?? 0) >= 60) {
       return { status: "maybe", title: "🟧 Retoc possible amb cautela", detail: "Risc de pluja: fes només retocs mínims i evita talls grans." };
     }
   }
 
   if (activityId === "green_summer") {
-    // Estiu: si calor, recomanar primera hora i baixa intensitat
     if (isFiniteNum(summary.tmaxToday) && summary.tmaxToday >= 30 && base.status === "yes") {
       return { status: "maybe", title: "🟧 En verd amb cautela", detail: "Millor a primera hora i amb intensitat baixa (evita exposar fusta)." };
     }
@@ -267,20 +265,11 @@ function gradeByActivity(summary, activityId) {
   return base;
 }
 
-// -------------------- UI --------------------
-
-const $ = (id) => document.getElementById(id);
-
-function safeEl(id) {
-  const el = $(id);
-  if (!el) throw new Error(`Missing element #${id}`);
-  return el;
-}
-
+// -------------------- UI rendering --------------------
 function fillFilters() {
   const plantSel = safeEl("plantFilter");
 
-  // evita duplicats si el boot corre 2 cops
+  // evita duplicats si el JS es carrega 2 cops
   plantSel.querySelectorAll('option[data-plant="1"]').forEach((o) => o.remove());
 
   PRUNE_DATA.plants.forEach((p) => {
@@ -314,14 +303,7 @@ function boxClassForKey(k) {
 function renderGrid({ plantId = "", type = "", summary = null } = {}) {
   const host = safeEl("pruneGrid");
 
-  const grid = document.createElement("div");
-  grid.className = "pg";
-
-  grid.appendChild(cell("Planta", "cell head"));
-  months.forEach((m) => grid.appendChild(cell(m, "cell head")));
-
   const monthNow = getMonthIndexLocal();
-
   const plants = PRUNE_DATA.plants.filter((p) => {
     if (plantId && p.id !== plantId) return false;
     if (type && p.type !== type) return false;
@@ -337,6 +319,12 @@ function renderGrid({ plantId = "", type = "", summary = null } = {}) {
     `;
     return;
   }
+
+  const grid = document.createElement("div");
+  grid.className = "pg";
+
+  grid.appendChild(cell("Planta", "cell head"));
+  months.forEach((m) => grid.appendChild(cell(m, "cell head")));
 
   plants.forEach((p) => {
     const left = document.createElement("div");
@@ -356,18 +344,15 @@ function renderGrid({ plantId = "", type = "", summary = null } = {}) {
       const b = document.createElement("div");
       b.className = "box k-off";
 
-      const activeKeys = activityKeysForPlant(p).filter((k) => (p.windows?.[k]?.[mi] === 1));
+      const activeKeys = activityKeysForPlant(p).filter((k) => p.windows?.[k]?.[mi] === 1);
 
       if (activeKeys.length) {
         const prio = ["winter_structural", "green_summer", "touchup"];
         const key = prio.find((x) => activeKeys.includes(x)) || activeKeys[0];
 
         b.className = `box ${boxClassForKey(key)}`;
-
-        // Tooltip base
         b.title = `${p.name} — ${PRUNE_DATA.legend[key]}`;
 
-        // Semàfor només el mes actual
         if (summary && mi === monthNow) {
           const g = gradeByActivity(summary, key);
           if (g.status === "no") b.classList.add("k-dim");
@@ -388,6 +373,12 @@ function renderGrid({ plantId = "", type = "", summary = null } = {}) {
 
   host.innerHTML = "";
   host.appendChild(grid);
+
+  // Força repaint/reflow (Android WebView/PWA: evita casos on queda invisible)
+  host.style.display = "none";
+  // eslint-disable-next-line no-unused-expressions
+  host.offsetHeight;
+  host.style.display = "";
 }
 
 function cell(txt, cls) {
@@ -419,8 +410,7 @@ function renderMeteoBadge(summary, grade) {
   `;
 }
 
-// -------------------- Fetch (ajusta ruta si cal) --------------------
-
+// -------------------- Fetch --------------------
 async function fetchForecast(muniId) {
   const r = await fetch(`/api/forecast?muni=${encodeURIComponent(muniId)}`, { cache: "no-store" });
   if (!r.ok) throw new Error(`forecast http ${r.status}`);
@@ -428,7 +418,6 @@ async function fetchForecast(muniId) {
 }
 
 // -------------------- Utils --------------------
-
 function numOrNull(x) {
   const n = Number(x);
   return Number.isFinite(n) ? n : null;
@@ -459,19 +448,17 @@ function escapeAttr(s) {
 }
 
 // -------------------- Boot --------------------
-
 async function boot() {
   const root = document.getElementById("pruneApp");
   if (!root) return;
 
   const muniId = root.dataset.muni || "43161";
 
-  // Elements (falla ràpid si algun ID no quadra)
   const plantSel = safeEl("plantFilter");
   const typeSel = safeEl("typeFilter");
   const btn = safeEl("btnRefreshPrune");
 
-  // Render inicial (sense forecast) => “Totes les plantes” sempre té dades
+  // Render inicial (sense forecast) perquè “Totes les plantes” sempre mostri la graella
   fillFilters();
   renderGrid({ plantId: "", type: "", summary: null });
 
@@ -503,7 +490,7 @@ async function boot() {
     }
   });
 
-  // Càrrega inicial de meteo (no bloqueja el calendari)
+  // Càrrega inicial forecast (no bloqueja el calendari)
   try {
     const raw = await fetchForecast(muniId);
     const norm = normalizeForecast(raw);
@@ -520,4 +507,4 @@ if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", boot);
 } else {
   boot();
-}
+    }
