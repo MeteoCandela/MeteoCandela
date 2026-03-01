@@ -1,74 +1,106 @@
 <!doctype html>
 <html lang="ca">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Calendari anual de poda — Alt Camp (Valls)</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <meta name="theme-color" content="#0b1220">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MeteoValls">
+
+  <title>MeteoValls · Calendari anual de poda (Alt Camp)</title>
   <meta name="description" content="Calendari anual de poda per l’Alt Camp (Valls) amb semàfor segons predicció AEMET." />
+  <link rel="canonical" href="https://meteocandela.cat/poda.html">
+  <meta name="robots" content="index,follow">
 
-  <!-- IMPORTANT: paths relatius -->
-  <link rel="stylesheet" href="./poda.css" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+  <link rel="manifest" href="./site.webmanifest">
+
+  <!-- CSS global (com la resta de pàgines) -->
+  <link rel="stylesheet" href="./style.css?v=2026-02-19-001">
+
+  <!-- CSS específic poda (nou) -->
+  <link rel="stylesheet" href="./poda.css?v=2026-03-01-001">
 </head>
-<body>
 
-<section
-  class="prune-card"
-  id="pruneApp"
-  data-muni="43161"
-  data-api=""  <!-- opcional: posa "https://meteocandela.cat/api" si cal -->
->
-  <header class="prune-head">
-    <div class="prune-head__left">
-      <h2>Calendari anual de poda — Alt Camp (Valls)</h2>
-      <p class="muted">Calendari orientatiu + semàfor segons predicció AEMET (gelada/pluja/vent/caldor).</p>
-    </div>
+<body data-page="poda">
 
-    <div class="prune-controls">
-      <label class="sr-only" for="plantFilter">Filtra per planta</label>
-      <select id="plantFilter" class="select">
-        <option value="">Totes les plantes</option>
-      </select>
-
-      <label class="sr-only" for="typeFilter">Filtra per tipus</label>
-      <select id="typeFilter" class="select">
-        <option value="">Tots els tipus</option>
-        <option value="fruit_mediterrani">Mediterrànies (olivera/vinya…)</option>
-        <option value="fruiter_llavor">Fruiters de llavor</option>
-        <option value="fruiter_os">Fruiters d’os</option>
-        <option value="fruiter_arbustiu">Fruiters arbustius</option>
-        <option value="fruiter_perenne">Fruiters perennes</option>
-        <option value="ornamental">Ornamentals</option>
-        <option value="bardissa">Bardisses</option>
-      </select>
-
-      <button id="btnRefreshPrune" class="btn" type="button">Actualitza meteo</button>
+  <header class="hero">
+    <div class="hero__overlay"></div>
+    <div class="hero__content">
+      <h1>Calendari anual de poda — Alt Camp (Valls)</h1>
+      <p class="status">Calendari orientatiu + semàfor segons predicció AEMET (gelada/pluja/vent/caldor).</p>
     </div>
   </header>
 
-  <div class="prune-meteo" id="pruneMeteo">
-    <div class="badge b-neutral">Carregant predicció…</div>
-  </div>
+  <main class="grid">
+    <section class="card span2">
+      <nav class="quick-nav" aria-label="Navegació principal">
+        <a href="./previsio.html" class="quick-nav__btn">⛅ Previsió</a>
+        <a href="./historic.html" class="quick-nav__btn">📊 Històric</a>
+        <a href="./agricola.html" class="quick-nav__btn">🚜 Agrícola</a>
+      </nav>
+    </section>
 
-  <div class="prune-legend">
-    <span class="lg lg-winter">Hivern / estructural</span>
-    <span class="lg lg-summer">En verd / estiu</span>
-    <span class="lg lg-touch">Retoc estètic</span>
-  </div>
+    <section class="card span2">
+      <section class="prune-card" id="pruneApp" data-muni="43161">
+        <div class="prune-head">
+          <div class="prune-controls">
+            <label class="sr-only" for="plantFilter">Filtra per planta</label>
+            <select id="plantFilter" class="select">
+              <option value="">Totes les plantes</option>
+            </select>
 
-  <div class="prune-grid" id="pruneGrid" aria-label="Calendari anual de poda"></div>
+            <label class="sr-only" for="typeFilter">Filtra per tipus</label>
+            <select id="typeFilter" class="select">
+              <option value="">Tots els tipus</option>
+              <option value="fruit_mediterrani">Mediterrànies (olivera/vinya…)</option>
+              <option value="fruiter_llavor">Fruiters de llavor</option>
+              <option value="fruiter_os">Fruiters d’os</option>
+              <option value="fruiter_arbustiu">Fruiters arbustius</option>
+              <option value="fruiter_perenne">Fruiters perennes</option>
+              <option value="ornamental">Ornamentals</option>
+              <option value="bardissa">Bardisses</option>
+            </select>
 
-  <details class="prune-notes">
-    <summary>Notes i criteris (Alt Camp)</summary>
-    <ul>
-      <li>Evita podes fortes si hi ha gelada prevista (Tmin ≤ 0 °C en 72 h).</li>
-      <li>Evita podar amb pluja o probabilitat alta (riscs d’infecció i mala cicatrització).</li>
-      <li>A l’estiu, podes molt suaus i a primera hora; evita exposar fusta al sol.</li>
-      <li>Desinfecta eines si passes de planta a planta o si hi ha fusta malalta.</li>
-    </ul>
-  </details>
-</section>
+            <button id="btnRefreshPrune" class="btn" type="button">Actualitza meteo</button>
+          </div>
 
-<!-- IMPORTANT: path relatiu -->
-<script type="module" src="./poda.js"></script>
+          <div class="prune-meteo" id="pruneMeteo">
+            <span class="pill">Carregant predicció…</span>
+          </div>
+        </div>
+
+        <div class="prune-legend">
+          <span class="lg lg-winter">Hivern / estructural</span>
+          <span class="lg lg-summer">En verd / estiu</span>
+          <span class="lg lg-touch">Retoc estètic</span>
+        </div>
+
+        <div class="prune-grid" id="pruneGrid" aria-label="Calendari anual de poda"></div>
+
+        <details class="prune-notes">
+          <summary>Notes i criteris (Alt Camp)</summary>
+          <ul>
+            <li>Evita podes fortes si hi ha gelada prevista (Tmin ≤ 0 °C en 72 h).</li>
+            <li>Evita podar amb pluja o probabilitat alta (mala cicatrització).</li>
+            <li>A l’estiu, poda suau i a primera hora; evita exposar fusta al sol.</li>
+          </ul>
+        </details>
+      </section>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>© <span id="year"></span> MeteoValls</span>
+    <span style="margin-left:12px;">
+      <a href="./sobre.html" style="color:inherit; text-decoration:underline;">Sobre l’estació</a>
+    </span>
+  </footer>
+
+  <!-- IMPORTANT: carrega l’APP com a la resta -->
+  <script type="module" src="./app.js?v=2026-02-19-001"></script>
 </body>
 </html>
