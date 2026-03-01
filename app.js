@@ -1,6 +1,6 @@
 // app.js — entrypoint únic (ESM)
 import { getBase } from "./lib/env.js";
-export const V = "2026-02-20-001";
+export const V = "2026-02-21-001";
 
 const BASE = getBase();
 const p = (x) => `${BASE}${x}`;
