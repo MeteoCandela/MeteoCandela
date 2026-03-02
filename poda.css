@@ -255,3 +255,48 @@
 .pg{
   transform: translateZ(0);
 }
+/* ===== Poda: columna “Planta” més estreta i mobile-friendly ===== */
+
+/* 1) Ample base més estret (desktop/tablet) */
+.pg{
+  grid-template-columns: 220px repeat(12, 1fr);
+}
+
+/* 2) En mòbil, encara més estreta + una mica menys padding */
+@media (max-width: 720px){
+  .pg{
+    grid-template-columns: 170px repeat(12, 1fr);
+    min-width: 760px; /* evita que quedi tot massa “apretat” */
+  }
+
+  .cell{
+    padding: 10px 10px;
+  }
+
+  .cell.rowhead{
+    padding: 10px 10px;
+  }
+
+  /* Texts de la planta més compactes */
+  .plant-name{
+    font-size: 14px;
+    line-height: 1.15;
+  }
+  .plant-note{
+    font-size: 11px;
+    line-height: 1.25;
+  }
+
+  /* Botó Info més petit */
+  .plant-info-btn{
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+}
+
+/* 3) En mòbil petit (<=390px), encara més */
+@media (max-width: 390px){
+  .pg{
+    grid-template-columns: 150px repeat(12, 1fr);
+  }
+}
