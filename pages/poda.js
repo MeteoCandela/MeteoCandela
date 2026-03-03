@@ -65,7 +65,7 @@ const PRUNE_DATA = {
       notes:["Evita poda forta amb risc de gelada; postcollita en verd."]
     },
     {
-      id:"citrus", name:"Cítrics (llimoner/taronger)", type:"fruiter_perenne",
+      id:"citrus", name:"Cítrics", type:"fruiter_perenne",
       windows:{
         winter_structural:[0,0,1,1,0,0,0,0,0,0,0,0],
         touchup:[0,0,0,0,1,1,0,0,0,0,0,0]
@@ -90,7 +90,7 @@ const PRUNE_DATA = {
       notes:["Feb–mar sanejant/aclarint (segons varietat)."]
     },
     {
-      id:"hedges", name:"Bardisses (xiprer/photinia/llorer)", type:"bardissa",
+      id:"hedges", name:"Bardisses (xiprer/llorer)", type:"bardissa",
       windows:{
         winter_structural:[0,0,1,0,0,0,0,0,0,0,0,0],
         green_summer:[0,0,0,0,1,1,0,0,0,0,0,0],
@@ -147,7 +147,7 @@ const PRUNE_DATA = {
       ]
     },
     {
-      id:"plum", name:"Prunera (separada)", type:"fruiter_os",
+      id:"plum", name:"Prunera", type:"fruiter_os",
       windows:{
         winter_structural:[0,1,1,0,0,0,0,0,0,0,0,0],
         green_summer:[0,0,0,0,0,1,1,1,1,0,0,0]
@@ -158,7 +158,7 @@ const PRUNE_DATA = {
       ]
     },
     {
-      id:"cherry", name:"Cirerer (separat)", type:"fruiter_os",
+      id:"cherry", name:"Cirerer", type:"fruiter_os",
       windows:{
         winter_structural:[0,0,0,0,0,0,0,0,0,0,0,0],
         green_summer:[0,0,0,0,0,1,1,1,1,0,0,0]
