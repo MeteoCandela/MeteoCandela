@@ -324,31 +324,214 @@
       <div class="faq-a">
         <p>
           El <strong>punt de rosada</strong> és la temperatura a la qual l’aire condensa (rosada).
-          El <strong>ΔT (T–Td)</strong> diu com d’aprop està la temperatura del punt de rosada.
-        </p>
-        <ul>
-          <li><strong>ΔT baix (&lt; 2–3 °C)</strong> → ambient molt humit (més risc de rosada/fongs).</li>
-          <li><strong>ΔT alt</strong> → ambient més sec.</li>
+<!-- FAQ · Secció Agrícola (accordion amb estil “MeteoValls” i 1 oberta màxim) -->
+<section class="mv-card mv-faq" aria-labelledby="faq-agricola-title">
+  <div class="mv-card__header">
+    <h2 id="faq-agricola-title" class="mv-title">FAQ · Secció Agrícola</h2>
+    <p class="mv-subtitle">
+      Aquesta pantalla t’ajuda a interpretar les dades meteo per prendre decisions pràctiques:
+      <strong>reg</strong>, <strong>estrès per calor</strong>, <strong>risc d’humitat/fongs</strong> i
+      <strong>seguiment del cultiu</strong>.
+    </p>
+  </div>
+
+  <div class="mv-accordion" data-accordion="single">
+    <details class="mv-acc-item" open>
+      <summary class="mv-acc-sum">
+        <span class="mv-acc-q">Què m’està dient aquesta pantalla?</span>
+        <span class="mv-acc-ico" aria-hidden="true"></span>
+      </summary>
+      <div class="mv-acc-a">
+        <ul class="mv-list">
+          <li>💧 Quanta aigua ha consumit el cultiu (per ajustar el reg).</li>
+          <li>🌡 Si la planta ha patit estrès per calor i aire sec.</li>
+          <li>🌧 Quanta pluja ha caigut (per descomptar del reg).</li>
+          <li>🍄 Si l’ambient és humit (risc de rosada i fongs).</li>
+          <li>🌱 Calor acumulada (seguiment del desenvolupament del cultiu).</li>
         </ul>
       </div>
     </details>
 
-    <details class="faq-item" role="listitem">
-      <summary class="faq-q">Guia ràpida · Si només miro 3 coses al dia, quines?</summary>
-      <div class="faq-a">
-        <ol>
-          <li><strong>ETc (mm)</strong> → orienta quant regar.</li>
-          <li><strong>Hores VPD alt</strong> → si el dia ha estat dur per la planta.</li>
-          <li><strong>Pluja (mm)</strong> → per restar del reg.</li>
-        </ol>
-        <p>
-          Amb aquests 3 indicadors ja pots treure molt suc de la pantalla.
-        </p>
+    <details class="mv-acc-item">
+      <summary class="mv-acc-sum">
+        <span class="mv-acc-q">ETc (mm) · L’aigua que ha consumit el cultiu</span>
+        <span class="mv-acc-ico" aria-hidden="true"></span>
+      </summary>
+      <div class="mv-acc-a">
+        <p><strong>És el valor més útil per al reg.</strong> Indica l’aigua que el cultiu ha gastat.</p>
+        <p><strong>Regla ràpida:</strong> <code>1 mm = 1 L/m²</code>. Exemple: <strong>3 mm</strong> = <strong>3 L/m²</strong>.</p>
+        <p><strong>Com usar-ho:</strong> si no plou, intenta reposar (aprox.) aquesta quantitat amb el reg.</p>
       </div>
     </details>
 
+    <details class="mv-acc-item">
+      <summary class="mv-acc-sum">
+        <span class="mv-acc-q">ET0 (mm) · Evapotranspiració “de referència”</span>
+        <span class="mv-acc-ico" aria-hidden="true"></span>
+      </summary>
+      <div class="mv-acc-a">
+        <p>Representa la demanda d’aigua de l’ambient (sol, calor, vent…).</p>
+        <p><strong>Idea clau:</strong> ET0 és “la set del dia”; ETc és “la set del teu cultiu”.</p>
+      </div>
+    </details>
+
+    <details class="mv-acc-item">
+      <summary class="mv-acc-sum">
+        <span class="mv-acc-q">VPD (kPa) · Si la planta està còmoda o estressada</span>
+        <span class="mv-acc-ico" aria-hidden="true"></span>
+      </summary>
+      <div class="mv-acc-a">
+        <p>Indica si l’aire està “estirant” massa aigua de la planta (aire sec + calor).</p>
+        <ul class="mv-list">
+          <li><strong>&lt; 0.8</strong> → Aire humit.</li>
+          <li><strong>0.8 – 1.2</strong> → Zona bona.</li>
+          <li><strong>&gt; 1.5</strong> → Possible estrès.</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="mv-acc-item">
+      <summary class="mv-acc-sum">
+        <span class="mv-acc-q">Hores VPD &gt; 1.2 i &gt; 1.6 · Quantes hores d’estrès hi ha hagut</span>
+        <span class="mv-acc-ico" aria-hidden="true"></span>
+      </summary>
+      <div class="mv-acc-a">
+        <p>Comptador d’hores “dures” per la planta.</p>
+        <ul class="mv-list">
+          <li><strong>Moltes hores &gt; 1.6</strong> → Dia exigent.</li>
+          <li><strong>0 hores</strong> → Dia suau.</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="mv-acc-item">
+      <summary class="mv-acc-sum">
+        <span class="mv-acc-q">Pluja diària (mm) · Aigua caiguda avui</span>
+        <span class="mv-acc-ico" aria-hidden="true"></span>
+      </summary>
+      <div class="mv-acc-a">
+        <p><strong>Regla ràpida:</strong> <code>10 mm = 10 L/m²</code>.</p>
+        <p><strong>Com usar-ho:</strong> descompta-ho del reg planificat (si ha estat pluja efectiva).</p>
+      </div>
+    </details>
+
+    <details class="mv-acc-item">
+      <summary class="mv-acc-sum">
+        <span class="mv-acc-q">Punt de rosada i ΔT · Humitat i risc de rosada/fongs</span>
+        <span class="mv-acc-ico" aria-hidden="true"></span>
+      </summary>
+      <div class="mv-acc-a">
+        <p>Si ΔT (T–Td) és baix, l’ambient és humit i pot haver-hi rosada.</p>
+        <ul class="mv-list">
+          <li><strong>ΔT &lt; 2–3 °C</strong> → Humitat alta (més risc de fongs).</li>
+          <li><strong>ΔT alt</strong> → Ambient més sec.</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="mv-acc-item">
+      <summary class="mv-acc-sum">
+        <span class="mv-acc-q">Guia ràpida · 3 coses per mirar cada dia</span>
+        <span class="mv-acc-ico" aria-hidden="true"></span>
+      </summary>
+      <div class="mv-acc-a">
+        <ol class="mv-list">
+          <li><strong>ETc</strong> → orienta quant regar.</li>
+          <li><strong>Hores VPD alt</strong> → si el dia ha estat dur.</li>
+          <li><strong>Pluja</strong> → per restar del reg.</li>
+        </ol>
+      </div>
+    </details>
   </div>
-  </section>
+</section>
+
+<style>
+  /* Ajusta aquests valors si ja tens variables globals */
+  :root{
+    --mv-bg: #0b1220;
+    --mv-card: rgba(255,255,255,.06);
+    --mv-border: rgba(255,255,255,.10);
+    --mv-text: rgba(255,255,255,.92);
+    --mv-muted: rgba(255,255,255,.70);
+  }
+
+  .mv-card{
+    background: var(--mv-card);
+    border: 1px solid var(--mv-border);
+    border-radius: 18px;
+    padding: 14px;
+    backdrop-filter: blur(10px);
+  }
+  .mv-card__header{padding: 4px 4px 10px}
+  .mv-title{margin:0 0 6px;font-size:1.05rem;letter-spacing:.2px;color:var(--mv-text)}
+  .mv-subtitle{margin:0;color:var(--mv-muted);line-height:1.35}
+
+  .mv-accordion{display:flex;flex-direction:column;gap:10px}
+
+  .mv-acc-item{
+    border: 1px solid var(--mv-border);
+    border-radius: 14px;
+    background: rgba(255,255,255,.04);
+    overflow: hidden;
+  }
+  .mv-acc-sum{
+    list-style:none;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding: 12px 12px;
+    color: var(--mv-text);
+    user-select:none;
+  }
+  .mv-acc-sum::-webkit-details-marker{display:none}
+  .mv-acc-q{font-weight:650}
+  .mv-acc-ico{
+    width: 18px; height: 18px;
+    border-right: 2px solid rgba(255,255,255,.70);
+    border-bottom: 2px solid rgba(255,255,255,.70);
+    transform: rotate(45deg);
+    transition: transform .18s ease;
+    flex: 0 0 auto;
+    margin-right: 2px;
+  }
+  details[open] .mv-acc-ico{transform: rotate(-135deg)}
+
+  .mv-acc-a{
+    padding: 0 12px 12px;
+    color: var(--mv-muted);
+    line-height: 1.4;
+  }
+  .mv-acc-a p{margin:10px 0}
+  .mv-list{margin:8px 0 0 18px}
+  .mv-list li{margin:6px 0}
+  code{
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.10);
+    padding: 1px 6px;
+    border-radius: 8px;
+    color: var(--mv-text);
+  }
+</style>
+
+<script>
+  // Accordion: quan n’obres una, es tanca la que estava oberta (single-open)
+  (function () {
+    const root = document.querySelector('.mv-accordion[data-accordion="single"]');
+    if (!root) return;
+
+    const items = Array.from(root.querySelectorAll('details.mv-acc-item'));
+    items.forEach((d) => {
+      d.addEventListener('toggle', () => {
+        if (!d.open) return;
+        items.forEach((other) => {
+          if (other !== d) other.open = false;
+        });
+      });
+    });
+  })();
+</script>
   </main>
 
   <footer class="footer">
