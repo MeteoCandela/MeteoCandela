@@ -168,7 +168,187 @@
       <h2 id="chartEtTitle">ET0 / ETc (resum)</h2>
       <canvas id="chartEt"></canvas>
     </section>
+<section class="faq-agricola" aria-labelledby="faq-agricola-title">
+  <header class="faq-agricola__header">
+    <h2 id="faq-agricola-title">FAQ · Secció Agrícola</h2>
+    <p class="faq-agricola__intro">
+      Aquesta pantalla t’ajuda a interpretar les dades meteo per prendre decisions pràctiques:
+      <strong>reg</strong>, <strong>estrès per calor</strong>, <strong>risc d’humitat/fongs</strong> i
+      <strong>seguiment del cultiu</strong>.
+    </p>
+  </header>
 
+  <div class="faq-agricola__list" role="list">
+
+    <details class="faq-item" role="listitem">
+      <summary class="faq-q">Què m’està dient aquesta pantalla?</summary>
+      <div class="faq-a">
+        <ul>
+          <li>💧 Quanta aigua ha consumit el cultiu (per ajustar el reg).</li>
+          <li>🌡 Si la planta ha patit estrès per calor i aire sec.</li>
+          <li>🌧 Quanta pluja ha caigut (per descomptar del reg).</li>
+          <li>🍄 Si l’ambient és humit (risc de rosada i fongs).</li>
+          <li>🌱 Calor acumulada (seguiment del desenvolupament del cultiu).</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="faq-item" role="listitem" open>
+      <summary class="faq-q">ETc (mm) · L’aigua que ha consumit el cultiu</summary>
+      <div class="faq-a">
+        <p>
+          És el valor més útil per al <strong>dia a dia del reg</strong>. Indica l’aigua que el cultiu ha gastat.
+        </p>
+        <p>
+          <strong>Regla ràpida:</strong> <code>1 mm = 1 litre per m²</code>.
+          Exemple: si marca <strong>3 mm</strong>, el cultiu ha consumit <strong>3 L/m²</strong> aquell dia.
+        </p>
+        <p>
+          <strong>Com usar-ho:</strong> si no plou, pots intentar reposar (aprox.) aquesta quantitat amb el reg
+          (tenint en compte el teu sistema i el tipus de sòl).
+        </p>
+      </div>
+    </details>
+
+    <details class="faq-item" role="listitem">
+      <summary class="faq-q">ET0 (mm) · Evapotranspiració “de referència”</summary>
+      <div class="faq-a">
+        <p>
+          És la base del càlcul. Representa la demanda d’aigua de l’ambient (sol, calor, vent…).
+          La app la calcula amb un mètode senzill (Hargreaves).
+        </p>
+        <p>
+          <strong>Idea clau:</strong> <em>ET0</em> és “la set del dia”; <em>ETc</em> és “la set del teu cultiu”.
+        </p>
+      </div>
+    </details>
+
+    <details class="faq-item" role="listitem">
+      <summary class="faq-q">VPD (kPa) · Si la planta està còmoda o estressada</summary>
+      <div class="faq-a">
+        <p>
+          El VPD indica si l’aire està “estirant” massa aigua de la planta (aire sec + calor).
+        </p>
+        <ul>
+          <li><strong>&lt; 0.8</strong> → Aire humit (transpiració baixa).</li>
+          <li><strong>0.8 – 1.2</strong> → Zona bona (activitat equilibrada).</li>
+          <li><strong>&gt; 1.5</strong> → Possibles hores d’estrès (calor/aire sec).</li>
+        </ul>
+        <p>
+          <strong>Com usar-ho:</strong> si el VPD és alt moltes hores, la planta pot patir encara que hi hagi una mica d’humitat al sòl.
+        </p>
+      </div>
+    </details>
+
+    <details class="faq-item" role="listitem">
+      <summary class="faq-q">VPD màxim · El pic d’estrès del dia</summary>
+      <div class="faq-a">
+        <p>
+          És el valor més alt de VPD del dia seleccionat.
+        </p>
+        <p>
+          <strong>Com usar-ho:</strong> si el VPD màxim és alt, mira també les <em>hores de VPD alt</em> per saber si ha estat
+          un moment puntual o moltes hores seguides.
+        </p>
+      </div>
+    </details>
+
+    <details class="faq-item" role="listitem">
+      <summary class="faq-q">Hores VPD &gt; 1.2 i &gt; 1.6 · Quantes hores d’estrès hi ha hagut</summary>
+      <div class="faq-a">
+        <p>
+          Aquest comptador diu quantes hores del dia han estat “dures” per la planta.
+        </p>
+        <ul>
+          <li><strong>Moltes hores &gt; 1.6</strong> → Dia exigent (estrès fort).</li>
+          <li><strong>0 hores</strong> → Dia suau.</li>
+        </ul>
+        <p>
+          <strong>Com usar-ho:</strong> si hi ha moltes hores d’estrès, pot ser útil avançar reg o reforçar-lo (segons cultiu i sòl).
+        </p>
+      </div>
+    </details>
+
+    <details class="faq-item" role="listitem">
+      <summary class="faq-q">Pluja diària (mm) · Aigua caiguda avui</summary>
+      <div class="faq-a">
+        <p>
+          Pluja acumulada del dia.
+          <strong>Regla ràpida:</strong> <code>10 mm = 10 L/m²</code>.
+        </p>
+        <p>
+          <strong>Com usar-ho:</strong> descompta aquesta quantitat del reg planificat (si ha estat una pluja efectiva).
+        </p>
+      </div>
+    </details>
+
+    <details class="faq-item" role="listitem">
+      <summary class="faq-q">Kc · Ajust del cultiu (per calcular ETc)</summary>
+      <div class="faq-a">
+        <p>
+          El Kc adapta el càlcul d’aigua al teu cultiu i a la fase (brots, creixement, ple estiu…).
+        </p>
+        <p>
+          <strong>Si no ho tens clar:</strong> deixa el valor recomanat per defecte. Si el canvies, l’ETc canviarà.
+        </p>
+      </div>
+    </details>
+
+    <details class="faq-item" role="listitem">
+      <summary class="faq-q">GDD · Calor acumulada per al creixement</summary>
+      <div class="faq-a">
+        <p>
+          Els GDD (Graus Dia) indiquen quanta calor útil s’ha acumulat. Serveixen per seguir el desenvolupament del cultiu
+          (floració, maduració, etc.).
+        </p>
+        <p>
+          <strong>No és un indicador de reg diari</strong>, sinó de planificació i comparació entre anys.
+        </p>
+      </div>
+    </details>
+
+    <details class="faq-item" role="listitem">
+      <summary class="faq-q">Base GDD · A partir de quina temperatura compta el creixement</summary>
+      <div class="faq-a">
+        <p>
+          És la temperatura “mínima” a partir de la qual el cultiu creix. Si canvies la base, canviaran els GDD.
+        </p>
+        <p>
+          <strong>Consell:</strong> usa la base recomanada per al teu cultiu (per defecte a la app).
+        </p>
+      </div>
+    </details>
+
+    <details class="faq-item" role="listitem">
+      <summary class="faq-q">Punt de rosada i ΔT · Humitat i risc de rosada/fongs</summary>
+      <div class="faq-a">
+        <p>
+          El <strong>punt de rosada</strong> és la temperatura a la qual l’aire condensa (rosada).
+          El <strong>ΔT (T–Td)</strong> diu com d’aprop està la temperatura del punt de rosada.
+        </p>
+        <ul>
+          <li><strong>ΔT baix (&lt; 2–3 °C)</strong> → ambient molt humit (més risc de rosada/fongs).</li>
+          <li><strong>ΔT alt</strong> → ambient més sec.</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="faq-item" role="listitem">
+      <summary class="faq-q">Guia ràpida · Si només miro 3 coses al dia, quines?</summary>
+      <div class="faq-a">
+        <ol>
+          <li><strong>ETc (mm)</strong> → orienta quant regar.</li>
+          <li><strong>Hores VPD alt</strong> → si el dia ha estat dur per la planta.</li>
+          <li><strong>Pluja (mm)</strong> → per restar del reg.</li>
+        </ol>
+        <p>
+          Amb aquests 3 indicadors ja pots treure molt suc de la pantalla.
+        </p>
+      </div>
+    </details>
+
+  </div>
+  </section>
   </main>
 
   <footer class="footer">
