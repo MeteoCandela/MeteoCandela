@@ -92,6 +92,7 @@ function buildBarChart(canvasId, labels, datasetLabel, data) {
 function pickGddField(base) {
   const b = String(base);
   if (b === "5") return "gdd_base5";
+  if (b === "7") return "gdd_base7";
   if (b === "12") return "gdd_base12";
   return "gdd_base10";
 }
