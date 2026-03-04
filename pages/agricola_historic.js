@@ -4,7 +4,7 @@ import { getApi } from "../lib/env.js";
 import { fmt1 } from "../lib/format.js";
 import { loadDailySummaryD1 } from "../lib/api.js";
 
-const REFRESH_MS = 6 * 60 * 60 * 1000; // 6h (D1 no cal cada minut)
+const REFRESH_MS = 6 * 60 * 60 * 1000; // 6h
 
 function setText(id, txt) {
   const el = $(id);
@@ -33,7 +33,7 @@ function toSortedRows(rows) {
   return arr
     .filter(r => r && r.date && /^\d{4}-\d{2}-\d{2}$/.test(String(r.date)))
     .slice()
-    .sort((a, b) => String(a.date).localeCompare(String(b.date))); // asc
+    .sort((a, b) => String(a.date).localeCompare(String(b.date)));
 }
 
 function destroyChart(ref) {
@@ -72,19 +72,13 @@ function buildBarChart(canvasId, labels, datasetLabel, data) {
 
   return new Chart(el, {
     type: "bar",
-    data: {
-      labels,
-      datasets: [{ label: datasetLabel, data, borderWidth: 1 }]
-    },
+    data: { labels, datasets: [{ label: datasetLabel, data, borderWidth: 1 }] },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       devicePixelRatio: dpr,
       plugins: { legend: { display: true }, tooltip: { displayColors: false } },
-      scales: {
-        x: { ticks: { autoSkip: true, maxTicksLimit: 14, maxRotation: 45, minRotation: 45 } },
-        y: { beginAtZero: true }
-      }
+      scales: { x: { ticks: { autoSkip: true, maxTicksLimit: 14, maxRotation: 45, minRotation: 45 } }, y: { beginAtZero: true } }
     }
   });
 }
@@ -98,19 +92,26 @@ function pickGddField(base) {
 }
 
 function computeRangeDaysFromSelect() {
-  const raw = String($("rangeSelect")?.value || "y:1"); // default 1 any
+  const raw = String($("rangeSelect")?.value || "y:1");
   const [unit, nStr] = raw.split(":");
   const n = Number(nStr);
 
-  let days = 365; // fallback
+  let days = 365;
   if (Number.isFinite(n) && n > 0) {
     if (unit === "d") days = Math.round(n);
     else if (unit === "m") days = Math.round(n * 30.4375);
     else if (unit === "y") days = Math.round(n * 365.25);
   }
 
-  // clamp (tu tens max 5 anys a D1)
   return Math.max(1, Math.min(1825, days));
+}
+
+function assertUniqueIds() {
+  const ids = ["rangeSelect", "kcSelect", "gddBase"];
+  for (const id of ids) {
+    const n = document.querySelectorAll(`#${id}`).length;
+    if (n !== 1) console.warn(`Duplicat d'ID detectat: #${id} count=${n}`);
+  }
 }
 
 export function initAgricolaHistoric() {
@@ -125,12 +126,12 @@ export function initAgricolaHistoric() {
   function renderStatus() {
     const last = state.rows.length ? state.rows[state.rows.length - 1] : null;
     if (!last) {
-      setText("lastUpdated", "Sense dades D1");
+      setText("lastUpdated", "Sense dades");
       setText("statusLine", "—");
       return;
     }
-    setText("lastUpdated", `D1: últim dia ${dayLabel(last.date)}`);
-    setText("statusLine", "Resum diari (D1). Període configurable.");
+    setText("lastUpdated", `Últim dia ${dayLabel(last.date)}`);
+    setText("statusLine", "Resum diari. Període configurable.");
   }
 
   function renderDetail(r, kc, base) {
@@ -187,17 +188,11 @@ export function initAgricolaHistoric() {
 
     const sum = (arr) => arr.reduce((acc, v) => acc + (Number.isFinite(Number(v)) ? Number(v) : 0), 0);
 
-    const et0Sum = sum(et0);
-    const etcSum = sum(etc);
-    const rainSum = sum(rain);
-    const gddSum = sum(gdd);
-    const vpd16Days = rows.reduce((acc, r) => acc + (((safeNum(r.hours_vpd_gt_160) || 0) > 0) ? 1 : 0), 0);
-
-    setText("kpiEt0Sum", Number.isFinite(et0Sum) ? fmt2(et0Sum) : "—");
-    setText("kpiEtcSum", Number.isFinite(etcSum) ? fmt2(etcSum) : "—");
-    setText("kpiRainSum", Number.isFinite(rainSum) ? fmt1(rainSum) : "—");
-    setText("kpiGddSum", Number.isFinite(gddSum) ? fmt2(gddSum) : "—");
-    setText("kpiVpd16Days", String(vpd16Days));
+    setText("kpiEt0Sum", fmt2(sum(et0)));
+    setText("kpiEtcSum", fmt2(sum(etc)));
+    setText("kpiRainSum", fmt1(sum(rain)));
+    setText("kpiGddSum", fmt2(sum(gdd)));
+    setText("kpiVpd16Days", String(rows.reduce((acc, r) => acc + (((safeNum(r.hours_vpd_gt_160) || 0) > 0) ? 1 : 0), 0)));
 
     const last = state.rows.length ? state.rows[state.rows.length - 1] : null;
     setText("kpiLastDay", last?.date ? dayLabel(last.date) : "—");
@@ -262,22 +257,20 @@ export function initAgricolaHistoric() {
   }
 
   function bindControls() {
-  $("rangeSelect")?.addEventListener("change", renderKPIsAndCharts);
-  $("kcSelect")?.addEventListener("change", renderKPIsAndCharts);
-  $("gddBase")?.addEventListener("change", renderKPIsAndCharts);
-}
+    $("rangeSelect")?.addEventListener("change", renderKPIsAndCharts);
+    $("kcSelect")?.addEventListener("change", renderKPIsAndCharts);
+    $("gddBase")?.addEventListener("change", renderKPIsAndCharts);
+  }
 
-  async function main() {
+  (async function main() {
+    assertUniqueIds();
     if ($("year")) $("year").textContent = String(new Date().getFullYear());
     bindControls();
     await refresh();
-
     if (state.timer) clearInterval(state.timer);
     state.timer = setInterval(refresh, REFRESH_MS);
-  }
-
-  main().catch((e) => {
+  })().catch((e) => {
     console.warn("Agrícola històric init parcial", e);
-    setText("lastUpdated", "Error carregant D1");
+    setText("lastUpdated", "Error carregant dades");
   });
 }
