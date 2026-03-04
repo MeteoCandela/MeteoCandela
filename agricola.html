@@ -169,131 +169,222 @@
       <canvas id="chartEt"></canvas>
     </section>
 
-<!-- FAQ · Secció Agrícola (accordion amb estil “MeteoValls” i 1 oberta màxim) -->
+<!-- FAQ · Secció Agrícola (versió ampliada + acordió 1 oberta) -->
 <section class="mv-card mv-faq" aria-labelledby="faq-agricola-title">
   <div class="mv-card__header">
     <h2 id="faq-agricola-title" class="mv-title">FAQ · Secció Agrícola</h2>
     <p class="mv-subtitle">
-      Aquesta pantalla t’ajuda a interpretar les dades meteo per prendre decisions pràctiques:
-      <strong>reg</strong>, <strong>estrès per calor</strong>, <strong>risc d’humitat/fongs</strong> i
-      <strong>seguiment del cultiu</strong>.
+      Guia pràctica per treure suc de les dades: <strong>reg</strong>, <strong>estrès</strong>,
+      <strong>humitat/fongs</strong> i <strong>seguiment del cultiu</strong>.
     </p>
   </div>
 
   <div class="mv-accordion" data-accordion="single">
+
     <details class="mv-acc-item" open>
       <summary class="mv-acc-sum">
-        <span class="mv-acc-q">Què m’està dient aquesta pantalla?</span>
-        <span class="mv-acc-ico" aria-hidden="true"></span>
-      </summary>
-      <div class="mv-acc-a">
-        <ul class="mv-list">
-          <li>💧 Quanta aigua ha consumit el cultiu (per ajustar el reg).</li>
-          <li>🌡 Si la planta ha patit estrès per calor i aire sec.</li>
-          <li>🌧 Quanta pluja ha caigut (per descomptar del reg).</li>
-          <li>🍄 Si l’ambient és humit (risc de rosada i fongs).</li>
-          <li>🌱 Calor acumulada (seguiment del desenvolupament del cultiu).</li>
-        </ul>
-      </div>
-    </details>
-
-    <details class="mv-acc-item">
-      <summary class="mv-acc-sum">
-        <span class="mv-acc-q">ETc (mm) · L’aigua que ha consumit el cultiu</span>
-        <span class="mv-acc-ico" aria-hidden="true"></span>
-      </summary>
-      <div class="mv-acc-a">
-        <p><strong>És el valor més útil per al reg.</strong> Indica l’aigua que el cultiu ha gastat.</p>
-        <p><strong>Regla ràpida:</strong> <code>1 mm = 1 L/m²</code>. Exemple: <strong>3 mm</strong> = <strong>3 L/m²</strong>.</p>
-        <p><strong>Com usar-ho:</strong> si no plou, intenta reposar (aprox.) aquesta quantitat amb el reg.</p>
-      </div>
-    </details>
-
-    <details class="mv-acc-item">
-      <summary class="mv-acc-sum">
-        <span class="mv-acc-q">ET0 (mm) · Evapotranspiració “de referència”</span>
-        <span class="mv-acc-ico" aria-hidden="true"></span>
-      </summary>
-      <div class="mv-acc-a">
-        <p>Representa la demanda d’aigua de l’ambient (sol, calor, vent…).</p>
-        <p><strong>Idea clau:</strong> ET0 és “la set del dia”; ETc és “la set del teu cultiu”.</p>
-      </div>
-    </details>
-
-    <details class="mv-acc-item">
-      <summary class="mv-acc-sum">
-        <span class="mv-acc-q">VPD (kPa) · Si la planta està còmoda o estressada</span>
-        <span class="mv-acc-ico" aria-hidden="true"></span>
-      </summary>
-      <div class="mv-acc-a">
-        <p>Indica si l’aire està “estirant” massa aigua de la planta (aire sec + calor).</p>
-        <ul class="mv-list">
-          <li><strong>&lt; 0.8</strong> → Aire humit.</li>
-          <li><strong>0.8 – 1.2</strong> → Zona bona.</li>
-          <li><strong>&gt; 1.5</strong> → Possible estrès.</li>
-        </ul>
-      </div>
-    </details>
-
-    <details class="mv-acc-item">
-      <summary class="mv-acc-sum">
-        <span class="mv-acc-q">Hores VPD &gt; 1.2 i &gt; 1.6 · Quantes hores d’estrès hi ha hagut</span>
-        <span class="mv-acc-ico" aria-hidden="true"></span>
-      </summary>
-      <div class="mv-acc-a">
-        <p>Comptador d’hores “dures” per la planta.</p>
-        <ul class="mv-list">
-          <li><strong>Moltes hores &gt; 1.6</strong> → Dia exigent.</li>
-          <li><strong>0 hores</strong> → Dia suau.</li>
-        </ul>
-      </div>
-    </details>
-
-    <details class="mv-acc-item">
-      <summary class="mv-acc-sum">
-        <span class="mv-acc-q">Pluja diària (mm) · Aigua caiguda avui</span>
-        <span class="mv-acc-ico" aria-hidden="true"></span>
-      </summary>
-      <div class="mv-acc-a">
-        <p><strong>Regla ràpida:</strong> <code>10 mm = 10 L/m²</code>.</p>
-        <p><strong>Com usar-ho:</strong> descompta-ho del reg planificat (si ha estat pluja efectiva).</p>
-      </div>
-    </details>
-
-    <details class="mv-acc-item">
-      <summary class="mv-acc-sum">
-        <span class="mv-acc-q">Punt de rosada i ΔT · Humitat i risc de rosada/fongs</span>
-        <span class="mv-acc-ico" aria-hidden="true"></span>
-      </summary>
-      <div class="mv-acc-a">
-        <p>Si ΔT (T–Td) és baix, l’ambient és humit i pot haver-hi rosada.</p>
-        <ul class="mv-list">
-          <li><strong>ΔT &lt; 2–3 °C</strong> → Humitat alta (més risc de fongs).</li>
-          <li><strong>ΔT alt</strong> → Ambient més sec.</li>
-        </ul>
-      </div>
-    </details>
-
-    <details class="mv-acc-item">
-      <summary class="mv-acc-sum">
-        <span class="mv-acc-q">Guia ràpida · 3 coses per mirar cada dia</span>
+        <span class="mv-acc-q">Guia ràpida (30 segons): què miro cada dia?</span>
         <span class="mv-acc-ico" aria-hidden="true"></span>
       </summary>
       <div class="mv-acc-a">
         <ol class="mv-list">
-          <li><strong>ETc</strong> → orienta quant regar.</li>
-          <li><strong>Hores VPD alt</strong> → si el dia ha estat dur.</li>
-          <li><strong>Pluja</strong> → per restar del reg.</li>
+          <li><strong>ETc (mm)</strong> → aigua a reposar (aprox.).</li>
+          <li><strong>Pluja diària (mm)</strong> → resta-la del reg (si ha estat efectiva).</li>
+          <li><strong>Hores VPD &gt; 1.6</strong> → si n’hi ha moltes, el dia ha estat dur (estrès).</li>
         </ol>
+        <p class="mv-note">
+          <strong>Regla ràpida:</strong> <code>1 mm = 1 L/m²</code>. (Ex.: 4 mm ≈ 4 litres per m².)
+        </p>
       </div>
     </details>
+
+    <details class="mv-acc-item">
+      <summary class="mv-acc-sum">
+        <span class="mv-acc-q">ETc (mm): quanta aigua ha consumit el cultiu (la dada clau)</span>
+        <span class="mv-acc-ico" aria-hidden="true"></span>
+      </summary>
+      <div class="mv-acc-a">
+        <p>
+          <strong>ETc</strong> és el consum d’aigua “real” del cultiu pel dia seleccionat.
+          Serveix per estimar quanta aigua has de reposar amb el reg.
+        </p>
+        <ul class="mv-list">
+          <li><strong>1 mm = 1 L/m²</strong> (10 mm = 10 L/m²).</li>
+          <li>Si tens degoteig, l’aigua no es reparteix a tot el m²: usa ETc com a <strong>referència</strong>, no com a “ordre exacta”.</li>
+          <li>Si el sòl és argilós, tolera millor; si és sorrenc, s’asseca més ràpid.</li>
+        </ul>
+        <p class="mv-note">
+          <strong>Consell pràctic:</strong> mira la tendència 3–5 dies. Si ETc és alta varis dies seguits i no plou, el dèficit s’acumula.
+        </p>
+      </div>
+    </details>
+
+    <details class="mv-acc-item">
+      <summary class="mv-acc-sum">
+        <span class="mv-acc-q">ET0 (mm): la “set” del dia (demanda atmosfèrica)</span>
+        <span class="mv-acc-ico" aria-hidden="true"></span>
+      </summary>
+      <div class="mv-acc-a">
+        <p>
+          <strong>ET0</strong> mesura com de “secant” ha estat el dia (sol, calor, vent…).
+          No és el consum del teu cultiu: és la base per calcular-lo.
+        </p>
+        <ul class="mv-list">
+          <li><strong>ET0 alta</strong> → el dia demana més aigua (més evaporació i transpiració).</li>
+          <li><strong>ET0 baixa</strong> → dia suau o humit.</li>
+        </ul>
+        <p class="mv-note">
+          <strong>Idea clau:</strong> ET0 és “la set del dia”; <strong>ETc</strong> és “la set del teu cultiu” (ETc = ET0 × Kc).
+        </p>
+      </div>
+    </details>
+
+    <details class="mv-acc-item">
+      <summary class="mv-acc-sum">
+        <span class="mv-acc-q">Kc: què és i com triar-lo (perquè ETc tingui sentit)</span>
+        <span class="mv-acc-ico" aria-hidden="true"></span>
+      </summary>
+      <div class="mv-acc-a">
+        <p>
+          <strong>Kc</strong> és el coeficient que adapta ET0 al teu cultiu i a la seva fase.
+          Si canvies Kc, canvia directament <strong>ETc</strong>.
+        </p>
+        <p><strong>Com triar Kc (guia simple):</strong></p>
+        <ul class="mv-list">
+          <li><strong>Planta petita / poc fullatge</strong> → Kc baix (menys consum).</li>
+          <li><strong>Planta amb molt fullatge / coberta verda</strong> → Kc més alt.</li>
+          <li><strong>Vinya</strong> (orientatiu): inicis temporada ~0.3–0.5 · mitja ~0.6–0.8 · pic estiu ~0.9–1.1.</li>
+        </ul>
+        <p class="mv-note">
+          <strong>Consell pràctic:</strong> si no ho tens clar, mantén el valor recomanat.
+          Canvia’l només si veus que ETc “no quadra” amb la realitat (sòl, vigor, coberta, maneig).
+        </p>
+      </div>
+    </details>
+
+    <details class="mv-acc-item">
+      <summary class="mv-acc-sum">
+        <span class="mv-acc-q">Pluja diària (mm): quant descompto del reg?</span>
+        <span class="mv-acc-ico" aria-hidden="true"></span>
+      </summary>
+      <div class="mv-acc-a">
+        <p>
+          Pluja acumulada del dia. <strong>10 mm = 10 L/m²</strong>.
+        </p>
+        <p><strong>Important:</strong> no tota la pluja és “efectiva”.</p>
+        <ul class="mv-list">
+          <li>Si plou <strong>poc i ràpid</strong> amb vent o calor, es pot evaporar.</li>
+          <li>Si el sòl està molt sec o molt dur, pot haver-hi <strong>escorrentia</strong>.</li>
+          <li>En general, una pluja suau i sostinguda “aprofita” millor.</li>
+        </ul>
+        <p class="mv-note">
+          <strong>Regla orientativa:</strong> resta la pluja a ETc, però valora el context (intensitat, sòl, pendent).
+        </p>
+      </div>
+    </details>
+
+    <details class="mv-acc-item">
+      <summary class="mv-acc-sum">
+        <span class="mv-acc-q">VPD (kPa): com saber si la planta pateix per aire sec i calor</span>
+        <span class="mv-acc-ico" aria-hidden="true"></span>
+      </summary>
+      <div class="mv-acc-a">
+        <p>
+          El <strong>VPD</strong> indica la “pressió” perquè la planta perdi aigua per transpiració.
+          És molt útil per entendre <strong>estrès</strong> (sobretot en dies calorosos).
+        </p>
+        <ul class="mv-list">
+          <li><strong>&lt; 0.8</strong> → aire humit (transpiració baixa).</li>
+          <li><strong>0.8 – 1.2</strong> → zona confortable per molts cultius.</li>
+          <li><strong>&gt; 1.5</strong> → estrès probable (si dura hores).</li>
+        </ul>
+        <p class="mv-note">
+          <strong>Truc:</strong> VPD alt + ETc alta = dia molt demandant. VPD alt moltes hores pot reduir creixement i qualitat.
+        </p>
+      </div>
+    </details>
+
+    <details class="mv-acc-item">
+      <summary class="mv-acc-sum">
+        <span class="mv-acc-q">VPD màxim i Hores VPD &gt; 1.2 / &gt; 1.6: pic vs durada</span>
+        <span class="mv-acc-ico" aria-hidden="true"></span>
+      </summary>
+      <div class="mv-acc-a">
+        <p>
+          <strong>VPD màxim</strong> és el pic del dia. Les <strong>hores VPD alt</strong> indiquen si ha estat puntual o sostingut.
+        </p>
+        <ul class="mv-list">
+          <li><strong>Pic alt però poques hores</strong> → estrès curt (menys impacte).</li>
+          <li><strong>Moltes hores &gt; 1.6</strong> → estrès fort sostingut (més impacte).</li>
+        </ul>
+        <p class="mv-note">
+          <strong>Ús pràctic:</strong> si hi ha moltes hores &gt;1.6, considera avançar el reg o evitar treballs en hores centrals (si aplica).
+        </p>
+      </div>
+    </details>
+
+    <details class="mv-acc-item">
+      <summary class="mv-acc-sum">
+        <span class="mv-acc-q">Punt de rosada i ΔT (T−Td): humitat, rosada i risc de fongs</span>
+        <span class="mv-acc-ico" aria-hidden="true"></span>
+      </summary>
+      <div class="mv-acc-a">
+        <p>
+          El <strong>punt de rosada</strong> és la temperatura a la qual l’aire condensa (rosada).
+          <strong>ΔT</strong> indica com d’aprop està la temperatura real d’aquest punt.
+        </p>
+        <ul class="mv-list">
+          <li><strong>ΔT &lt; 2–3 °C</strong> → ambient molt humit (més risc de rosada/fongs).</li>
+          <li><strong>ΔT &gt; 5 °C</strong> → ambient més sec.</li>
+        </ul>
+        <p class="mv-note">
+          <strong>Ús pràctic:</strong> nits amb ΔT baix + fullatge dens = més vigilància (segons cultiu i historial de malalties).
+        </p>
+      </div>
+    </details>
+
+    <details class="mv-acc-item">
+      <summary class="mv-acc-sum">
+        <span class="mv-acc-q">GDD: què és i per què et pot servir (fenologia i planificació)</span>
+        <span class="mv-acc-ico" aria-hidden="true"></span>
+      </summary>
+      <div class="mv-acc-a">
+        <p>
+          Els <strong>GDD</strong> (Graus Dia de Creixement) són la <strong>calor acumulada útil</strong> per al desenvolupament del cultiu.
+          No són per calcular el reg diari, sinó per <strong>planificar</strong>.
+        </p>
+        <ul class="mv-list">
+          <li>Ajuda a estimar canvis de fase (brotació, floració, maduració) segons el cultiu.</li>
+          <li>Serveix per comparar anys: “anem avançats o endarrerits?”</li>
+          <li>Pot ajudar a situar finestres orientatives de treballs/tractaments (segons cultiu i pràctica local).</li>
+        </ul>
+        <p class="mv-note">
+          <strong>Important:</strong> els llindars exactes de GDD depenen del cultiu/varietat i del criteri utilitzat.
+        </p>
+      </div>
+    </details>
+
+    <details class="mv-acc-item">
+      <summary class="mv-acc-sum">
+        <span class="mv-acc-q">Base GDD: per què canvia el valor si la modifico?</span>
+        <span class="mv-acc-ico" aria-hidden="true"></span>
+      </summary>
+      <div class="mv-acc-a">
+        <p>
+          La <strong>base GDD</strong> és la temperatura a partir de la qual considerem que el cultiu “creix”.
+          Si puges la base, comptaràs menys GDD; si la baixes, en comptaràs més.
+        </p>
+        <p class="mv-note">
+          <strong>Consell:</strong> deixa la base recomanada per al teu cultiu (p. ex. molts usos en vinya treballen amb base 10 °C).
+        </p>
+      </div>
+    </details>
+
   </div>
 </section>
 
 <style>
-  /* Ajusta aquests valors si ja tens variables globals */
   :root{
-    --mv-bg: #0b1220;
     --mv-card: rgba(255,255,255,.06);
     --mv-border: rgba(255,255,255,.10);
     --mv-text: rgba(255,255,255,.92);
@@ -346,11 +437,18 @@
   .mv-acc-a{
     padding: 0 12px 12px;
     color: var(--mv-muted);
-    line-height: 1.4;
+    line-height: 1.45;
   }
   .mv-acc-a p{margin:10px 0}
   .mv-list{margin:8px 0 0 18px}
   .mv-list li{margin:6px 0}
+  .mv-note{
+    margin-top:10px;
+    padding:10px 10px;
+    border-radius: 12px;
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.08);
+  }
   code{
     background: rgba(255,255,255,.08);
     border: 1px solid rgba(255,255,255,.10);
@@ -361,7 +459,7 @@
 </style>
 
 <script>
-  // Accordion: quan n’obres una, es tanca la que estava oberta (single-open)
+  // Accordion: només 1 oberta. En obrir-ne una, es tanquen les altres.
   (function () {
     const root = document.querySelector('.mv-accordion[data-accordion="single"]');
     if (!root) return;
@@ -377,6 +475,8 @@
     });
   })();
 </script>
+
+
   </main>
 
   <footer class="footer">
