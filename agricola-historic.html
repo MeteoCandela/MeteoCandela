@@ -1,4 +1,3 @@
-<!-- agricola-historic.html -->
 <!doctype html>
 <html lang="ca">
 <head>
@@ -20,7 +19,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
   <link rel="manifest" href="./site.webmanifest">
 
-  <link rel="stylesheet" href="./style.css?v=2026-02-19-001">
+  <link rel="stylesheet" href="./style.css?v=2026-03-04-001">
   <script defer src="./vendor/chart.umd.min.js"></script>
 </head>
 
@@ -44,7 +43,6 @@
       </nav>
     </section>
 
-    <!-- CARD: Resum i període (SCOPED) -->
     <section class="card span2" id="cardAgroHistoric">
       <div class="card-head">
         <h2>Resum i període</h2>
@@ -52,35 +50,34 @@
       </div>
 
       <div class="chips-grid">
-       <div class="chip">
-  <span>📅 Període</span>
-  <strong>
-    <select id="rangeSelect" class="select" aria-label="Període">
-      <optgroup label="Dies">
-        <option value="d:30">Últims 30 dies</option>
-        <option value="d:45">Últims 45 dies</option>
-        <option value="d:60">Últims 60 dies</option>
-        <option value="d:90">Últims 90 dies</option>
-        <option value="d:120">Últims 120 dies</option>
-        <option value="d:180">Últims 180 dies</option>
-      </optgroup>
+        <div class="chip">
+          <span>📅 Període</span>
+          <strong>
+            <select id="rangeSelect" class="select" aria-label="Període">
+              <optgroup label="Dies">
+                <option value="d:30">Últims 30 dies</option>
+                <option value="d:45">Últims 45 dies</option>
+                <option value="d:60">Últims 60 dies</option>
+                <option value="d:90">Últims 90 dies</option>
+                <option value="d:120">Últims 120 dies</option>
+                <option value="d:180">Últims 180 dies</option>
+              </optgroup>
 
-      <optgroup label="Mesos (aprox.)">
-        <option value="m:1">Últim 1 mes</option>
-        <option value="m:3">Últims 3 mesos</option>
-        <option value="m:6">Últims 6 mesos</option>
-        <option value="m:9">Últims 9 mesos</option>
-      </optgroup>
+              <optgroup label="Mesos (aprox.)">
+                <option value="m:1">Últim 1 mes</option>
+                <option value="m:3">Últims 3 mesos</option>
+                <option value="m:6">Últims 6 mesos</option>
+                <option value="m:9">Últims 9 mesos</option>
+              </optgroup>
 
-      <optgroup label="Anys (aprox.)">
-        <option value="y:1" selected>Últim 1 any</option>
-        <option value="y:2">Últims 2 anys</option>
-        <option value="y:5">Últims 5 anys</option>
-      </optgroup>
-    </select>
-  </strong>
-</div> 
-     
+              <optgroup label="Anys (aprox.)">
+                <option value="y:1" selected>Últim 1 any</option>
+                <option value="y:2">Últims 2 anys</option>
+                <option value="y:5">Últims 5 anys</option>
+              </optgroup>
+            </select>
+          </strong>
+        </div>
 
         <div class="chip">
           <span>🌱 Kc</span>
@@ -101,7 +98,7 @@
             <select id="gddBase" class="select" aria-label="Base GDD">
               <option value="5">5 °C</option>
               <option value="7">7 °C</option>
-              <option value="10">10 °C</option>
+              <option value="10" selected>10 °C</option>
               <option value="12">12 °C</option>
             </select>
           </strong>
@@ -136,7 +133,7 @@
 
         <div class="kpi kpi--wide-right">
           <div class="kpi-val" id="kpiLastDay">—</div>
-          <div class="kpi-lab">Últim dia amb dades (D1)</div>
+          <div class="kpi-lab">Últim dia amb dades</div>
         </div>
       </div>
     </section>
@@ -202,6 +199,6 @@
     <span>© <span id="year"></span> MeteoValls</span>
   </footer>
 
-  <script type="module" src="./app.js?v=2026-02-19-001"></script>
+  <script type="module" src="./app.js?v=2026-03-04-001"></script>
 </body>
 </html>
