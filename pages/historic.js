@@ -350,9 +350,16 @@ export function initHistoric() {
 
       setUrlFilters(y, m, d);
 
-      const filtered = applyFilters(daily, y, m, d);
-      render(filtered);
-      renderSummary(filtered);
+      let filtered = applyFilters(daily, y, m, d);
+
+// En vista general, no mostrem el dia actual perquè encara no està tancat
+if (!d) {
+  const today = todayYmdLocal();
+  filtered = filtered.filter(r => String((r.date ?? r.day) || "").slice(0,10) !== today);
+}
+
+render(filtered);
+renderSummary(filtered);
 
       // Badge anual/mensual (sempre clar)
       updateFilterBadge(filterInfo, y, m, d);
