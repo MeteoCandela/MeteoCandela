@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="ca">
 <head>
@@ -12,16 +13,16 @@
 
   <!-- SEO bàsic -->
   <title>MeteoValls · Estació meteorològica de Valls (Alt Camp) en temps real</title>
-  <meta name="description" content="MeteoValls és una estació meteorològica automàtica a Valls (Alt Camp) amb dades en temps real de temperatura, humitat, vent, ratxes i pluja. Disponible també a Google Play.">
+  <meta name="description" content="MeteoValls és una estació meteorològica automàtica a Valls (Alt Camp) amb dades en temps real de temperatura, humitat, vent, ratxes i pluja. Gràfiques actualitzades cada 5 minuts.">
   <link rel="canonical" href="https://meteocandela.cat/">
   <meta name="robots" content="index,follow">
 
-  <!-- Open Graph -->
+  <!-- Open Graph (WhatsApp / Facebook / Telegram) -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="MeteoValls">
   <meta property="og:locale" content="ca_ES">
   <meta property="og:title" content="MeteoValls · Estació meteorològica de Valls (Alt Camp)">
-  <meta property="og:description" content="MeteoValls (abans MeteoCandela). Dades en temps real de temperatura, humitat, vent, ratxes i pluja. També disponible a Google Play.">
+  <meta property="og:description" content="MeteoValls (abans MeteoCandela). Dades en temps real de temperatura, humitat, vent, ratxes i pluja.">
   <meta property="og:url" content="https://meteocandela.cat/">
   <meta property="og:image" content="https://meteocandela.cat/og-image.png">
   <meta property="og:image:secure_url" content="https://meteocandela.cat/og-image.png">
@@ -33,7 +34,7 @@
   <!-- Twitter / X -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="MeteoValls · Estació meteorològica de Valls">
-  <meta name="twitter:description" content="MeteoValls (abans MeteoCandela). Dades en temps real de temperatura, vent, humitat i pluja. També disponible a Google Play.">
+  <meta name="twitter:description" content="MeteoValls (abans MeteoCandela). Dades en temps real de temperatura, vent, humitat i pluja.">
   <meta name="twitter:image" content="https://meteocandela.cat/og-image.png">
   <meta name="twitter:image:alt" content="MeteoValls · Estació meteorològica de Valls en temps real">
 
@@ -52,67 +53,22 @@
       "addressRegion": "Tarragona",
       "addressCountry": "ES"
     },
-    "areaServed": {
-      "@type": "AdministrativeArea",
-      "name": "Alt Camp"
-    }
+    "areaServed": { "@type": "AdministrativeArea", "name": "Alt Camp" }
   }
   </script>
 
-  <!-- Schema.org: App Android -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "MobileApplication",
-    "name": "MeteoValls",
-    "operatingSystem": "Android",
-    "applicationCategory": "WeatherApplication",
-    "url": "https://meteocandela.cat/",
-    "downloadUrl": "https://play.google.com/store/apps/details?id=cat.meteovalls.android",
-    "publisher": {
-      "@type": "Organization",
-      "name": "KartaFighter"
-    },
-    "description": "Aplicació Android de MeteoValls amb dades meteorològiques en temps real de Valls (Alt Camp)."
-  }
-  </script>
-
-  <!-- Schema.org: FAQ -->
+  <!-- Schema.org: FAQ (SEO) -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "FAQPage",
     "mainEntity": [
-      {
-        "@type":"Question",
-        "name":"Cada quant s’actualitzen les dades?",
-        "acceptedAnswer":{"@type":"Answer","text":"Les dades s’actualitzen aproximadament cada 5 minuts, segons la recepció dels sensors i la connexió."}
-      },
-      {
-        "@type":"Question",
-        "name":"On està situada l’estació MeteoValls?",
-        "acceptedAnswer":{"@type":"Answer","text":"L’estació és a Valls (Alt Camp, Tarragona), en un entorn urbà representatiu de la zona."}
-      },
-      {
-        "@type":"Question",
-        "name":"Les dades són oficials?",
-        "acceptedAnswer":{"@type":"Answer","text":"No. Són dades d’una estació meteorològica automàtica privada amb finalitat informativa i divulgativa."}
-      },
-      {
-        "@type":"Question",
-        "name":"Per què de vegades falten dades?",
-        "acceptedAnswer":{"@type":"Answer","text":"Pot ser per interrupcions temporals de connexió, manteniment o pèrdues puntuals de senyal."}
-      },
-      {
-        "@type":"Question",
-        "name":"Què és una ratxa de vent?",
-        "acceptedAnswer":{"@type":"Answer","text":"És la velocitat màxima puntual del vent registrada en un interval curt, diferent del vent mitjà."}
-      },
-      {
-        "@type":"Question",
-        "name":"Què és el punt de rosada?",
-        "acceptedAnswer":{"@type":"Answer","text":"El punt de rosada és la temperatura a la qual l’aire s’hauria de refredar perquè el vapor d’aigua comencés a condensar-se i aparegui rosada o boira. Com més alt és el punt de rosada, més humitat hi ha a l’ambient i més xafogor es pot notar."}
-      }
+      {"@type":"Question","name":"Cada quant s’actualitzen les dades?","acceptedAnswer":{"@type":"Answer","text":"Les dades s’actualitzen aproximadament cada 5 minuts, segons la recepció dels sensors i la connexió."}},
+      {"@type":"Question","name":"On està situada l’estació MeteoValls?","acceptedAnswer":{"@type":"Answer","text":"L’estació és a Valls (Alt Camp, Tarragona), en un entorn urbà representatiu de la zona."}},
+      {"@type":"Question","name":"Les dades són oficials?","acceptedAnswer":{"@type":"Answer","text":"No. Són dades d’una estació meteorològica automàtica privada amb finalitat informativa i divulgativa."}},
+      {"@type":"Question","name":"Per què de vegades falten dades?","acceptedAnswer":{"@type":"Answer","text":"Pot ser per interrupcions temporals de connexió, manteniment o pèrdues puntuals de senyal."}},
+      {"@type":"Question","name":"Què és una ratxa de vent?","acceptedAnswer":{"@type":"Answer","text":"És la velocitat màxima puntual del vent registrada en un interval curt, diferent del vent mitjà."}},
+      {"@type": "Question","name": "Què és el punt de rosada?","acceptedAnswer": {"@type": "Answer","text": "El punt de rosada és la temperatura a la qual l’aire s’hauria de refredar perquè el vapor d’aigua comencés a condensar-se i aparegui rosada (o boira). Com més alt és el punt de rosada, més humitat hi ha a l’ambient i més xafogor es pot notar."}}
     ]
   }
   </script>
@@ -129,137 +85,7 @@
   <!-- CSS -->
   <link rel="stylesheet" href="./style.css?v=2026-02-19-001">
 
-  <!-- Ajustos visuals locals -->
-  <style>
-    .hero__cta{
-      margin-top:14px;
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      justify-content:center;
-    }
-
-    .store-btn,
-    .hero-btn-secondary{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      min-height:44px;
-      padding:12px 18px;
-      border-radius:12px;
-      text-decoration:none;
-      font-weight:700;
-      border:1px solid rgba(255,255,255,.14);
-      box-shadow:0 8px 24px rgba(0,0,0,.18);
-      transition:transform .15s ease, opacity .15s ease;
-      white-space:nowrap;
-    }
-
-    .store-btn{
-      background:#2563eb;
-      color:#fff;
-    }
-
-    .hero-btn-secondary{
-      background:rgba(255,255,255,.08);
-      color:#fff;
-      backdrop-filter:blur(6px);
-    }
-
-    .store-btn:hover,
-    .hero-btn-secondary:hover{
-      transform:translateY(-1px);
-      opacity:.96;
-    }
-
-    .store-btn:active,
-    .hero-btn-secondary:active{
-      transform:translateY(0);
-    }
-
-    .app-promo{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:16px;
-      flex-wrap:wrap;
-    }
-
-    .app-promo__text{
-      flex:1 1 340px;
-    }
-
-    .app-promo__text h2{
-      margin:0 0 8px;
-    }
-
-    .app-promo__text p{
-      margin:0;
-      opacity:.95;
-    }
-
-    .app-promo__actions{
-      flex:0 0 auto;
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-
-    .app-badges{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-top:10px;
-    }
-
-    .app-badge{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:8px 12px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(255,255,255,.04);
-      font-size:.95rem;
-    }
-
-    .mobile-play-hint{
-      margin-top:10px;
-      font-size:.95rem;
-      opacity:.92;
-    }
-
-    .is-hidden{
-      display:none !important;
-    }
-
-    @media (max-width: 760px){
-      .hero__cta{
-        justify-content:center;
-      }
-
-      .store-btn,
-      .hero-btn-secondary{
-        width:100%;
-      }
-
-      .app-promo{
-        align-items:flex-start;
-      }
-
-      .app-promo__actions{
-        width:100%;
-      }
-
-      .app-promo__actions .store-btn,
-      .app-promo__actions .hero-btn-secondary{
-        width:100%;
-      }
-    }
-  </style>
-
-  <!-- Vendors -->
+  <!-- Vendors (defer) -->
   <script defer src="./vendor/chart.umd.min.js"></script>
   <script defer src="./vendor/suncalc.min.js"></script>
 </head>
@@ -271,7 +97,6 @@
     <p>
       MeteoValls és una estació meteorològica automàtica situada a Valls, comarca de l’Alt Camp (Tarragona),
       al barri de la Candela. Ofereix dades meteorològiques en temps real de temperatura, humitat, vent, ratxes i pluja.
-      També disposa d’aplicació Android a Google Play.
     </p>
   </section>
 
@@ -281,108 +106,54 @@
       <h1>MeteoValls · Temps Vallenc</h1>
       <p id="lastUpdated" aria-live="polite">Carregant…</p>
       <p id="statusLine" class="status" aria-live="polite">—</p>
-
-      <div class="hero__cta">
-        <a
-          id="heroPlayBtn"
-          href="https://play.google.com/store/apps/details?id=cat.meteovalls.android"
-          class="store-btn is-hidden"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Descarrega l'app MeteoValls a Google Play"
-        >
-          📲 Descarrega l’app Android
-        </a>
-
-        <a
-          id="heroDesktopPlayBtn"
-          href="https://play.google.com/store/apps/details?id=cat.meteovalls.android"
-          class="hero-btn-secondary is-hidden"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Veure MeteoValls a Google Play"
-        >
-          Google Play
-        </a>
-      </div>
-
-      <p id="heroPlayHint" class="mobile-play-hint is-hidden">
-        Si utilitzes Android, també pots tenir MeteoValls com a app nativa des de Google Play.
-      </p>
     </div>
   </header>
 
   <main class="grid">
+
     <!-- Navegació ràpida -->
     <section class="card span2">
       <nav class="quick-nav" aria-label="Navegació principal">
         <a href="/previsio.html" class="quick-nav__btn">⛅ Previsió</a>
         <a href="/historic.html" class="quick-nav__btn">📊 Històric</a>
-        <a href="/agricola.html" class="quick-nav__btn">🚜 Agrícola</a>
+        <a href="/agricola.html" class="quick-nav__btn">🚜</a>
       </nav>
-    </section>
-
-    <!-- Promo app: sobretot visible en escriptori / pantalles grans -->
-    <section id="appPromoCard" class="card span2 is-hidden">
-      <div class="app-promo">
-        <div class="app-promo__text">
-          <h2>MeteoValls també és a Google Play</h2>
-          <p>
-            Instal·la l’app Android de MeteoValls per consultar les dades meteorològiques de Valls
-            en temps real de manera ràpida i còmoda.
-          </p>
-
-          <div class="app-badges" aria-label="Característiques de l'app">
-            <span class="app-badge">📍 Valls · Alt Camp</span>
-            <span class="app-badge">🌡️ Dades en temps real</span>
-            <span class="app-badge">🔔 Avisos i accés ràpid</span>
-          </div>
-        </div>
-
-        <div class="app-promo__actions">
-          <a
-            href="https://play.google.com/store/apps/details?id=cat.meteovalls.android"
-            class="store-btn"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Instal·la MeteoValls
-          </a>
-        </div>
-      </div>
     </section>
 
     <!-- ACTUAL -->
     <section class="card" id="cardCurrent">
       <div class="card-head">
-        <h2>Actual</h2>
-        <div class="card-head__right">
-          <div id="currentIcon" class="now-icon" aria-hidden="true"></div>
-        </div>
-      </div>
+  <h2>Actual</h2>
+
+  <div class="card-head__right">
+    <!-- IMPORTANT: aquest id és el que usa lib/sun.js -->
+    <div id="currentIcon" class="now-icon" aria-hidden="true"></div>
+  </div>
+</div>
 
       <div class="now-source">
+        <!-- IMPORTANT: aquest id és el que usa home.js -->
         <span class="pill" id="sourceLine">Font: —</span>
       </div>
 
-      <!-- AVÍS XL -->
-      <section id="alertXL" class="alert-xl" style="display:none;" role="status" aria-live="polite">
-        <div class="alert-xl__left">
-          <div class="alert-xl__title" id="alertXLTitle">—</div>
-          <div class="alert-xl__msg" id="alertXLMsg">—</div>
-          <div class="alert-xl__meta" id="alertXLMeta">—</div>
-        </div>
+      <!-- AVÍS XL (últim avís del sistema) -->
+<section id="alertXL" class="alert-xl" style="display:none;" role="status" aria-live="polite">
+  <div class="alert-xl__left">
+    <div class="alert-xl__title" id="alertXLTitle">—</div>
+    <div class="alert-xl__msg" id="alertXLMsg">—</div>
+    <div class="alert-xl__meta" id="alertXLMeta">—</div>
+  </div>
 
-        <button id="alertXLClose" class="alert-xl__close" type="button" aria-label="Tancar avís">✕</button>
-      </section>
-
-      <!-- Avisos (Push) -->
-      <div class="push-row">
-        <button id="btnPush" class="push-btn" type="button" style="display:none;">
-          🔔 Activar avisos
-        </button>
-      </div>
-
+  <button id="alertXLClose" class="alert-xl__close" type="button" aria-label="Tancar avís">✕</button>
+</section>
+      
+<!-- Avisos (Push) -->
+<div class="push-row">
+  <button id="btnPush" class="push-btn" type="button" style="display:none;">
+    🔔 Activar avisos
+  </button>
+</div>
+      
       <!-- KPIs -->
       <div class="kpi-grid">
         <div class="kpi">
@@ -404,19 +175,21 @@
           <div class="kpi-val" id="kpiRainDay">—</div>
           <div class="kpi-lab">Pluja diària (mm)</div>
         </div>
-
+        
+        <!-- KPI GRAN DRETA -->
         <div class="kpi kpi--wide-left">
           <div class="kpi-val" id="kpiGustMaxDay">—</div>
           <div class="kpi-lab">Ratxa màxima (km/h)</div>
         </div>
 
+        <!-- KPI GRAN ESQUERRA -->
         <div class="kpi kpi--wide-right">
           <div class="kpi-val" id="kpiRainRate">—</div>
           <div class="kpi-lab">Intensitat pluja (mm/h)</div>
         </div>
       </div>
 
-      <!-- Detall compacte -->
+      <!-- Detall compacte (1 per fila, full width via CSS) -->
       <div class="chips-grid">
         <div class="chip"><span>🌡️ Mín/Max avui</span><strong id="chipMinMax">—</strong></div>
         <div class="chip"><span>🥵🥶 Sensació tèrmica</span><strong id="chipFeels">—</strong></div>
@@ -427,7 +200,7 @@
       </div>
     </section>
 
-    <!-- SELECTOR DE DIA -->
+    <!-- SELECTOR DE DIA (NECESSARI pel JS) -->
     <section class="card span2">
       <div class="daybar">
         <div class="daybar__left">
@@ -476,7 +249,7 @@
 
       <details class="faq-item">
         <summary>Què és MeteoValls?</summary>
-        <p>MeteoValls és una estació meteorològica automàtica situada a <strong>Valls</strong> (Alt Camp) que mostra dades reals de temperatura, humitat, vent, ratxes i pluja.</p>
+        <p>MeteoValls és una estació meteorològica automàtica situada a <strong>Valls</strong>, (Alt Camp), que mostra dades reals de temperatura, humitat, vent, ratxes i pluja.</p>
       </details>
 
       <details class="faq-item">
@@ -486,7 +259,7 @@
 
       <details class="faq-item">
         <summary>D’on surten les dades?</summary>
-        <p>Les dades provenen directament dels sensors físics de l’estació. No s’utilitzen prediccions ni fonts externes per als valors actuals.</p>
+        <p>Les dades provenen directament dels sensors físics de l’estació. No s’utilitzen prediccions ni fonts externes.</p>
       </details>
 
       <details class="faq-item">
@@ -505,43 +278,32 @@
       </details>
 
       <details class="faq-item">
-        <summary>Què és el punt de rosada?</summary>
-        <p>
-          El <strong>punt de rosada</strong> és la temperatura a la qual l’aire s’hauria de refredar perquè el vapor d’aigua
-          comencés a <strong>condensar-se</strong> i aparegui <strong>rosada</strong> o boira.
-          Com més alt és el punt de rosada, més <strong>humitat</strong> hi ha a l’ambient i més xafogor es pot notar.
-        </p>
-      </details>
-
-      <details class="faq-item">
-        <summary>Teniu aplicació per Android?</summary>
-        <p>
-          Sí. MeteoValls també és disponible a <strong>Google Play</strong> com a aplicació Android.
-        </p>
+  <summary>Què és el punt de rosada?</summary>
+  <p>
+    El <strong>punt de rosada</strong> és la temperatura a la qual l’aire s’hauria de refredar perquè el vapor d’aigua
+    comencés a <strong>condensar-se</strong> i aparegui <strong>rosada</strong> (o boira si passa a l’aire).
+    Com més alt és el punt de rosada, més <strong>humitat</strong> hi ha a l’ambient i més “xafogor” es pot notar.
+  </p>
       </details>
 
       <div class="push-status-slot">
-        <div id="pushStatus" class="push-status"></div>
+  <div id="pushStatus" class="push-status"></div>
 
-        <button id="btnPushOff" class="push-btn-off" style="display:none;">
-          🔕 Desactivar avisos
-        </button>
+  <button id="btnPushOff"
+          class="push-btn-off"
+          style="display:none;">
+    🔕 Desactivar avisos
+  </button>
       </div>
+      
     </section>
+
   </main>
 
   <footer class="footer">
     <span>© <span id="year"></span> MeteoValls</span>
     <span style="margin-left:12px;">
       <a href="./sobre.html" style="color:inherit; text-decoration:underline;">Sobre l’estació</a>
-    </span>
-    <span style="margin-left:12px;">
-      <a href="https://play.google.com/store/apps/details?id=cat.meteovalls.android"
-         target="_blank"
-         rel="noopener noreferrer"
-         style="color:inherit; text-decoration:underline;">
-        App Android
-      </a>
     </span>
   </footer>
 
@@ -555,34 +317,46 @@
       items.forEach((d) => {
         d.addEventListener("toggle", () => {
           if (!d.open) return;
-          items.forEach((other) => {
-            if (other !== d) other.open = false;
-          });
+          items.forEach((other) => { if (other !== d) other.open = false; });
         });
       });
     })();
   </script>
 
-  <!-- CTA contextual Google Play -->
-  <script>
-    (function () {
-      const PLAY_URL = "https://play.google.com/store/apps/details?id=cat.meteovalls.android";
+  <button id="btnInstallFab" class="install-fab" type="button" style="display:none;" aria-label="Instal·la l'app">
+    ⬇️ Instal·la l’app
+  </button>
 
-      const ua = navigator.userAgent || "";
-      const isAndroid = /Android/i.test(ua);
-      const isMobileUA = /Mobi|Android|iPhone|iPad|iPod/i.test(ua);
-      const isNarrow = window.matchMedia("(max-width: 900px)").matches;
-      const isMobile = isMobileUA || isNarrow;
+  <div id="iosInstallTip" class="install-tip" style="display:none;" role="dialog" aria-modal="true" aria-label="Com instal·lar a iPhone">
+  <div class="install-tip__card">
+    <div class="install-tip__title">Instal·lar a iPhone (Safari)</div>
 
-      const isStandalone =
-        window.matchMedia("(display-mode: standalone)").matches ||
-        window.matchMedia("(display-mode: fullscreen)").matches ||
-        navigator.standalone === true;
+    <div class="install-tip__text">
+      <strong>⚠️ Important:</strong> cal obrir aquesta pàgina amb <strong>Safari</strong>
+      (no Chrome, ni dins WhatsApp / Instagram / Telegram).<br><br>
 
-      const heroPlayBtn = document.getElementById("heroPlayBtn");
-      const heroDesktopPlayBtn = document.getElementById("heroDesktopPlayBtn");
-      const heroPlayHint = document.getElementById("heroPlayHint");
-      const appPromoCard = document.getElementById("appPromoCard");
+      1) Si estàs en una app o Chrome: toca <strong>…</strong> → <strong>Obrir a Safari</strong><br>
+      2) A Safari, toca <strong>Compartir</strong> (icona ⬆️)<br>
+      3) Tria <strong>Afegir a pantalla d’inici</strong>
+    </div>
 
-      if (heroPlayBtn) heroPlayBtn.href = PLAY_URL;
-      if (heroDesktopPlayBtn) hero
+    <button id="btnCloseIosTip" class="install-tip__close" type="button">D’acord</button>
+  </div>
+</div>
+  
+<!-- Meteocat Floating Icon -->
+<a id="meteocatIcon"
+   class="mv-icon mv-hidden"
+   href="./avisos.html"
+   aria-label="Avisos Meteocat Alt Camp">
+
+  <span class="mv-icon__symbol">⚠️</span>
+  <span id="meteocatIconCount" class="mv-icon__count"></span>
+
+</a>
+  
+  <!-- App (module) -->
+  <script type="module" src="./app.js?v=2026-02-19-001"></script>
+  
+</body>
+</html>
