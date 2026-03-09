@@ -16,22 +16,19 @@ const PRUNE_DATA = {
   plants: [
     // --- Base ---
     {
-      id:"olive", name:"Olivera", type:"fruit_mediterrani",
-      windows:{
-        winter_structural:[0,1,1,1,0,0,0,0,0,0,0,0],
-        green_summer:[0,0,0,0,1,1,0,0,0,0,0,0],
-        touchup:[0,0,0,0,0,0,0,0,1,1,0,0]
-      },
-      notes:["Poda principal: finals d’hivern i inici de primavera, evitant gelades i dies molt humits."]
-    },
     {
-      id:"vine", name:"Vinya", type:"fruit_mediterrani",
-      windows:{
-        winter_structural:[1,1,1,0,0,0,0,0,0,0,0,0],
-        green_summer:[0,0,0,0,1,1,1,1,1,0,0,0]
-      },
-      notes:["Poda d’hivern: gen–mar (evita gel i pluja). Poda en verd: maig–set."]
-    },
+  id:"olive", name:"Olivera", type:"fruit_mediterrani",
+  windows:{
+    winter_structural:[0,1,1,1,0,0,0,0,0,0,0,0],
+    green_summer:[0,0,0,0,1,1,0,0,0,0,0,0],
+    touchup:[0,0,0,0,0,0,0,0,1,1,0,0]
+  },
+  notes:[
+    "Poda principal a finals d’hivern i inici de primavera, evitant gelades i dies molt humits.",
+    "A finals de primavera es poden fer retocs lleus: xupons, branques molt verticals o aclarida suau per aireig.",
+    "A l’estiu no és època de poda forta."
+  ]
+},
     {
       id:"almond", name:"Ametller", type:"fruiter_os",
       windows:{
