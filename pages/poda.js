@@ -16,7 +16,6 @@ const PRUNE_DATA = {
   plants: [
     // --- Base ---
     {
-    {
   id:"olive", name:"Olivera", type:"fruit_mediterrani",
   windows:{
     winter_structural:[0,1,1,1,0,0,0,0,0,0,0,0],
@@ -35,7 +34,11 @@ const PRUNE_DATA = {
         winter_structural:[0,1,1,0,0,0,0,0,0,0,0,0],
         green_summer:[0,0,0,0,1,1,0,0,0,0,0,0]
       },
-      notes:["Millor feb–mar (Alt Camp)."]
+      notes:[
+  "Poda principal preferentment entre febrer i març, millor evitant els dies de fred intens.",
+  "A finals de primavera es poden fer petits retocs de vigor o aireig si l’arbre va massa carregat.",
+  "Evita podes fortes en plena calor o amb risc de gelada."
+]
     },
     {
       id:"hazelnut", name:"Avellaner", type:"fruiter_arbustiu",
@@ -43,7 +46,11 @@ const PRUNE_DATA = {
         winter_structural:[0,1,1,1,0,0,0,0,0,0,0,0],
         touchup:[0,0,0,0,0,0,0,0,1,0,0,0]
       },
-      notes:["Renovació/aclarida: finals d’hivern–primavera."]
+      notes:[
+  "Poda de renovació i aclarida a finals d’hivern i inici de primavera.",
+  "Convé eliminar tanys vells, fusta mal orientada i excés de rebrots des de la base.",
+  "Els retocs de tardor han de ser lleus i només de manteniment."
+]
     },
     {
       id:"apple_pear", name:"Pomera / Perera", type:"fruiter_llavor",
@@ -51,7 +58,11 @@ const PRUNE_DATA = {
         winter_structural:[1,1,1,0,0,0,0,0,0,0,0,0],
         green_summer:[0,0,0,0,1,1,1,0,0,0,0,0]
       },
-      notes:["Poda d’hivern gen–mar; en verd maig–juliol."]
+      notes:[
+  "Poda principal d’hivern entre gener i març per donar forma i regular la producció.",
+  "Entre maig i juliol es poden fer aclarides suaus i eliminació de brots massa vigorosos.",
+  "La poda en verd és complementària i no substitueix la poda principal."
+]
     },
     {
       id:"stone_fruit", name:"Cirerer / Prunera / Presseguer", type:"fruiter_os",
@@ -59,7 +70,11 @@ const PRUNE_DATA = {
         winter_structural:[0,1,1,0,0,0,0,0,0,0,0,0],
         green_summer:[0,0,0,0,0,1,1,1,1,0,0,0]
       },
-      notes:["Evita poda forta amb risc de gelada; postcollita en verd."]
+      notes:[
+  "La poda principal sol fer-se entre finals d’hivern i inici de primavera, evitant fred intens.",
+  "En moltes varietats és molt útil la poda en verd o postcollita per aireig i control del vigor.",
+  "Evita podes fortes en dies humits o amb risc de malalties de fusta."
+]
     },
     {
       id:"citrus", name:"Cítrics", type:"fruiter_perenne",
