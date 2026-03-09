@@ -82,7 +82,11 @@ const PRUNE_DATA = {
         winter_structural:[0,0,1,1,0,0,0,0,0,0,0,0],
         touchup:[0,0,0,0,1,1,0,0,0,0,0,0]
       },
-      notes:["Mar–abr (evitant fred tardà)."]
+      notes:[
+  "Poda principal entre març i abril, quan baixa el risc de fred tardà.",
+  "Convé eliminar branques seques, mal orientades o que espesseixen massa la copa.",
+  "Els retocs de temporada han de ser suaus."
+]
     },
     {
       id:"roses", name:"Rosers", type:"ornamental",
@@ -91,7 +95,11 @@ const PRUNE_DATA = {
         green_summer:[0,0,0,0,1,1,1,1,1,0,0,0],
         touchup:[0,0,0,0,1,1,1,1,1,1,0,0]
       },
-      notes:["Poda principal feb–mar; manteniment temporada."]
+      notes:[
+  "Poda principal entre febrer i març per estimular rebrot i floració.",
+  "Durant la temporada es poden anar traient flors passades, branques seques i brots desordenats.",
+  "Els retocs d’estiu i tardor són de manteniment, no de renovació forta."
+]
     },
     {
       id:"hydrangea", name:"Hortènsies", type:"ornamental",
@@ -99,7 +107,11 @@ const PRUNE_DATA = {
         winter_structural:[0,1,1,0,0,0,0,0,0,0,0,0],
         green_summer:[0,0,0,0,0,0,1,1,1,0,0,0]
       },
-      notes:["Feb–mar sanejant/aclarint (segons varietat)."]
+      notes:[
+  "Poda de sanejament i aclarida entre febrer i març, segons el tipus d’hortènsia.",
+  "A l’estiu només convé retirar parts seques o descompensades si cal.",
+  "No totes les varietats admeten la mateixa intensitat de poda."
+]
     },
     {
       id:"hedges", name:"Bardisses (xiprer/llorer)", type:"bardissa",
@@ -108,7 +120,11 @@ const PRUNE_DATA = {
         green_summer:[0,0,0,0,1,1,0,0,0,0,0,0],
         touchup:[0,0,0,0,0,0,0,0,1,1,0,0]
       },
-      notes:["Retall principal març; retocs maig–juny i set–oct."]
+      notes:[
+  "Retall principal a finals d’hivern o inici de primavera per definir la forma general.",
+  "A finals de primavera i inici d’estiu es poden fer repassos per mantenir densitat i línia.",
+  "Els retocs de tardor han de ser lleus."
+]
     },
 
     // --- Fruiters mediterranis habituals ---
@@ -200,9 +216,10 @@ const PRUNE_DATA = {
         green_summer:[0,0,0,0,1,1,1,0,0,0,0,0]
       },
       notes:[
-        "Evita poda d’hivern (sangrat). Millor finals primavera–estiu (mai–juliol).",
-        "Retalls moderats i talls nets."
-      ]
+  "Evita la poda d’hivern perquè la noguera tendeix a sagnar molt.",
+  "Millor fer retalls moderats entre finals de primavera i estiu.",
+  "Convé limitar-se a talls nets i no excessius."
+]
     },
     {
       id:"mulberry", name:"Morera", type:"ornamental",
