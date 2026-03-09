@@ -9,10 +9,10 @@ const months = ["Gen","Feb","Mar","Abr","Mai","Jun","Jul","Ago","Set","Oct","Nov
 // -----------------------------
 const PRUNE_DATA = {
   legend: {
-    winter_structural: "Poda d’hivern (estructura/sanitària)",
-    green_summer: "Aclarida/xupons/aireig",
-    touchup: "Retocs estètics",
-  },
+  winter_structural: "Poda principal (estructura, renovació i sanejament)",
+  green_summer: "Retocs en verd (xupons, aclarida i aireig)",
+  touchup: "Retocs suaus o de forma",
+},
   plants: [
     // --- Base ---
     {
