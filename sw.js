@@ -1,6 +1,6 @@
 // sw.js — MeteoValls (scope-safe + anti-stale ESM + PUSH)
 
-const VERSION = "2026-02-21-001"; // 🔁 PUJA AIXÒ SEMPRE
+const VERSION = "2026-04-06-002"; // 🔁 PUJA AIXÒ SEMPRE
 const CACHE_PREFIX = "meteovalls-";
 const CACHE_NAME = `${CACHE_PREFIX}${VERSION}`;
 
@@ -200,7 +200,11 @@ self.addEventListener("push", (event) => {
         const r = await fetch(lastUrl, { cache: "no-store" });
         if (r.ok) {
           const t = await r.text();
-          try { data = JSON.parse(t); } catch { data = { body: t }; }
+          try {
+            const json = JSON.parse(t);
+            // /api/push/last retorna {ok, rec:{title,body,tag,url}}
+            data = json?.rec || json;
+          } catch { data = { body: t }; }
         }
       } catch {}
     }
