@@ -67,11 +67,11 @@ function heatIndexC(tC, rh){
   return hiC;
 }
 
-// Wind Chill (Environment Canada) en °C. Aplica amb T<=10°C i vent>4.8 km/h
+// Wind Chill (Environment Canada) en °C. Aplica amb T<=15°C i vent>4.8 km/h
 // Si no aplica, retorna null
 function windChillC(tC, windKmh){
   if (!Number.isFinite(tC) || !Number.isFinite(windKmh)) return null;
-  if (tC > 10 || windKmh <= 4.8) return null;
+  if (tC > 15 || windKmh <= 4.8) return null;
 
   const v = windKmh;
   const wc =
