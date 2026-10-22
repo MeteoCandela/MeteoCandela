@@ -443,9 +443,10 @@ export function initPrevisio() {
       renderDaily(rotateDailyToToday(fx.daily));
     } catch(e){
       console.error(e);
-      if (status) status.textContent = `Error /api/forecast: ${e?.message || e}`;
-      const hw = $("hourlyWrap"); if (hw) hw.innerHTML = `<p class="muted-line">Error carregant previsió.</p>`;
-      const dw = $("dailyWrap");  if (dw) dw.innerHTML = `<p class="muted-line">Error carregant previsió.</p>`;
+      if (status) status.textContent = "No s'ha pogut carregar la previsió.";
+      const retryBtn = `<button onclick="location.reload()" class="btn" style="margin-top:10px">🔄 Reintenta</button>`;
+      const hw = $("hourlyWrap"); if (hw) hw.innerHTML = `<p class="muted-line">Error carregant la previsió. Comprova la connexió.</p>${retryBtn}`;
+      const dw = $("dailyWrap");  if (dw) dw.innerHTML = `<p class="muted-line">Error carregant la previsió.</p>`;
     }
   }
 
@@ -521,7 +522,7 @@ export function initPrevisio() {
 
   initSelectors().catch(async (e) => {
     console.error(e);
-    if (status) status.textContent = `Error inicialitzant selectors: ${e?.message || e}`;
+    if (status) status.textContent = "No s'han pogut carregar els municipis. Mostrant Valls per defecte.";
 
     if (zoneSel) zoneSel.innerHTML = `<option value="altcamp">Municipis Alt Camp</option>`;
     if (muniSel) muniSel.innerHTML = `<option value="${VALLS_ID}">★ Valls</option>`;

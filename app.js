@@ -15,7 +15,20 @@ async function initPushIfPresent() {
   }
 }
 
+function markActiveNav() {
+  const cur = location.pathname;
+  document.querySelectorAll("a.quick-nav__btn, a.crumbs__btn").forEach(a => {
+    try {
+      const href = new URL(a.href, location.origin).pathname;
+      const match = href === cur ||
+        (href.replace(/\/index\.html$/, "/") === cur.replace(/\/index\.html$/, "/"));
+      if (match) a.setAttribute("aria-current", "page");
+    } catch {}
+  });
+}
+
 async function boot() {
+  markActiveNav();
   const page = document.body?.dataset?.page || "home";
 
   try {
