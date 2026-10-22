@@ -527,6 +527,9 @@ export function initAgricola() {
       return;
     }
 
+    const card = document.getElementById("cardAgroCurrent");
+    if (card) card.removeAttribute("data-loading");
+
     setSourceLine(`Font: ${tag}`);
     setText("lastUpdated", `Actualitzat: ${fmtDate(row.ts)}`);
     renderStatus(row.ts, state.hb);

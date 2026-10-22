@@ -137,6 +137,9 @@ function computeTodayRows(historyRows, current) {
 }
 
 function renderCurrent(current, historyRows) {
+  const card = document.getElementById("cardCurrent");
+  if (card) card.removeAttribute("data-loading");
+
   // KPIs
   if ($("kpiTemp")) $("kpiTemp").textContent = current.temp_c == null ? "—" : fmt1(current.temp_c);
   if ($("kpiHum"))  $("kpiHum").textContent  = current.hum_pct == null ? "—" : String(Math.round(current.hum_pct));

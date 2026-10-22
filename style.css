@@ -1079,6 +1079,35 @@ h2{
 .muni-picker--double select{ min-width: 220px; }
 
 /* =========================
+   SKELETON LOADER — shimmer en KPIs mentre data-loading és present
+   ========================= */
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+[data-loading] .kpi-val,
+[data-loading] .chip > strong {
+  color: transparent !important;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,.06) 25%,
+    rgba(255,255,255,.14) 50%,
+    rgba(255,255,255,.06) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 6px;
+  pointer-events: none;
+  user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-loading] .kpi-val,
+  [data-loading] .chip > strong { animation: none; }
+}
+
+/* =========================
    HOME "ACTUAL" — KPIs/chips (SCOPAT)
    IMPORTANT: no toquem .kpi global per no trencar altres pàgines
    ========================= */
