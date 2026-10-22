@@ -1,6 +1,6 @@
 // sw.js — MeteoValls (scope-safe + anti-stale ESM + PUSH)
 
-const VERSION = "2026-10-22-002"; // 🔁 PUJA AIXÒ SEMPRE
+const VERSION = "2026-10-22-003"; // 🔁 PUJA AIXÒ SEMPRE
 const CACHE_PREFIX = "meteovalls-";
 const CACHE_NAME = `${CACHE_PREFIX}${VERSION}`;
 
@@ -28,6 +28,9 @@ const PRECACHE_URLS = [
   inScope("/style.css"),
   inScope("/app.js"),
   inScope("/offline.html"),
+  inScope("/lib/faq-accordion.js"),
+  inScope("/lib/app-cta.js"),
+  inScope("/lib/mv-accordion.js"),
   inScope("/avisos.html"),
   inScope("/poda.html"),
   inScope("/poda.css"),
