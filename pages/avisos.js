@@ -2,6 +2,7 @@
 import { getApi } from "../lib/env.js";
 import { $ } from "../lib/dom.js";
 import { fetchJson } from "../lib/api.js";
+import { escapeHtml } from "../lib/format.js";
 
 // =========================
 // Estils / textos (Meteocat 0-6)
@@ -325,7 +326,7 @@ if (card) {
       lastDayKey = dayKey;
       const day = document.createElement("div");
       day.className = "mv-alert-day";
-      day.innerHTML = `<div class="mv-alert-day__title">${prettyDia(g.dia)}</div>`;
+      day.innerHTML = `<div class="mv-alert-day__title">${escapeHtml(prettyDia(g.dia))}</div>`;
       listEl.appendChild(day);
     }
 
@@ -348,16 +349,16 @@ if (card) {
     card.innerHTML = `
   <div class="mv-alert-item__head">
     <div>
-      <div class="mv-alert-item__title">${title}</div>
+      <div class="mv-alert-item__title">${escapeHtml(title)}</div>
       <div class="mv-alert-item__meta">Perill: ${perillText(g.perill)} ${perillBadge(g.perill)}</div>
       ${periodesHtml ? `<div class="mv-chips">${periodesHtml}</div>` : ""}
     </div>
-    <div class="mv-alert-item__meta">${g.comarca || ""}</div>
+    <div class="mv-alert-item__meta">${escapeHtml(g.comarca || "")}</div>
   </div>
 
-  <div class="mv-alert-item__txt">${g.coment || "—"}</div>
+  <div class="mv-alert-item__txt">${escapeHtml(g.coment || "—")}</div>
 
-  ${llindarNice ? `<div class="mv-threshold">Llindar: ${llindarNice}</div>` : ""}
+  ${llindarNice ? `<div class="mv-threshold">Llindar: ${escapeHtml(llindarNice)}</div>` : ""}
 `;
 
     listEl.appendChild(card);
