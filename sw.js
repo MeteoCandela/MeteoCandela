@@ -1,6 +1,6 @@
 // sw.js — MeteoValls (scope-safe + anti-stale ESM + PUSH)
 
-const VERSION = "2026-10-22-001"; // 🔁 PUJA AIXÒ SEMPRE
+const VERSION = "2026-10-22-002"; // 🔁 PUJA AIXÒ SEMPRE
 const CACHE_PREFIX = "meteovalls-";
 const CACHE_NAME = `${CACHE_PREFIX}${VERSION}`;
 
@@ -23,9 +23,11 @@ const PRECACHE_URLS = [
   inScope("/historic.html"),
   inScope("/sobre.html"),
   inScope("/agricola.html"),
-  inScope("/agricola_historic.html"),
+  inScope("/agricola-historic.html"),
   inScope("/site.webmanifest"),
   inScope("/style.css"),
+  inScope("/app.js"),
+  inScope("/offline.html"),
   inScope("/avisos.html"),
   inScope("/poda.html"),
   inScope("/poda.css"),
@@ -104,8 +106,10 @@ async function networkFirst(req, cacheKey) {
       (await cache.match(cacheKey || req.url)) ||
       (await cache.match(req, { ignoreSearch: true })) ||
       (await caches.match(req, { ignoreSearch: true }));
+    if (cached) return cached;
+    const offlinePage = await caches.match(inScope("/offline.html"));
     return (
-      cached ||
+      offlinePage ||
       new Response("Offline", {
         status: 503,
         headers: { "content-type": "text/plain; charset=utf-8" },
