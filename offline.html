@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Sense connexió · MeteoValls</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0b1220">
+  <link rel="stylesheet" href="./style.css?v=2026-10-22-001">
+  <style>
+    .offline-wrap{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      min-height:60vh;
+      text-align:center;
+      gap:16px;
+      padding:24px;
+    }
+    .offline-icon{ font-size:3.5rem; }
+    .offline-title{ font-size:1.4rem; font-weight:700; margin:0; }
+    .offline-msg{ opacity:.7; max-width:360px; margin:0; line-height:1.5; }
+    .offline-btn{
+      margin-top:8px;
+      padding:10px 24px;
+      border-radius:10px;
+      background:#2563eb;
+      color:#fff;
+      border:none;
+      font-size:1rem;
+      font-weight:600;
+      cursor:pointer;
+    }
+  </style>
+</head>
+<body data-page="offline">
+  <header class="hero hero--small">
+    <div class="hero__overlay"></div>
+    <div class="hero__content">
+      <h1>MeteoValls</h1>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="card span2">
+      <div class="offline-wrap">
+        <div class="offline-icon">📡</div>
+        <h2 class="offline-title">Sense connexió</h2>
+        <p class="offline-msg">No s'ha pogut carregar la pàgina. Comprova la connexió a internet i torna-ho a intentar.</p>
+        <button class="offline-btn" onclick="location.reload()">Reintenta</button>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
