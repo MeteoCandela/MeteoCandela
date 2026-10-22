@@ -419,7 +419,7 @@ export function initHome() {
 
       // Badge Meteocat
       try {
-        const b = await import(`../lib/meteocat_badge.js?v=${Date.now()}`);
+        const b = await import("../lib/meteocat_badge.js");
         b?.initMeteocatBadge?.();
       } catch (e) {
         console.warn("Badge Meteocat no disponible", e);
@@ -427,7 +427,7 @@ export function initHome() {
 
       // Avisos XL
       try {
-        const m = await import(`../lib/alerts_ui.js?v=${Date.now()}`);
+        const m = await import("../lib/alerts_ui.js");
         m?.initAlertsXL?.({ pollMs: 60000 });
       } catch (e) {
         console.warn("Alerts XL no disponible", e);
