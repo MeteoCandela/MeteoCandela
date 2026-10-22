@@ -1,6 +1,8 @@
 // pages/previsio.js
 import { $ } from "../lib/dom.js";
 import { getApi } from "../lib/env.js";
+import { fmt1, fmtInt } from "../lib/format.js";
+import { fetchJson } from "../lib/api.js";
 
 // -------- LocalStorage (més robust: per ID de zona) --------
 const LS_ZONE_ID = "meteovalls:fx_zone_id";
@@ -29,14 +31,6 @@ function hourNum(hourStr){
   return m ? Number(m[1]) : NaN;
 }
 
-function fmt1(x){
-  const n = Number(x);
-  return Number.isFinite(n) ? n.toFixed(1) : "—";
-}
-function fmtInt(x){
-  const n = Number(x);
-  return Number.isFinite(n) ? String(Math.round(n)) : "—";
-}
 function fmt0orDash(x){
   const n = Number(x);
   return Number.isFinite(n) ? String(Math.round(n)) : "—";
@@ -170,20 +164,6 @@ function fmtWind(h){
   const dTxt = dir ? ` ${dir}` : "";
   const gust = Number.isFinite(g) ? `<div class="fx-gust">ratxa ${Math.round(g)} km/h</div>` : "";
   return `<div class="fx-wind-main">${vTxt}${dTxt}</div>${gust}`;
-}
-
-async function fetchJson(url){
-  const res = await fetch(url, { cache: "no-store" });
-  const txt = await res.text();
-  let data = null;
-  try { data = txt ? JSON.parse(txt) : null; } catch { data = null; }
-  if (!res.ok) {
-    const msg = (data && (data.error || data.detail))
-      ? `${data.error || "error"} ${data.detail || ""}`.trim()
-      : txt.slice(0,140);
-    throw new Error(`HTTP ${res.status}: ${msg}`);
-  }
-  return data;
 }
 
 function getSelectedText(selectId){

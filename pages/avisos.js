@@ -1,7 +1,7 @@
 // pages/avisos.js
 import { getApi } from "../lib/env.js";
-
-function $(id){ return document.getElementById(id); }
+import { $ } from "../lib/dom.js";
+import { fetchJson } from "../lib/api.js";
 
 // =========================
 // Estils / textos (Meteocat 0-6)
@@ -146,21 +146,6 @@ function setHeader({ updated_ts = null, message = "—" } = {}){
 
   // ✅ Eliminem "Dada: fa X min" (queda lleig quan és gran)
   if (stEl) stEl.textContent = "";
-}
-
-// =========================
-// Fetch
-// =========================
-
-async function fetchJson(url, opts){
-  const res = await fetch(url, opts);
-  let j = null;
-  try { j = await res.json(); } catch {}
-  if (!res.ok) {
-    const msg = j?.error || j?.message || `HTTP ${res.status}`;
-    throw new Error(msg);
-  }
-  return j;
 }
 
 // =========================

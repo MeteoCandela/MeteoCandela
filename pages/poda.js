@@ -1,6 +1,8 @@
 // pages/poda.js (ESM) — Calendari anual de poda + semàfor AEMET (Alt Camp)
 
 import { getApi } from "../lib/env.js";
+import { $ } from "../lib/dom.js";
+import { fetchJson } from "../lib/api.js";
 
 const months = ["Gen","Feb","Mar","Abr","Mai","Jun","Jul","Ago","Set","Oct","Nov","Des"];
 
@@ -315,8 +317,6 @@ const PRUNE_DATA = {
 // -----------------------------
 // HELPERS
 // -----------------------------
-const $ = (id) => document.getElementById(id);
-
 const numOrNull = (x) => {
   const n = Number(x);
   return Number.isFinite(n) ? n : null;
@@ -579,20 +579,6 @@ function renderGrid({ plantId="", type="", summary=null } = {}){
 // -----------------------------
 // API forecast
 // -----------------------------
-async function fetchJson(url){
-  const res = await fetch(url, { cache: "no-store" });
-  const txt = await res.text();
-  let data = null;
-  try { data = txt ? JSON.parse(txt) : null; } catch { data = null; }
-  if (!res.ok) {
-    const msg = (data && (data.error || data.detail))
-      ? `${data.error || "error"} ${data.detail || ""}`.trim()
-      : txt.slice(0, 180);
-    throw new Error(`HTTP ${res.status}: ${msg}`);
-  }
-  return data;
-}
-
 async function fetchForecast(muniId){
   const api = getApi?.() || {};
   const ORIGIN = window.location.origin;
