@@ -1,18 +1,7 @@
 // pages/historic.js
 import { $ } from "../lib/dom.js";
 import { getApi } from "../lib/env.js";
-
-/* =========================
-   Formatters
-   ========================= */
-function fmt1(x){
-  const n = Number(x);
-  return Number.isFinite(n) ? n.toFixed(1) : "—";
-}
-function fmtInt(x){
-  const n = Number(x);
-  return Number.isFinite(n) ? String(Math.round(n)) : "—";
-}
+import { fmt1, fmtInt } from "../lib/format.js";
 function fmtDateCA(ymd) {
   try {
     const [y, m, d] = String(ymd).slice(0,10).split("-").map(Number);
