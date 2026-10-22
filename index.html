@@ -431,52 +431,8 @@
   </footer>
 
   <!-- Només una FAQ oberta a la vegada -->
-  <script>
-    (function () {
-      var box = document.getElementById("faq");
-      if (!box) return;
-
-      var items = Array.prototype.slice.call(box.querySelectorAll("details.faq-item"));
-      items.forEach(function (d) {
-        d.addEventListener("toggle", function () {
-          if (!d.open) return;
-          items.forEach(function (other) {
-            if (other !== d) other.open = false;
-          });
-        });
-      });
-    })();
-  </script>
-
-  <!-- CTA contextual Google Play -->
-  <script>
-    (function () {
-      var ua = navigator.userAgent || "";
-      var isAndroid = /Android/i.test(ua);
-      var isMobileUA = /Mobi|Android|iPhone|iPad|iPod/i.test(ua);
-      var isStandalone = false;
-
-      try {
-        isStandalone =
-          (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
-          (window.matchMedia && window.matchMedia("(display-mode: fullscreen)").matches) ||
-          (navigator.standalone === true);
-      } catch (e) {
-        isStandalone = false;
-      }
-
-      var heroPlayWrap = document.getElementById("heroPlayWrap");
-      var appPromoCard = document.getElementById("appPromoCard");
-
-      if (isAndroid && isMobileUA && !isStandalone) {
-        if (heroPlayWrap) heroPlayWrap.style.display = "flex";
-      }
-
-      if (!isMobileUA) {
-        if (appPromoCard) appPromoCard.style.display = "block";
-      }
-    })();
-  </script>
+  <script defer src="./lib/faq-accordion.js"></script>
+  <script defer src="./lib/app-cta.js"></script>
 
   <button id="btnInstallFab" class="install-fab" type="button" style="display:none;" aria-label="Instal·la l'app">
     ⬇️ Instal·la l’app

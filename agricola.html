@@ -560,22 +560,7 @@
     <span style="margin-left:12px;"></span>
   </footer>
 
-  <script>
-    (function () {
-      const root = document.querySelector('.mv-accordion[data-accordion="single"]');
-      if (!root) return;
-
-      const items = Array.from(root.querySelectorAll('details.mv-acc-item'));
-      items.forEach((d) => {
-        d.addEventListener('toggle', () => {
-          if (!d.open) return;
-          items.forEach((other) => {
-            if (other !== d) other.open = false;
-          });
-        });
-      });
-    })();
-  </script>
+  <script defer src="./lib/mv-accordion.js"></script>
 
   <script type="module" src="./app.js?v=2026-10-22-001"></script>
 </body>
