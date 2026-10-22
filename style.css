@@ -233,7 +233,7 @@ h2{
 }
 
 .select:focus, .btn:focus{
-  outline: 2px solid rgba(255,255,255,.25);
+  outline: 2px solid rgba(255,255,255,.8);
   outline-offset: 2px;
 }
 
@@ -1049,6 +1049,9 @@ h2{
   outline: none;
   border-color: rgba(255,255,255,.55);
   box-shadow: 0 0 0 3px rgba(255,255,255,.12), 0 8px 22px rgba(0,0,0,.32);
+}
+@media (forced-colors: active){
+  .muni-picker select:focus{ outline: 2px solid ButtonText; }
 }
 
 /* doble selector (si l’uses) */
