@@ -182,7 +182,7 @@ function renderError(msg){
   if (metaEl) metaEl.textContent = safeText(msg, "Error carregant avisos.");
   if (hintEl) {
     hintEl.style.display = "block";
-    hintEl.textContent = "Prova de refrescar o torna-ho a intentar més tard.";
+    hintEl.innerHTML = `Prova de refrescar o torna-ho a intentar més tard. <button onclick="location.reload()" class="btn" style="margin-top:8px;font-size:13px">🔄 Reintenta</button>`;
   }
 }
 
