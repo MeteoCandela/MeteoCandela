@@ -215,6 +215,157 @@ function renderSummary(rows){
 }
 
 /* =========================
+   Charts
+   ========================= */
+function fmtDayLabel(ymd) {
+  try {
+    const [, m, d] = String(ymd).slice(0, 10).split("-");
+    return `${d}/${m}`;
+  } catch { return String(ymd || ""); }
+}
+
+function destroyHistCharts() {
+  try { window.__histChartTemp?.destroy?.(); } catch {}
+  try { window.__histChartRain?.destroy?.(); } catch {}
+  window.__histChartTemp = window.__histChartRain = null;
+}
+
+function buildHistCharts(rows) {
+  destroyHistCharts();
+
+  const tempSection = document.getElementById("chartHistTempSection");
+  const rainSection = document.getElementById("chartHistRainSection");
+
+  const multiDay = rows && rows.length > 1;
+
+  if (!multiDay || typeof window.Chart === "undefined") {
+    if (tempSection) tempSection.style.display = "none";
+    if (rainSection) rainSection.style.display = "none";
+    return;
+  }
+
+  const sorted = rows
+    .slice()
+    .sort((a, b) => String(a.date ?? a.day).localeCompare(String(b.date ?? b.day)));
+
+  const labels = sorted.map(r => fmtDayLabel(r.date ?? r.day));
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+
+  const commonBase = {
+    responsive: true,
+    maintainAspectRatio: false,
+    devicePixelRatio: dpr,
+    layout: { padding: { top: 6, right: 4, bottom: 4 } },
+    interaction: { mode: "nearest", intersect: false, axis: "x" },
+    scales: {
+      x: {
+        type: "category",
+        ticks: { autoSkip: true, maxTicksLimit: 14, maxRotation: 45, minRotation: 0, padding: 4 },
+        grid: { drawTicks: true }
+      }
+    }
+  };
+
+  // ---- Temperatura ----
+  const tempCanvas = document.getElementById("chartHistTemp");
+  if (tempCanvas && tempSection) {
+    const tmin = sorted.map(r => { const v = Number(r.temp_min_c ?? r.tmin); return Number.isFinite(v) ? v : null; });
+    const tmax = sorted.map(r => { const v = Number(r.temp_max_c ?? r.tmax); return Number.isFinite(v) ? v : null; });
+    const tavg = sorted.map(r => { const v = Number(r.temp_avg_c ?? r.tavg); return Number.isFinite(v) ? v : null; });
+
+    tempSection.style.display = "";
+    if (document.getElementById("chartHistTempTitle")) {
+      document.getElementById("chartHistTempTitle").textContent = `Temperatura (°C) · ${rows.length} dies`;
+    }
+
+    window.__histChartTemp = new Chart(tempCanvas, {
+      type: "line",
+      data: {
+        labels,
+        datasets: [
+          { label: "T màxima", data: tmax, tension: 0.2, pointRadius: rows.length > 60 ? 0 : 2, pointHoverRadius: 5, borderWidth: 1.4, borderDash: [5, 3], fill: false },
+          { label: "T mínima", data: tmin, tension: 0.2, pointRadius: rows.length > 60 ? 0 : 2, pointHoverRadius: 5, borderWidth: 1.4, borderDash: [5, 3], fill: false },
+          { label: "T mitjana", data: tavg, tension: 0.25, pointRadius: rows.length > 60 ? 0 : 2, pointHoverRadius: 5, borderWidth: 1.8, fill: false },
+        ]
+      },
+      options: {
+        ...commonBase,
+        plugins: {
+          legend: { display: true },
+          tooltip: {
+            displayColors: false,
+            callbacks: {
+              title: (items) => {
+                const idx = items?.[0]?.dataIndex;
+                return idx != null ? fmtDateCA(sorted[idx]?.date ?? sorted[idx]?.day) : "";
+              },
+              label: (ctx) => {
+                const v = ctx.parsed?.y;
+                return v == null ? "—" : `${ctx.dataset.label}: ${Number(v).toFixed(1)} °C`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // ---- Pluja ----
+  const rainCanvas = document.getElementById("chartHistRain");
+  if (rainCanvas && rainSection) {
+    const rain = sorted.map(r => { const v = Number(r.rain_mm ?? r.rain); return Number.isFinite(v) ? v : 0; });
+    const hasRain = rain.some(v => v > 0);
+
+    if (!hasRain) {
+      rainSection.style.display = "none";
+    } else {
+      rainSection.style.display = "";
+      if (document.getElementById("chartHistRainTitle")) {
+        const total = rain.reduce((a, b) => a + b, 0);
+        document.getElementById("chartHistRainTitle").textContent =
+          `Pluja diària (mm) · total ${total.toFixed(1)} mm`;
+      }
+
+      window.__histChartRain = new Chart(rainCanvas, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [{
+            label: "Pluja (mm)",
+            data: rain,
+            borderWidth: 0,
+            borderRadius: 3,
+          }]
+        },
+        options: {
+          ...commonBase,
+          scales: {
+            ...commonBase.scales,
+            y: { beginAtZero: true }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              displayColors: false,
+              callbacks: {
+                title: (items) => {
+                  const idx = items?.[0]?.dataIndex;
+                  return idx != null ? fmtDateCA(sorted[idx]?.date ?? sorted[idx]?.day) : "";
+                },
+                label: (ctx) => {
+                  const v = ctx.parsed?.y;
+                  return v == null ? "—" : `Pluja: ${Number(v).toFixed(1)} mm`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+  }
+}
+
+/* =========================
    Fetch daily summary
    ========================= */
 async function fetchDaily(DAILY_URL) {
@@ -349,6 +500,7 @@ if (!d) {
 
 render(filtered);
 renderSummary(filtered);
+buildHistCharts(filtered);
 
       // Badge anual/mensual (sempre clar)
       updateFilterBadge(filterInfo, y, m, d);
