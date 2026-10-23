@@ -23,8 +23,9 @@
 .page-calendari .field--actions .toolbar-actions{display:flex;gap:8px;flex-wrap:wrap}
 
 .page-calendari .view-switch{display:flex;gap:8px;flex-wrap:wrap}
-.page-calendari .seg{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:inherit;padding:8px 12px;border-radius:999px}
-.page-calendari .seg.active{background:rgba(90,169,255,.18)}
+.page-calendari .seg{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:inherit;padding:8px 12px;border-radius:999px;cursor:pointer;transition:background .15s}
+.page-calendari .seg:hover{background:rgba(255,255,255,.09)}
+.page-calendari .seg.active{background:rgba(90,169,255,.18);border-color:rgba(90,169,255,.4)}
 
 .page-calendari .mc-card{overflow:hidden}
 .page-calendari .mc-card__head{padding:16px;border-top:4px solid rgba(255,255,255,.18)}
@@ -82,7 +83,8 @@
 .page-calendari .family-block__head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .page-calendari .family-block__head h3{margin:0}
 .page-calendari .family-block__grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
-.page-calendari .family-mini{padding:12px;text-align:left;border-radius:16px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03);color:inherit}
+.page-calendari .family-mini{padding:12px;text-align:left;border-radius:16px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03);color:inherit;cursor:pointer;transition:background .15s}
+.page-calendari .family-mini:hover{background:rgba(255,255,255,.06)}
 .page-calendari .family-mini strong{display:block;margin-bottom:4px}
 
 .page-calendari .table-wrap{overflow:auto}
