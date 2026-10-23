@@ -304,7 +304,7 @@ function buildHistCharts(rows) {
       options: {
         ...commonBase,
         plugins: {
-          legend: { display: true, labels: { filter: (item) => item.datasetIndex < 3 } },
+          legend: { display: true, labels: { filter: (item) => item.text !== "Màx" && item.text !== "Mín" } },
           tooltip: {
             displayColors: false,
             filter: (item) => item.datasetIndex < 3,
