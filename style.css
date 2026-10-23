@@ -246,11 +246,14 @@ h2{
    CHARTS (Chart.js)
    ========================= */
 .chart-box{
-  min-height: 220px;
-  height: auto;
+  height: 260px;
   display: flex;
   flex-direction: column;
   min-width: 0;
+}
+
+@media (max-width: 400px){
+  .chart-box{ height: 220px; }
 }
 
 .card.chart-box h2{
@@ -274,7 +277,7 @@ h2{
 }
 
 @media (min-width: 900px){
-  .card.chart-box.span2{ min-height: 300px; height: auto; }
+  .card.chart-box.span2{ height: 300px; }
 }
 
 /* =========================
@@ -1374,7 +1377,7 @@ html.fs-lock, body.fs-lock { overflow: hidden; }
 /* =========================
    Push UI
    ========================= */
-.push-row { margin-bottom: 14px; min-height: 44px; }
+.push-row { margin-bottom: 14px; }
 
 .push-btn{
   display:inline-flex;
