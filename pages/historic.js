@@ -304,7 +304,7 @@ function buildHistCharts(rows) {
       options: {
         ...commonBase,
         plugins: {
-          legend: { display: true },
+          legend: { display: true, labels: { filter: (item) => item.datasetIndex < 3 } },
           tooltip: {
             displayColors: false,
             filter: (item) => item.datasetIndex < 3,
