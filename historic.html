@@ -20,7 +20,7 @@
   <meta property="og:url" content="https://meteocandela.cat/historic.html">
   <meta property="og:image" content="https://meteocandela.cat/og-image.png">
 
-  <link rel="stylesheet" href="/style.css?v=2026-10-23-003">
+  <link rel="stylesheet" href="/style.css?v=2026-10-23-004">
 </head>
 
 <body data-page="historic">
@@ -110,6 +110,17 @@
       </div>
     </section>
 
+    <!-- Gràfiques històric -->
+    <section class="card chart-box span2" id="chartHistTempSection" style="display:none">
+      <h2 id="chartHistTempTitle">Temperatura (°C)</h2>
+      <canvas id="chartHistTemp"></canvas>
+    </section>
+
+    <section class="card chart-box span2" id="chartHistRainSection" style="display:none">
+      <h2 id="chartHistRainTitle">Pluja diària (mm)</h2>
+      <canvas id="chartHistRain"></canvas>
+    </section>
+
     <!-- Taula / Cards -->
     <section class="card span2">
       <h2>Dades d’històric diari</h2>
@@ -151,6 +162,7 @@
     <span>© <span id="year"></span> MeteoValls</span>
   </footer>
 
-  <script type="module" src="/app.js?v=2026-10-23-003"></script>
+  <script defer src="./vendor/chart.umd.min.js"></script>
+  <script type="module" src="/app.js?v=2026-10-23-004"></script>
 </body>
 </html>
