@@ -280,8 +280,13 @@ function buildHistCharts(rows) {
     const periodMin = finiteMin.length ? Math.min(...finiteMin) : null;
 
     tempSection.style.display = "";
-    if (document.getElementById("chartHistTempTitle")) {
-      document.getElementById("chartHistTempTitle").textContent = `Temperatura (°C) · ${rows.length} dies`;
+    const titleEl = document.getElementById("chartHistTempTitle");
+    if (titleEl) {
+      const extras = [
+        periodMax != null ? `màx ${periodMax.toFixed(1)} °C` : null,
+        periodMin != null ? `mín ${periodMin.toFixed(1)} °C` : null,
+      ].filter(Boolean).join(" / ");
+      titleEl.textContent = `Temperatura (°C) · ${rows.length} dies${extras ? ` · ${extras}` : ""}`;
     }
 
     window.__histChartTemp = new Chart(tempCanvas, {
@@ -292,8 +297,8 @@ function buildHistCharts(rows) {
           { label: "T màxima", data: tmax, tension: 0.2, pointRadius: rows.length > 60 ? 0 : 2, pointHoverRadius: 5, borderWidth: 1.4, borderDash: [5, 3], fill: false },
           { label: "T mínima", data: tmin, tension: 0.2, pointRadius: rows.length > 60 ? 0 : 2, pointHoverRadius: 5, borderWidth: 1.4, borderDash: [5, 3], fill: false },
           { label: "T mitjana", data: tavg, tension: 0.25, pointRadius: rows.length > 60 ? 0 : 2, pointHoverRadius: 5, borderWidth: 1.8, fill: false },
-          ...(periodMax != null ? [{ label: `Rècord màx: ${periodMax.toFixed(1)} °C`, data: labels.map(() => periodMax), tension: 0, pointRadius: 0, pointHoverRadius: 0, borderWidth: 1, borderDash: [2, 4], fill: false }] : []),
-          ...(periodMin != null ? [{ label: `Rècord mín: ${periodMin.toFixed(1)} °C`, data: labels.map(() => periodMin), tension: 0, pointRadius: 0, pointHoverRadius: 0, borderWidth: 1, borderDash: [2, 4], fill: false }] : []),
+          ...(periodMax != null ? [{ label: "Màx", data: labels.map(() => periodMax), tension: 0, pointRadius: 0, pointHoverRadius: 0, borderWidth: 1, borderDash: [2, 4], fill: false }] : []),
+          ...(periodMin != null ? [{ label: "Mín", data: labels.map(() => periodMin), tension: 0, pointRadius: 0, pointHoverRadius: 0, borderWidth: 1, borderDash: [2, 4], fill: false }] : []),
         ]
       },
       options: {
