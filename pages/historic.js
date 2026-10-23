@@ -2,6 +2,7 @@
 import { $ } from "../lib/dom.js";
 import { getApi } from "../lib/env.js";
 import { fmt1, fmtInt } from "../lib/format.js";
+import { initChartFullscreen } from "../lib/fullscreen_chart.js";
 function fmtDateCA(ymd) {
   try {
     const [y, m, d] = String(ymd).slice(0,10).split("-").map(Number);
@@ -363,6 +364,8 @@ function buildHistCharts(rows) {
       });
     }
   }
+
+  initChartFullscreen(["chartHistTemp", "chartHistRain"]);
 }
 
 /* =========================
