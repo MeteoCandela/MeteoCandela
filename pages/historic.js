@@ -376,6 +376,7 @@ function buildHistCharts(rows) {
   if (rainCanvas && rainSection) {
     const rain = sorted.map(r => { const v = Number(r.rain_mm ?? r.rain); return Number.isFinite(v) ? v : 0; });
     const hasRain = rain.some(v => v > 0);
+    const rainCum = rain.reduce((acc, v) => { acc.push((acc.length ? acc[acc.length - 1] : 0) + v); return acc; }, []);
 
     if (!hasRain) {
       rainSection.style.display = "none";
@@ -414,8 +415,12 @@ function buildHistCharts(rows) {
                   return idx != null ? fmtDateCA(sorted[idx]?.date ?? sorted[idx]?.day) : "";
                 },
                 label: (ctx) => {
+                  const idx = ctx.dataIndex;
                   const v = ctx.parsed?.y;
-                  return v == null ? "—" : `Pluja: ${Number(v).toFixed(1)} mm`;
+                  const cum = rainCum[idx];
+                  const dayStr = v == null ? "—" : `Pluja: ${Number(v).toFixed(1)} mm`;
+                  const cumStr = (cum != null && Number.isFinite(cum)) ? `Acumulat: ${cum.toFixed(1)} mm` : null;
+                  return cumStr ? [dayStr, cumStr] : dayStr;
                 }
               }
             }
