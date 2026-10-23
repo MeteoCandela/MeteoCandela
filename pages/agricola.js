@@ -305,6 +305,7 @@ function buildLineChart(canvasId, labels, data, label, unit, rowsRef) {
       responsive: true,
       maintainAspectRatio: false,
       devicePixelRatio: dpr,
+      layout: { padding: { top: 6, right: 4 } },
       interaction: { mode: "nearest", intersect: false, axis: "x" },
       plugins: {
         legend: { display: true },
