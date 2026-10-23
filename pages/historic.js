@@ -274,6 +274,11 @@ function buildHistCharts(rows) {
     const tmax = sorted.map(r => { const v = Number(r.temp_max_c ?? r.tmax); return Number.isFinite(v) ? v : null; });
     const tavg = sorted.map(r => { const v = Number(r.temp_avg_c ?? r.tavg); return Number.isFinite(v) ? v : null; });
 
+    const finiteMax = tmax.filter(v => v != null);
+    const finiteMin = tmin.filter(v => v != null);
+    const periodMax = finiteMax.length ? Math.max(...finiteMax) : null;
+    const periodMin = finiteMin.length ? Math.min(...finiteMin) : null;
+
     tempSection.style.display = "";
     if (document.getElementById("chartHistTempTitle")) {
       document.getElementById("chartHistTempTitle").textContent = `Temperatura (°C) · ${rows.length} dies`;
@@ -287,6 +292,8 @@ function buildHistCharts(rows) {
           { label: "T màxima", data: tmax, tension: 0.2, pointRadius: rows.length > 60 ? 0 : 2, pointHoverRadius: 5, borderWidth: 1.4, borderDash: [5, 3], fill: false },
           { label: "T mínima", data: tmin, tension: 0.2, pointRadius: rows.length > 60 ? 0 : 2, pointHoverRadius: 5, borderWidth: 1.4, borderDash: [5, 3], fill: false },
           { label: "T mitjana", data: tavg, tension: 0.25, pointRadius: rows.length > 60 ? 0 : 2, pointHoverRadius: 5, borderWidth: 1.8, fill: false },
+          ...(periodMax != null ? [{ label: `Rècord màx: ${periodMax.toFixed(1)} °C`, data: labels.map(() => periodMax), tension: 0, pointRadius: 0, pointHoverRadius: 0, borderWidth: 1, borderDash: [2, 4], fill: false }] : []),
+          ...(periodMin != null ? [{ label: `Rècord mín: ${periodMin.toFixed(1)} °C`, data: labels.map(() => periodMin), tension: 0, pointRadius: 0, pointHoverRadius: 0, borderWidth: 1, borderDash: [2, 4], fill: false }] : []),
         ]
       },
       options: {
@@ -295,6 +302,7 @@ function buildHistCharts(rows) {
           legend: { display: true },
           tooltip: {
             displayColors: false,
+            filter: (item) => item.datasetIndex < 3,
             callbacks: {
               title: (items) => {
                 const idx = items?.[0]?.dataIndex;
