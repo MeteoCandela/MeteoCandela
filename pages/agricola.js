@@ -364,6 +364,7 @@ function buildBarChartET(canvasId, et0, etc) {
       responsive: true,
       maintainAspectRatio: false,
       devicePixelRatio: dpr,
+      layout: { padding: { top: 6, bottom: 8, right: 4 } },
       plugins: {
         legend: { display: true },
         tooltip: {
