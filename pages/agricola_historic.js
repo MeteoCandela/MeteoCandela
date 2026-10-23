@@ -3,6 +3,7 @@ import { $ } from "../lib/dom.js";
 import { getApi } from "../lib/env.js";
 import { fmt1 } from "../lib/format.js";
 import { loadDailySummaryD1 } from "../lib/api.js";
+import { initChartFullscreen } from "../lib/fullscreen_chart.js";
 
 const REFRESH_MS = 6 * 60 * 60 * 1000; // 6h
 
@@ -41,7 +42,16 @@ function destroyChart(ref) {
   return null;
 }
 
-function buildLineChart(canvasId, labels, datasets, yBeginAtZero = false) {
+const _chartBase = {
+  responsive: true,
+  maintainAspectRatio: false,
+  layout: { padding: { top: 6, right: 4, bottom: 4 } },
+  scales: {
+    x: { ticks: { autoSkip: true, maxTicksLimit: 14, maxRotation: 45, minRotation: 0, padding: 4 } }
+  }
+};
+
+function buildLineChart(canvasId, labels, datasets, yBeginAtZero = false, multiSeries = false) {
   const el = document.getElementById(canvasId);
   if (!el || !window.Chart) return null;
 
@@ -51,15 +61,11 @@ function buildLineChart(canvasId, labels, datasets, yBeginAtZero = false) {
     type: "line",
     data: { labels, datasets },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      ..._chartBase,
       devicePixelRatio: dpr,
-      interaction: { mode: "nearest", intersect: false, axis: "x" },
+      interaction: { mode: multiSeries ? "index" : "nearest", intersect: false, axis: "x" },
       plugins: { legend: { display: true }, tooltip: { displayColors: false } },
-      scales: {
-        x: { ticks: { autoSkip: true, maxTicksLimit: 14, maxRotation: 45, minRotation: 45 } },
-        y: { beginAtZero: yBeginAtZero }
-      }
+      scales: { ..._chartBase.scales, y: { beginAtZero: yBeginAtZero } }
     }
   });
 }
@@ -72,13 +78,13 @@ function buildBarChart(canvasId, labels, datasetLabel, data) {
 
   return new Chart(el, {
     type: "bar",
-    data: { labels, datasets: [{ label: datasetLabel, data, borderWidth: 1 }] },
+    data: { labels, datasets: [{ label: datasetLabel, data, borderWidth: 0, borderRadius: 3 }] },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      ..._chartBase,
       devicePixelRatio: dpr,
-      plugins: { legend: { display: true }, tooltip: { displayColors: false } },
-      scales: { x: { ticks: { autoSkip: true, maxTicksLimit: 14, maxRotation: 45, minRotation: 45 } }, y: { beginAtZero: true } }
+      interaction: { mode: "nearest", intersect: false, axis: "x" },
+      plugins: { legend: { display: false }, tooltip: { displayColors: false } },
+      scales: { ..._chartBase.scales, y: { beginAtZero: true } }
     }
   });
 }
@@ -205,18 +211,20 @@ export function initAgricolaHistoric() {
     state.charts.et = buildLineChart("chartEtDaily", labels, [
       { label: "ET0 (mm)", data: et0, tension: 0.25, pointRadius: 0, borderWidth: 1.8, fill: false },
       { label: "ETc (mm)", data: etc, tension: 0.25, pointRadius: 0, borderWidth: 1.8, fill: false }
-    ], true);
+    ], true, true);
 
     state.charts.gdd = buildLineChart("chartGddDaily", labels, [
       { label: `GDD base ${base} (diari)`, data: gdd, tension: 0.25, pointRadius: 0, borderWidth: 1.8, fill: false }
-    ], true);
+    ], true, false);
 
     state.charts.vpd = buildLineChart("chartVpdHours", labels, [
       { label: "Hores VPD > 1.2", data: h12, tension: 0.25, pointRadius: 0, borderWidth: 1.8, fill: false },
       { label: "Hores VPD > 1.6", data: h16, tension: 0.25, pointRadius: 0, borderWidth: 1.8, fill: false }
-    ], true);
+    ], true, true);
 
     state.charts.rain = buildBarChart("chartRainDaily", labels, "Pluja (mm/dia)", rain);
+
+    initChartFullscreen(["chartEtDaily", "chartGddDaily", "chartVpdHours", "chartRainDaily"]);
 
     const bindDetail = (chartRef) => {
       if (!chartRef) return;
