@@ -216,6 +216,52 @@ function renderSummary(rows){
 }
 
 /* =========================
+   CSV export
+   ========================= */
+function downloadCsv(rows, y, m, d) {
+  if (!rows || !rows.length) return;
+
+  const sep = ";";
+  const headers = ["Data", "T min (°C)", "T max (°C)", "T mitjana (°C)", "Pluja (mm)", "Ratxa max (km/h)", "Vent mitja (km/h)", "Humitat mitjana (%)"];
+
+  const pick = (r, ...keys) => {
+    for (const k of keys) { if (r[k] != null) return r[k]; }
+    return null;
+  };
+  const fv = (v, dec = 1) => (v == null || !Number.isFinite(Number(v))) ? "" : Number(v).toFixed(dec);
+
+  const sorted = rows
+    .slice()
+    .sort((a, b) => String(a.date ?? a.day).localeCompare(String(b.date ?? b.day)));
+
+  const lines = [
+    "﻿" + headers.join(sep),
+    ...sorted.map(r => [
+      String(r.date ?? r.day ?? ""),
+      fv(pick(r, "temp_min_c", "tmin")),
+      fv(pick(r, "temp_max_c", "tmax")),
+      fv(pick(r, "temp_avg_c", "tavg")),
+      fv(pick(r, "rain_mm", "rain")),
+      fv(pick(r, "gust_max_kmh", "gust_max", "gust")),
+      fv(pick(r, "wind_avg_kmh", "wind_avg")),
+      fv(pick(r, "hum_avg_pct", "hum_avg"), 0),
+    ].join(sep))
+  ];
+
+  const suffix = d ? d : (m ? `${y}-${m}` : y);
+  const filename = `meteovalls-historic-${suffix || "dades"}.csv`;
+
+  const blob = new Blob([lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
+}
+
+/* =========================
    Charts
    ========================= */
 function fmtDayLabel(ymd) {
@@ -493,6 +539,7 @@ export function initHistoric() {
     const dayPicker = $("dayPicker");
     const dayClearBtn = $("dayClearBtn");
     const clearBtn = $("clearBtn");
+    const csvBtn = $("csvBtn");
 
     if (!yearSel || !monthSel) {
       if (info) info.textContent = "Error: no s'han trobat els controls de filtre (yearSelect/monthSelect).";
@@ -544,6 +591,9 @@ export function initHistoric() {
       }
     }
 
+    let currentFiltered = [];
+    let currentY = "", currentM = "", currentD = "";
+
     function refresh() {
       let y = yearSel.value || "";
       let m = monthSel.value || "";
@@ -566,6 +616,9 @@ if (!d) {
   const today = todayYmdLocal();
   filtered = filtered.filter(r => String((r.date ?? r.day) || "").slice(0,10) !== today);
 }
+
+      currentFiltered = filtered;
+      currentY = y; currentM = m; currentD = d;
 
 render(filtered);
 renderSummary(filtered);
@@ -610,6 +663,13 @@ buildHistCharts(filtered);
         monthSel.value = "";
         if (dayPicker) dayPicker.value = "";
         refresh();
+      });
+    }
+
+    // CSV export
+    if (csvBtn) {
+      csvBtn.addEventListener("click", () => {
+        downloadCsv(currentFiltered, currentY, currentM, currentD);
       });
     }
 

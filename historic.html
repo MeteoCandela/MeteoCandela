@@ -20,7 +20,7 @@
   <meta property="og:url" content="https://meteocandela.cat/historic.html">
   <meta property="og:image" content="https://meteocandela.cat/og-image.png">
 
-  <link rel="stylesheet" href="/style.css?v=2026-10-23-010">
+  <link rel="stylesheet" href="/style.css?v=2026-10-23-011">
 </head>
 
 <body data-page="historic">
@@ -128,7 +128,10 @@
 
     <!-- Taula / Cards -->
     <section class="card span2">
-      <h2>Dades d’històric diari</h2>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+        <h2 style="margin:0">Dades d’històric diari</h2>
+        <button id="csvBtn" class="btn" type="button" style="font-size:13px">⬇ Descarrega CSV</button>
+      </div>
 
       <div class="table-wrap">
         <table class="hist-table" aria-label="Taula d'històric diari">
@@ -168,6 +171,6 @@
   </footer>
 
   <script defer src="./vendor/chart.umd.min.js"></script>
-  <script type="module" src="/app.js?v=2026-10-23-010"></script>
+  <script type="module" src="/app.js?v=2026-10-23-011"></script>
 </body>
 </html>
