@@ -20,7 +20,7 @@
   <meta property="og:url" content="https://meteocandela.cat/historic.html">
   <meta property="og:image" content="https://meteocandela.cat/og-image.png">
 
-  <link rel="stylesheet" href="/style.css?v=2026-10-23-009">
+  <link rel="stylesheet" href="/style.css?v=2026-10-23-010">
 </head>
 
 <body data-page="historic">
@@ -121,6 +121,11 @@
       <canvas id="chartHistRain"></canvas>
     </section>
 
+    <section class="card chart-box span2" id="chartHistWindSection" style="display:none">
+      <h2 id="chartHistWindTitle">Vent i ratxa màxima (km/h)</h2>
+      <canvas id="chartHistWind"></canvas>
+    </section>
+
     <!-- Taula / Cards -->
     <section class="card span2">
       <h2>Dades d’històric diari</h2>
@@ -163,6 +168,6 @@
   </footer>
 
   <script defer src="./vendor/chart.umd.min.js"></script>
-  <script type="module" src="/app.js?v=2026-10-23-009"></script>
+  <script type="module" src="/app.js?v=2026-10-23-010"></script>
 </body>
 </html>

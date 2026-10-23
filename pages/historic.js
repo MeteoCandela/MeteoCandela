@@ -228,7 +228,8 @@ function fmtDayLabel(ymd) {
 function destroyHistCharts() {
   try { window.__histChartTemp?.destroy?.(); } catch {}
   try { window.__histChartRain?.destroy?.(); } catch {}
-  window.__histChartTemp = window.__histChartRain = null;
+  try { window.__histChartWind?.destroy?.(); } catch {}
+  window.__histChartTemp = window.__histChartRain = window.__histChartWind = null;
 }
 
 function buildHistCharts(rows) {
@@ -378,7 +379,59 @@ function buildHistCharts(rows) {
     }
   }
 
-  initChartFullscreen(["chartHistTemp", "chartHistRain"]);
+  // ---- Vent / Ratxa ----
+  const windCanvas = document.getElementById("chartHistWind");
+  const windSection = document.getElementById("chartHistWindSection");
+  if (windCanvas && windSection) {
+    const wind = sorted.map(r => { const v = Number(r.wind_avg_kmh ?? r.wind_avg); return Number.isFinite(v) ? v : null; });
+    const gust = sorted.map(r => { const v = Number(r.gust_max_kmh ?? r.gust_max ?? r.gust); return Number.isFinite(v) ? v : null; });
+
+    const hasWind = wind.some(v => v != null) || gust.some(v => v != null);
+
+    if (!hasWind) {
+      windSection.style.display = "none";
+    } else {
+      windSection.style.display = "";
+      const gustMax = Math.max(...gust.filter(v => v != null));
+      const windTitleEl = document.getElementById("chartHistWindTitle");
+      if (windTitleEl) {
+        windTitleEl.textContent = `Vent i ratxa màxima (km/h) · ${rows.length} dies${Number.isFinite(gustMax) ? ` · ratxa màx ${gustMax.toFixed(1)} km/h` : ""}`;
+      }
+
+      window.__histChartWind = new Chart(windCanvas, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            { label: "Ratxa màxima", data: gust, tension: 0.2, pointRadius: rows.length > 60 ? 0 : 2, pointHoverRadius: 5, borderWidth: 1.4, borderDash: [6, 4], fill: false },
+            { label: "Vent mitjà",   data: wind, tension: 0.2, pointRadius: rows.length > 60 ? 0 : 2, pointHoverRadius: 5, borderWidth: 1.8, fill: false },
+          ]
+        },
+        options: {
+          ...commonBase,
+          scales: { ...commonBase.scales, y: { beginAtZero: true } },
+          plugins: {
+            legend: { display: true },
+            tooltip: {
+              displayColors: false,
+              callbacks: {
+                title: (items) => {
+                  const idx = items?.[0]?.dataIndex;
+                  return idx != null ? fmtDateCA(sorted[idx]?.date ?? sorted[idx]?.day) : "";
+                },
+                label: (ctx) => {
+                  const v = ctx.parsed?.y;
+                  return v == null ? "—" : `${ctx.dataset.label}: ${Number(v).toFixed(1)} km/h`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+  }
+
+  initChartFullscreen(["chartHistTemp", "chartHistRain", "chartHistWind"]);
 }
 
 /* =========================
