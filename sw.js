@@ -1,6 +1,6 @@
 // sw.js — MeteoValls (scope-safe + anti-stale ESM + PUSH)
 
-const VERSION = "2026-10-23-013"; // 🔁 PUJA AIXÒ SEMPRE
+const VERSION = "2026-10-23-014"; // 🔁 PUJA AIXÒ SEMPRE
 const CACHE_PREFIX = "meteovalls-";
 const CACHE_NAME = `${CACHE_PREFIX}${VERSION}`;
 
@@ -35,6 +35,7 @@ const PRECACHE_URLS = [
   inScope("/poda.html"),
   inScope("/poda.css"),
   inScope("/calendari.html"),
+  inScope("/calendari-style.css"),
   inScope("/vendor/chart.umd.min.js"),
   inScope("/vendor/suncalc.min.js"),
   inScope("/favicon.png"),
