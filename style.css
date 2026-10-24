@@ -1282,14 +1282,18 @@ h2{
 
 .fs-body {
   flex: 1;
-  padding: 12px;
+  padding: 0;
   display: flex;
+  overflow: hidden; /* retalla el canvas ampliat */
 }
 
 .fs-canvas-host {
   position: relative;
   width: 100%;
   height: 100%;
+  touch-action: none;    /* gestió pròpia: evita zoom natiu del browser */
+  transform-origin: 0 0; /* origen per al càlcul pinch-zoom */
+  will-change: transform;
 }
 
 /* Chart.js amb maintainAspectRatio:false necessita alçada real */
@@ -1304,6 +1308,27 @@ html.fs-lock, body.fs-lock { overflow: hidden; }
 /* petit detall UX */
 .fs-clickable { cursor: zoom-in; }
 .fs-placeholder { width: 100%; }
+
+.fs-head-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.fs-zoom-reset {
+  appearance: none;
+  border: 0;
+  background: rgba(90,169,255,0.18);
+  color: inherit;
+  padding: 6px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.fs-zoom-reset:active { transform: scale(0.96); }
 
 .fs-zoom-btn{
   appearance: none;
