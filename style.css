@@ -1369,6 +1369,50 @@ html.fs-lock, body.fs-lock { overflow: hidden; }
 /* Amaga botons ⛶ mentre hi ha modal fullscreen */
 .fs-lock .fs-zoom-btn { display: none !important; }
 
+/* Scrollbar de dades (scroll mode mòbil) */
+.fs-scrollbar-wrap {
+  padding: 6px 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  flex-shrink: 0;
+}
+.fs-scroll-info {
+  font-size: 11px;
+  opacity: 0.6;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fs-scrollbar {
+  width: 100%;
+  accent-color: rgba(90,169,255,0.85);
+  cursor: pointer;
+  touch-action: pan-x;
+}
+
+/* Bottom sheet en mòbil retrat */
+@media (max-width: 640px) and (orientation: portrait) {
+  .fs-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .fs-panel {
+    width: 100%;
+    max-height: calc(100% - 28px);
+    height: auto;
+    border-radius: 20px 20px 0 0;
+    border-bottom: 0;
+  }
+  .fs-body {
+    height: 56vw;
+    min-height: 180px;
+    flex: none;
+  }
+}
+
 /* =========================
    iOS install banner
    ========================= */
