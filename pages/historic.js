@@ -434,7 +434,6 @@ function buildHistCharts(rows) {
 
   // ---- Vent / Ratxa ----
   const windCanvas = document.getElementById("chartHistWind");
-  const windSection = document.getElementById("chartHistWindSection");
   if (windCanvas && windSection) {
     const wind = sorted.map(r => { const v = Number(r.wind_avg_kmh ?? r.wind_avg); return Number.isFinite(v) ? v : null; });
     const gust = sorted.map(r => { const v = Number(r.gust_max_kmh ?? r.gust_max ?? r.gust); return Number.isFinite(v) ? v : null; });
