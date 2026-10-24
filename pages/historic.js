@@ -283,12 +283,14 @@ function buildHistCharts(rows) {
 
   const tempSection = document.getElementById("chartHistTempSection");
   const rainSection = document.getElementById("chartHistRainSection");
+  const windSection = document.getElementById("chartHistWindSection");
 
   const multiDay = rows && rows.length > 1;
 
   if (!multiDay || typeof window.Chart === "undefined") {
     if (tempSection) tempSection.style.display = "none";
     if (rainSection) rainSection.style.display = "none";
+    if (windSection) windSection.style.display = "none";
     return;
   }
 
