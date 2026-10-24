@@ -1309,6 +1309,30 @@ html.fs-lock, body.fs-lock { overflow: hidden; }
 .fs-clickable { cursor: zoom-in; }
 .fs-placeholder { width: 100%; }
 
+/* Tooltip extern (no escala amb zoom) */
+.fs-ext-tooltip {
+  position: absolute;
+  z-index: 200;
+  pointer-events: none;
+  background: rgba(11,18,32,0.93);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  max-width: 220px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+.fs-tt-title {
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: rgba(255,255,255,0.9);
+}
+.fs-tt-line {
+  color: rgba(255,255,255,0.75);
+  white-space: nowrap;
+}
+
 .fs-head-actions {
   display: flex;
   gap: 8px;
