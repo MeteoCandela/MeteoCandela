@@ -1,6 +1,6 @@
 // sw.js — MeteoValls (scope-safe + anti-stale ESM + PUSH)
 
-const VERSION = "2026-10-24-006"; // 🔁 PUJA AIXÒ SEMPRE
+const VERSION = "2026-10-25-001"; // 🔁 PUJA AIXÒ SEMPRE
 const CACHE_PREFIX = "meteovalls-";
 const CACHE_NAME = `${CACHE_PREFIX}${VERSION}`;
 
