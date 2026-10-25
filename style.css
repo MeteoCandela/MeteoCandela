@@ -1393,18 +1393,12 @@ html.fs-lock, body.fs-lock { overflow: hidden; }
   touch-action: pan-x;
 }
 
-/* Bottom sheet en mòbil retrat */
+/* Mòbil retrat: centrat, proporcions bones */
 @media (max-width: 640px) and (orientation: portrait) {
-  .fs-overlay {
-    align-items: flex-end;
-    padding: 0;
-  }
   .fs-panel {
     width: 100%;
-    max-height: calc(100% - 28px);
+    max-height: calc(100% - 32px);
     height: auto;
-    border-radius: 20px 20px 0 0;
-    border-bottom: 0;
   }
   .fs-body {
     height: 56vw;
